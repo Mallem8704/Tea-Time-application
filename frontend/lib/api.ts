@@ -75,7 +75,7 @@ export async function apiFetch<T = any>(endpoint: string, options: FetchOptions 
     }
 
     const text = await response.text();
-    return text ? JSON.parse(text) : {};
+    return text ? (JSON.parse(text) as T) : ({} as T);
 }
 
 export const api = {

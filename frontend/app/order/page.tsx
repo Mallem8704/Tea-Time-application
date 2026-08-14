@@ -31,7 +31,7 @@ import { openRazorpayCheckout } from "@/lib/razorpay";
 function CustomerOrderContent() {
     const searchParams = useSearchParams();
     const { language, t } = useLanguage();
-    const { taxRate } = useOutlet();
+    const { taxRate, outlet } = useOutlet();
     const toast = useToast();
 
     // Table State
