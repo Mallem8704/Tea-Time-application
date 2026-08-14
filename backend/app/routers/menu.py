@@ -17,6 +17,7 @@ from app.schemas import (
 )
 from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
+from app.routers.ws import manager
 
 router = APIRouter(prefix="", tags=["Menu Items"])
 
@@ -242,7 +243,7 @@ def update_menu_item(
 
 
 @router.patch("/{item_id}/availability", response_model=MenuItemOut)
-def toggle_availability(
+async def toggle_availability(
     item_id: int,
     data: MenuItemAvailabilityUpdate,
     current_user: User = Depends(require_staff_or_owner),
@@ -274,11 +275,26 @@ def toggle_availability(
     )
     db.commit()
     db.refresh(item)
+
+    # Broadcast real-time availability change
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=current_user.outlet_id,
+            event="menu:availability_changed",
+            data={
+                "item_id": item.id,
+                "name": item.name,
+                "is_available": item.is_available,
+            },
+        )
+    except Exception:
+        pass
+
     return item
 
 
 @router.patch("/{item_id}/price", response_model=MenuItemOut)
-def update_item_price(
+async def update_item_price(
     item_id: int,
     data: MenuItemPriceUpdate,
     current_user: User = Depends(require_owner),
@@ -312,6 +328,22 @@ def update_item_price(
     )
     db.commit()
     db.refresh(item)
+
+    # Broadcast real-time price change
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=current_user.outlet_id,
+            event="menu:price_changed",
+            data={
+                "item_id": item.id,
+                "name": item.name,
+                "price_paise": item.price_paise,
+                "price_formatted": f"₹{item.price_paise / 100:.2f}",
+            },
+        )
+    except Exception:
+        pass
+
     return item
 
 

@@ -282,15 +282,26 @@ export default function AdminMenuManagementPage() {
 
                 {/* Top Actions Bar */}
                 <div className="p-6 bg-white border-b border-cream-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 shadow-2xs">
-                    <div>
-                        <h2 className="text-xl font-extrabold text-espresso-950 tracking-tight flex items-center gap-2">
-                            Menu & Pricing Catalog
-                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-cream-200 text-espresso-800 font-bold">
-                                {items.length} Items
-                            </span>
-                        </h2>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-extrabold text-espresso-950 tracking-tight">
+                                Menu & Pricing Management
+                            </h2>
+                            {/* Live Stats Pills */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-cream-200 text-espresso-800 font-extrabold">
+                                    Total: {items.length}
+                                </span>
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold border border-emerald-200">
+                                    🟢 Available: {items.filter((i) => i.is_available).length}
+                                </span>
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 font-extrabold border border-red-200">
+                                    🔴 Unavailable: {items.filter((i) => !i.is_available).length}
+                                </span>
+                            </div>
+                        </div>
                         <p className="text-xs text-espresso-600">
-                            Bilingual menu management, stock thresholds, image uploads & owner price controls.
+                            Bilingual menu catalog, 1-tap availability toggles, image uploads & owner price controls.
                         </p>
                     </div>
 
