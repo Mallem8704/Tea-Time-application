@@ -99,7 +99,9 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                             {isOwner ? <Shield className="w-4 h-4 text-saffron-400" /> : <User className="w-4 h-4 text-emerald-400" />}
                         </div>
                         <div className="overflow-hidden">
-                            <h4 className="text-xs font-bold text-white truncate">{user?.name || "Staff"}</h4>
+                            <h4 className="text-xs font-bold text-white truncate">
+                                {isOwner ? (user?.name && !user.name.includes("Ramesh") ? user.name : "Sreenivasulu") : (user?.name || "Staff")}
+                            </h4>
                             <span className="text-[10px] uppercase font-extrabold tracking-wider text-saffron-400">
                                 {user?.role || "Staff"}
                             </span>

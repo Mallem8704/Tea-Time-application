@@ -742,6 +742,12 @@ def auto_seed_if_empty():
             seed_database(clear_existing=False)
         else:
             print(f"[AUTO-SEED] Database already populated with outlet: {existing_outlet.name}")
+            # Ensure owner name is synchronized to Sreenivasulu
+            owner = db.query(User).filter(User.role == "owner").first()
+            if owner and owner.name != "Sreenivasulu":
+                print(f"[AUTH-SYNC] Updating owner name from '{owner.name}' to 'Sreenivasulu'")
+                owner.name = "Sreenivasulu"
+                db.commit()
     except Exception as e:
         print(f"[AUTO-SEED] Warning: Auto-seed check encountered: {e}")
     finally:
