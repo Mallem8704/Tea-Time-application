@@ -65,14 +65,14 @@ def seed_database(clear_existing: bool = True):
 
         owner_user = User(
             outlet_id=outlet.id,
-            name="Sreenivasulu (Owner)",
+            name="Sreenivasulu",
             email="owner@teatime.com",
             password_hash=get_password_hash(owner_password),
             role="owner",
         )
         staff_user = User(
             outlet_id=outlet.id,
-            name="Suresh Kumar (Counter Staff)",
+            name="Suresh Kumar",
             email="staff@teatime.com",
             password_hash=get_password_hash(staff_password),
             role="staff",
