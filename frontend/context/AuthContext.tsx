@@ -53,6 +53,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         }
         setIsLoading(false);
+
+        // Fetch fresh profile from backend to sync any name or role updates
+        if (storedToken) {
+            api.getMe()
+                .then((freshUser) => {
+                    if (freshUser && freshUser.name) {
+                        const updated: AuthUser = {
+                            id: freshUser.id,
+                            email: freshUser.email,
+                            name: freshUser.name,
+                            role: freshUser.role,
+                            outlet_id: freshUser.outlet_id,
+                        };
+                        setUser(updated);
+                        localStorage.setItem("teatime_user", JSON.stringify(updated));
+                    }
+                })
+                .catch(() => {});
+        }
     }, []);
 
     const login = async (email: string, password: string) => {
