@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --color-espresso-950: #0f0805;
+  --color-espresso-900: #1a0f0a;
+  --color-espresso-800: #2c1a11;
+  --color-espresso-700: #42281b;
+  --color-espresso-600: #5c3826;
+  --color-espresso-500: #7b4c34;
+
+  --color-terracotta-50: #fbf5f2;
+  --color-terracotta-100: #f6e9e4;
+  --color-terracotta-200: #eed0c4;
+  --color-terracotta-300: #e2ae9a;
+  --color-terracotta-400: #d4876c;
+  --color-terracotta-500: #c85a32;
+  --color-terracotta-600: #ba4724;
+  --color-terracotta-700: #9b371c;
+  --color-terracotta-800: #7f301b;
+  --color-terracotta-900: #682c1b;
+
+  --color-saffron-50: #fffbeb;
+  --color-saffron-100: #fef3c7;
+  --color-saffron-200: #fde68a;
+  --color-saffron-300: #fcd34d;
+  --color-saffron-400: #fbbf24;
+  --color-saffron-500: #f59e0b;
+  --color-saffron-600: #d97706;
+  --color-saffron-700: #b45309;
+
+  --color-cream-50: #fdfaf6;
+  --color-cream-100: #f7f0e6;
+  --color-cream-200: #eee2d1;
+  --color-cream-300: #e1cdb3;
+  --color-cream-400: #ceb190;
+  --color-cream-500: #bd9772;
+
+  --color-chai-500: #8c4a2f;
+  --color-chai-600: #743a24;
+  --color-chai-700: #5d2d1b;
+}
+
+:root {
+  --background: #fdfaf6;
+  --foreground: #1a0f0a;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100vh;
+}
