@@ -1,251 +1,236 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Coffee, Radio, Bell, ShoppingBag, ArrowRight, Sparkles, ChefHat } from "lucide-react";
+import React from "react";
+import Link from "next/link";
+import {
+    QrCode,
+    LayoutDashboard,
+    ChefHat,
+    Utensils,
+    CreditCard,
+    BarChart3,
+    ArrowRight,
+    Sparkles,
+    ShieldCheck,
+    Coffee,
+    Clock,
+    MapPin,
+    Phone,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
-import { VegBadge, SpecialBadge, StockBadge, OrderStatusBadge } from "@/components/ui/Badge";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useLanguage } from "@/context/LanguageContext";
-import { useToast } from "@/context/ToastContext";
-import { useAdminSocket } from "@/hooks/useSockets";
-import { formatRupees } from "@/lib/formatters";
-import { api } from "@/lib/api";
 
-export default function DesignSystemDemoPage() {
+export default function HomePage() {
     const { language, t } = useLanguage();
-    const toast = useToast();
-    const [loadingBtn, setLoadingBtn] = useState(false);
-    const [liveMenu, setLiveMenu] = useState<any[]>([]);
 
-    // Connect to WebSocket hub
-    const { isConnected: wsConnected, lastEvent } = useAdminSocket(1, (event) => {
-        console.log("[Demo] WS Event received:", event);
-        if (event.event === "new_order") {
-            toast.info(`New Order #${event.data?.order_number} received on Table ${event.data?.table_label}!`);
-        }
-    });
+    const portalCards = [
+        {
+            title: language === "en" ? "Customer QR Ordering" : "కస్టమర్ QR ఆర్డరింగ్",
+            subtitle: language === "en" ? "Browse bilingual menu, order, & track live" : "మెనూ చూడండి, ఆర్డర్ చేయండి మరియు లైవ్ ట్రాక్ చేయండి",
+            badge: language === "en" ? "Zero Login • Table T1" : "లాగిన్ అవసరం లేదు",
+            badgeColor: "bg-terracotta-100 text-terracotta-800 border-terracotta-200",
+            href: "/order?table=T1",
+            icon: QrCode,
+            cta: language === "en" ? "Open Customer Menu (Table T1) →" : "మెనూ తెరవండి (టేబుల్ T1) →",
+            buttonVariant: "primary" as const,
+            bgGlow: "group-hover:border-terracotta-400 group-hover:shadow-terracotta-500/10",
+        },
+        {
+            title: language === "en" ? "Live Orders & Operations Cockpit" : "లైవ్ ఆర్డర్లు & ఆపరేషన్స్ కాక్‌పిట్",
+            subtitle: language === "en" ? "5-stage Kanban board, audio chimes, table alerts" : "లైవ్ కాన్బన్ బోర్డ్, సౌండ్ అలర్ట్స్, టేబుల్ సర్వీస్",
+            badge: language === "en" ? "Owner & Staff Portal" : "యజమాని & సిబ్బంది",
+            badgeColor: "bg-espresso-100 text-espresso-900 border-espresso-200",
+            href: "/admin/login",
+            icon: LayoutDashboard,
+            cta: language === "en" ? "Launch Admin Cockpit →" : "అడ్మిన్ పోర్టల్ తెరవండి →",
+            buttonVariant: "secondary" as const,
+            bgGlow: "group-hover:border-espresso-400 group-hover:shadow-espresso-500/10",
+        },
+        {
+            title: language === "en" ? "Kitchen Display System (KDS)" : "కిచెన్ డిస్‌ప్లే సిస్టమ్ (KDS)",
+            subtitle: language === "en" ? "High-contrast prep tickets, elapsed timers, checklists" : "వంటగది టిక్కెట్లు, టైమర్లు మరియు చెక్‌లిస్ట్‌లు",
+            badge: language === "en" ? "Cooks & Chai Masters" : "వంటగది వీక్షణ",
+            badgeColor: "bg-saffron-100 text-saffron-900 border-saffron-300",
+            href: "/admin/kds",
+            icon: ChefHat,
+            cta: language === "en" ? "Open Kitchen Screen →" : "కిచెన్ స్క్రీన్ తెరవండి →",
+            buttonVariant: "outline" as const,
+            bgGlow: "group-hover:border-saffron-400 group-hover:shadow-saffron-500/10",
+        },
+    ];
 
-    useEffect(() => {
-        api.getMenu()
-            .then((data) => setLiveMenu(data.slice(0, 3)))
-            .catch(() => {});
-    }, []);
-
-    const handleTestButtonLoading = () => {
-        setLoadingBtn(true);
-        setTimeout(() => {
-            setLoadingBtn(false);
-            toast.success(language === "en" ? "Action completed successfully!" : "కార్యం విజయవంతంగా పూర్తయింది!");
-        }, 1200);
-    };
+    const quickLinks = [
+        { href: "/admin/menu", label: "Menu & Price CRUD", icon: Utensils },
+        { href: "/admin/tables", label: "Tables & QR Stands", icon: QrCode },
+        { href: "/admin/payments", label: "Cashier & UPI Ledger", icon: CreditCard },
+        { href: "/admin/analytics", label: "Sales & Analytics", icon: BarChart3 },
+    ];
 
     return (
-        <main className="min-h-screen bg-cream-50 text-espresso-950 flex flex-col justify-between selection:bg-terracotta-500 selection:text-white pb-16">
-            {/* Top Navigation */}
-            <header className="border-b border-cream-200 bg-white/80 backdrop-blur-md sticky top-0 z-40">
-                <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+        <main className="min-h-screen bg-cream-50 text-espresso-950 flex flex-col justify-between selection:bg-terracotta-500 selection:text-white">
+            {/* Header */}
+            <header className="border-b border-cream-200 bg-white/90 backdrop-blur-md sticky top-0 z-40">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-3">
                         <img
                             src="/logo.png"
                             alt="Tea Time Kadiri Logo"
-                            className="h-11 w-auto object-contain"
+                            className="h-12 w-auto object-contain"
                         />
-                    </div>
+                    </Link>
 
                     <div className="flex items-center gap-3">
-                        {/* WebSocket Status Indicator */}
-                        <div
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
-                                wsConnected
-                                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                                    : "bg-saffron-50 border-saffron-300 text-saffron-800"
-                            }`}
-                        >
-                            <Radio className={`w-3.5 h-3.5 ${wsConnected ? "animate-pulse text-emerald-600" : "text-saffron-600"}`} />
-                            <span>{wsConnected ? "WebSocket Connected" : "Connecting WS..."}</span>
-                        </div>
-
-                        {/* Language Switcher */}
                         <LanguageToggle />
+                        <Link href="/admin/login">
+                            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
+                                Admin Sign In
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </header>
 
-            {/* Design System Hero */}
-            <div className="max-w-6xl mx-auto px-6 pt-10 pb-6 w-full">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
-                    <div>
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-saffron-100 border border-saffron-200 text-saffron-900 text-xs font-bold mb-2">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Tea Time Cafe Design System & Bilingual i18n
-                        </div>
-                        <h2 className="text-3xl font-extrabold text-espresso-950 tracking-tight">
-                            Design Tokens, Components & Real-Time Client
-                        </h2>
-                        <p className="text-sm text-espresso-600 mt-1">
-                            Switching language dynamically translates typography, badges, order statuses, and cafe components.
-                        </p>
+            {/* Hero Section */}
+            <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
+                <div className="text-center max-w-2xl mx-auto space-y-4">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-terracotta-50 border border-terracotta-200 text-terracotta-800 text-xs font-bold shadow-2xs">
+                        <Sparkles className="w-3.5 h-3.5 text-terracotta-600" />
+                        <span>Kadiri Outlet • Authentic Irani Chai & Cafe SaaS</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="primary"
-                            size="sm"
-                            leftIcon={<Bell className="w-4 h-4" />}
-                            onClick={() => toast.success(language === "en" ? "Fresh Irani Chai is ready!" : "వేడి ఇరానీ చాయ్ సిద్ధంగా ఉంది!")}
-                        >
-                            Trigger Success Toast
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toast.error(language === "en" ? "Payment failed. Please retry." : "చెల్లింపు విఫలమైంది. మళ్లీ ప్రయత్నించండి.")}
-                        >
-                            Trigger Error Toast
-                        </Button>
-                    </div>
+                    <h1 className="text-3xl sm:text-5xl font-black text-espresso-950 tracking-tight leading-tight">
+                        {language === "en" ? (
+                            <>
+                                Good Tea. <span className="text-terracotta-600">Good Time.</span>
+                            </>
+                        ) : (
+                            <>
+                                మంచి టీ. <span className="text-terracotta-600">మంచి సమయం.</span>
+                            </>
+                        )}
+                    </h1>
+
+                    <p className="text-sm sm:text-base text-espresso-700 font-medium">
+                        {language === "en"
+                            ? "Complete smart cafe platform with zero-login QR ordering, real-time Kitchen Kanban, stock automation, and analytics."
+                            : "కస్టమర్ QR ఆర్డరింగ్, లైవ్ కిచెన్ కాన్బన్ మరియు పూర్తి కేఫ్ నిర్వహణ ప్లాట్‌ఫారమ్."}
+                    </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* SECTION 1: BUTTONS & VARIANTS */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Button System</CardTitle>
-                            <CardDescription>Terracotta primary, deep espresso, saffron accent, outline, ghost & loading states.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex flex-wrap gap-2.5 items-center">
-                                <Button variant="primary">{t("add_to_cart")}</Button>
-                                <Button variant="saffron">{t("checkout")}</Button>
-                                <Button variant="secondary">{t("call_staff")}</Button>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2.5 items-center">
-                                <Button variant="outline">{t("view_cart")}</Button>
-                                <Button variant="ghost">{t("close")}</Button>
-                                <Button variant="danger">{t("cancel")}</Button>
-                            </div>
-
-                            <div className="pt-2 border-t border-cream-100 flex flex-wrap gap-2.5 items-center">
-                                <Button size="sm" variant="primary">{t("add_to_cart")} (sm)</Button>
-                                <Button size="md" variant="primary">{t("add_to_cart")} (md)</Button>
-                                <Button
-                                    size="md"
-                                    variant="primary"
-                                    isLoading={loadingBtn}
-                                    onClick={handleTestButtonLoading}
-                                >
-                                    {loadingBtn ? "Processing..." : "Test Loading State"}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* SECTION 2: BADGES & STATUSES */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Badges & Statuses</CardTitle>
-                            <CardDescription>Vegetarian indicator, availability flags, specials, and Kanban progression badges.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-espresso-500 mb-2">Dietary & Specials</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    <VegBadge isVeg={true} />
-                                    <VegBadge isVeg={false} />
-                                    <SpecialBadge label={t("bestseller")} />
-                                    <SpecialBadge label={t("special")} />
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-espresso-500 mb-2">Stock Availability</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    <StockBadge status="in_stock" qty={150} />
-                                    <StockBadge status="low_stock" qty={4} />
-                                    <StockBadge status="out_of_stock" qty={0} />
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-espresso-500 mb-2">Order Kanban Pipeline</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    <OrderStatusBadge status="placed" />
-                                    <OrderStatusBadge status="accepted" />
-                                    <OrderStatusBadge status="preparing" />
-                                    <OrderStatusBadge status="ready" />
-                                    <OrderStatusBadge status="served" />
-                                    <OrderStatusBadge status="cancelled" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* SECTION 3: MENU CARD COMPONENT DEMO */}
-                <div className="mt-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-bold text-espresso-950">Live Menu Card Components</h3>
-                        <span className="text-xs text-espresso-500 font-semibold">Rendered in {language === "en" ? "English" : "తెలుగు"}</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        {liveMenu.length > 0 ? (
-                            liveMenu.map((item) => (
-                                <Card key={item.id} hoverEffect className="flex flex-col justify-between">
-                                    <div>
-                                        <div className="h-36 bg-linear-to-br from-cream-100 to-cream-200 relative flex items-center justify-center p-4">
-                                            <ChefHat className="w-12 h-12 text-terracotta-400 opacity-70" />
-                                            <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                                                <VegBadge isVeg={item.is_veg} showText={false} />
-                                                {item.is_special && <SpecialBadge />}
-                                            </div>
-                                            <div className="absolute top-3 right-3">
-                                                <StockBadge status={item.is_available ? "in_stock" : "out_of_stock"} qty={item.stock_qty} />
-                                            </div>
+                {/* Primary Portals Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                    {portalCards.map((p, idx) => {
+                        const Icon = p.icon;
+                        return (
+                            <div
+                                key={idx}
+                                className={`group bg-white rounded-3xl p-6 border-2 border-cream-200 hover:border-terracotta-400 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between ${p.bgGlow}`}
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="w-12 h-12 rounded-2xl bg-cream-100 group-hover:bg-terracotta-500 text-espresso-900 group-hover:text-white flex items-center justify-center transition-colors shadow-xs">
+                                            <Icon className="w-6 h-6" />
                                         </div>
-
-                                        <CardHeader>
-                                            <div className="flex items-start justify-between gap-2">
-                                                <CardTitle>{language === "te" && item.name_te ? item.name_te : item.name}</CardTitle>
-                                                <span className="text-base font-extrabold text-terracotta-600 shrink-0">
-                                                    {formatRupees(item.price_paise)}
-                                                </span>
-                                            </div>
-                                            <CardDescription>
-                                                {language === "te" && item.description_te ? item.description_te : item.description}
-                                            </CardDescription>
-                                        </CardHeader>
+                                        <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${p.badgeColor}`}>
+                                            {p.badge}
+                                        </span>
                                     </div>
 
-                                    <CardFooter>
-                                        <span className="text-xs text-espresso-500 font-medium">
-                                            {t("table")} T1
-                                        </span>
+                                    <div>
+                                        <h2 className="text-lg font-black text-espresso-950 group-hover:text-terracotta-600 transition-colors">
+                                            {p.title}
+                                        </h2>
+                                        <p className="text-xs text-espresso-600 font-medium mt-1 leading-relaxed">
+                                            {p.subtitle}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 mt-4 border-t border-cream-100">
+                                    <Link href={p.href} className="block w-full">
                                         <Button
-                                            size="sm"
-                                            variant="primary"
-                                            leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}
-                                            onClick={() => toast.success(`${language === "te" && item.name_te ? item.name_te : item.name} ${t("added")}`)}
+                                            variant={p.buttonVariant}
+                                            size="md"
+                                            className="w-full shadow-sm"
                                         >
-                                            {t("add_to_cart")}
+                                            {p.cta}
                                         </Button>
-                                    </CardFooter>
-                                </Card>
-                            ))
-                        ) : (
-                            <div className="col-span-3 text-center py-10 text-espresso-500 text-sm">
-                                Loading sample menu cards...
+                                    </Link>
+                                </div>
                             </div>
-                        )}
+                        );
+                    })}
+                </div>
+
+                {/* Direct Admin Operations Shortcuts */}
+                <div className="mt-12 bg-white rounded-3xl p-6 sm:p-8 border border-cream-200 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-cream-200">
+                        <div>
+                            <h3 className="text-base font-bold text-espresso-950">
+                                Admin Operations Modules
+                            </h3>
+                            <p className="text-xs text-espresso-600 font-medium mt-0.5">
+                                Direct links for authenticated staff and owners
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-xs font-bold text-espresso-700 bg-cream-100 px-3 py-1.5 rounded-xl">
+                            <ShieldCheck className="w-4 h-4 text-terracotta-600" />
+                            <span>Kadiri Master Outlet</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
+                        {quickLinks.map((q, i) => {
+                            const QIcon = q.icon;
+                            return (
+                                <Link
+                                    key={i}
+                                    href={q.href}
+                                    className="p-3.5 rounded-2xl bg-cream-50 hover:bg-terracotta-50 border border-cream-200 hover:border-terracotta-200 transition text-center group flex flex-col items-center gap-2"
+                                >
+                                    <QIcon className="w-5 h-5 text-espresso-700 group-hover:text-terracotta-600 transition" />
+                                    <span className="text-xs font-bold text-espresso-900 group-hover:text-terracotta-900">
+                                        {q.label}
+                                    </span>
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
-            </div>
+
+                {/* Outlet Contact Info Bar */}
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
+                    <div className="p-4 rounded-2xl bg-cream-100/70 border border-cream-200 flex items-center gap-3">
+                        <MapPin className="w-5 h-5 text-terracotta-600 shrink-0" />
+                        <div>
+                            <p className="text-[11px] font-bold uppercase text-espresso-500">Location</p>
+                            <p className="text-xs font-bold text-espresso-900">Main Road, Kadiri, Andhra Pradesh</p>
+                        </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-cream-100/70 border border-cream-200 flex items-center gap-3">
+                        <Clock className="w-5 h-5 text-terracotta-600 shrink-0" />
+                        <div>
+                            <p className="text-[11px] font-bold uppercase text-espresso-500">Hours</p>
+                            <p className="text-xs font-bold text-espresso-900">6:00 AM – 11:00 PM (Daily)</p>
+                        </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-cream-100/70 border border-cream-200 flex items-center gap-3">
+                        <Coffee className="w-5 h-5 text-terracotta-600 shrink-0" />
+                        <div>
+                            <p className="text-[11px] font-bold uppercase text-espresso-500">Specialty</p>
+                            <p className="text-xs font-bold text-espresso-900">Irani Chai, Osmania Biscuits & Bun Maska</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             {/* Footer */}
-            <footer className="border-t border-cream-200 bg-white/50 py-5 text-center text-xs text-espresso-500">
-                Tea Time Cafe &bull; Design System & Bilingual Framework &bull; Ready for Feature Screens
+            <footer className="border-t border-cream-200 bg-white py-6 text-center text-xs text-espresso-500 font-medium">
+                <p>&copy; {new Date().getFullYear()} Tea Time Cafe &bull; Kadiri Outlet. All rights reserved.</p>
             </footer>
         </main>
     );
