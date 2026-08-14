@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
     Coffee,
@@ -15,6 +15,7 @@ import {
     MapPin,
     QrCode,
     X,
+    RefreshCw,
 } from "lucide-react";
 import { MenuItemCard, MenuItemData } from "@/components/order/MenuItemCard";
 import { CartDrawer, CartItem } from "@/components/order/CartDrawer";
@@ -95,18 +96,26 @@ function CustomerOrderContent() {
     }, [searchParams]);
 
     // 2. Fetch Categories & Menu Items
-    useEffect(() => {
+    const [loadError, setLoadError] = useState<string | null>(null);
+
+    const fetchMenuData = useCallback(async () => {
         setIsLoadingMenu(true);
-        Promise.all([api.getCategories(true), api.getMenu()])
-            .then(([cats, items]) => {
-                setCategories(cats);
-                setMenuItems(items);
-            })
-            .catch((err) => {
-                toast.error("Failed to load cafe menu");
-            })
-            .finally(() => setIsLoadingMenu(false));
+        setLoadError(null);
+        try {
+            const [cats, items] = await Promise.all([api.getCategories(true), api.getMenu()]);
+            if (Array.isArray(cats)) setCategories(cats);
+            if (Array.isArray(items)) setMenuItems(items);
+        } catch (err: any) {
+            console.error("Failed to load menu:", err);
+            setLoadError("Connecting to cafe server. If it takes a moment, please tap Retry.");
+        } finally {
+            setIsLoadingMenu(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchMenuData();
+    }, [fetchMenuData]);
 
     // Filter Menu Items
     const filteredItems = useMemo(() => {
@@ -391,6 +400,22 @@ function CustomerOrderContent() {
                     <div className="text-center py-20 text-espresso-500">
                         <Coffee className="w-10 h-10 mx-auto mb-3 text-terracotta-400 animate-pulse" />
                         <p className="text-sm font-medium">Brewing the menu...</p>
+                        <p className="text-xs text-espresso-400 mt-1">Connecting to cafe server</p>
+                    </div>
+                ) : loadError ? (
+                    <div className="bg-white rounded-3xl p-10 text-center border border-cream-300 shadow-sm max-w-md mx-auto my-8">
+                        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-saffron-600" />
+                        <h3 className="text-base font-bold text-espresso-950">Menu Still Loading</h3>
+                        <p className="text-xs text-espresso-600 mt-1.5 leading-relaxed">{loadError}</p>
+                        <Button
+                            size="md"
+                            variant="primary"
+                            className="mt-5 mx-auto"
+                            onClick={fetchMenuData}
+                            leftIcon={<RefreshCw className="w-4 h-4" />}
+                        >
+                            Retry Loading Menu
+                        </Button>
                     </div>
                 ) : filteredItems.length === 0 ? (
                     <div className="bg-white rounded-3xl p-12 text-center border border-cream-200">

@@ -332,7 +332,11 @@ async def delete_table(
 # ==========================================
 
 @router.get("/{table_id}/qr")
-def generate_table_qr(table_id: int, db: Session = Depends(get_db)):
+def generate_table_qr(
+    table_id: int,
+    frontend_url: Optional[str] = Query(None, description="Optional frontend origin override for QR target"),
+    db: Session = Depends(get_db),
+):
     """Generate high-resolution PNG QR Code for table encoding /order?table=<label>."""
     table = db.query(CafeTable).filter(CafeTable.id == table_id).first()
     if not table:
@@ -341,7 +345,16 @@ def generate_table_qr(table_id: int, db: Session = Depends(get_db)):
             detail=f"Table with ID {table_id} not found",
         )
 
-    target_url = table.qr_code_url or f"{FRONTEND_URL}/order?table={table.label}"
+    # Resolve target URL dynamically based on frontend caller origin or production domain
+    if frontend_url and frontend_url.startswith("http"):
+        base_origin = frontend_url.rstrip("/")
+        target_url = f"{base_origin}/order?table={table.label}"
+    else:
+        configured_origin = FRONTEND_URL.split(",")[0].strip().rstrip("/")
+        if table.qr_code_url and not table.qr_code_url.startswith("http://localhost"):
+            target_url = table.qr_code_url
+        else:
+            target_url = f"{configured_origin}/order?table={table.label}"
 
     # Generate QR Code image with cafe brand colors (crisp 15 box size)
     qr = qrcode.QRCode(
