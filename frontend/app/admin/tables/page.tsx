@@ -278,13 +278,12 @@ export default function AdminTablesPage() {
                                 <div className="border-4 border-terracotta-500 rounded-3xl p-6 space-y-4 bg-cream-50/40">
                                     {/* Cafe Logo */}
                                     <div className="flex flex-col items-center">
-                                        <div className="w-12 h-12 rounded-2xl bg-terracotta-500 text-white flex items-center justify-center shadow-md mx-auto mb-2">
-                                            <Coffee className="w-7 h-7" />
-                                        </div>
-                                        <h1 className="text-xl font-black text-espresso-950 tracking-tight">
-                                            Tea Time Cafe
-                                        </h1>
-                                        <p className="text-[11px] text-espresso-600 font-bold uppercase tracking-wider">
+                                        <img
+                                            src="/logo.png"
+                                            alt="Tea Time Kadiri Logo"
+                                            className="h-16 w-auto object-contain mx-auto mb-1"
+                                        />
+                                        <p className="text-[10px] text-espresso-600 font-bold uppercase tracking-wider">
                                             Kadiri Outlet &bull; Table Service
                                         </p>
                                     </div>

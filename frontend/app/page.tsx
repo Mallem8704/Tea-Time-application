@@ -46,13 +46,11 @@ export default function DesignSystemDemoPage() {
             <header className="border-b border-cream-200 bg-white/80 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-terracotta-500 text-white flex items-center justify-center shadow-md shadow-terracotta-500/20">
-                            <Coffee className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold tracking-tight text-espresso-950">{t("app_title")}</h1>
-                            <p className="text-xs text-espresso-600 font-medium">{t("app_tagline")}</p>
-                        </div>
+                        <img
+                            src="/logo.png"
+                            alt="Tea Time Kadiri Logo"
+                            className="h-11 w-auto object-contain"
+                        />
                     </div>
 
                     <div className="flex items-center gap-3">

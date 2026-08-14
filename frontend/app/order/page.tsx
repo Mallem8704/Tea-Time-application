@@ -242,12 +242,13 @@ function CustomerOrderContent() {
         return (
             <main className="min-h-screen bg-cream-50 text-espresso-950 flex flex-col">
                 <header className="border-b border-cream-200 bg-white/90 backdrop-blur-md sticky top-0 z-40">
-                    <div className="max-w-4xl mx-auto px-6 py-3.5 flex items-center justify-between">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-terracotta-500 text-white flex items-center justify-center shadow-xs">
-                                <Coffee className="w-5 h-5" />
-                            </div>
-                            <span className="font-bold text-espresso-950 text-base">{t("app_title")}</span>
+                            <img
+                                src="/logo.png"
+                                alt="Tea Time Kadiri Logo"
+                                className="h-10 w-auto object-contain"
+                            />
                         </div>
                         <LanguageToggle />
                     </div>
@@ -265,19 +266,13 @@ function CustomerOrderContent() {
         <main className="min-h-screen bg-cream-50 text-espresso-950 flex flex-col justify-between pb-28">
             {/* Header */}
             <header className="border-b border-cream-200 bg-white/90 backdrop-blur-md sticky top-0 z-40">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-terracotta-500 text-white flex items-center justify-center shadow-sm shadow-terracotta-500/20 shrink-0">
-                            <Coffee className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-base font-bold tracking-tight text-espresso-950 leading-tight">
-                                {t("app_title")}
-                            </h1>
-                            <p className="text-[11px] text-espresso-600 font-medium">
-                                {t("app_tagline")}
-                            </p>
-                        </div>
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                        <img
+                            src="/logo.png"
+                            alt="Tea Time Kadiri Logo"
+                            className="h-11 sm:h-12 w-auto object-contain"
+                        />
                     </div>
 
                     <div className="flex items-center gap-2">

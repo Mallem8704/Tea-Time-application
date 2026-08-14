@@ -120,8 +120,12 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
             {/* Header Banner */}
             <div className="bg-white rounded-3xl p-6 border border-cream-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-terracotta-500 text-white flex items-center justify-center shadow-md shadow-terracotta-500/20 shrink-0">
-                        <UtensilsCrossed className="w-6 h-6" />
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-cream-200 p-1 flex items-center justify-center shadow-xs shrink-0">
+                        <img
+                            src="/logo.png"
+                            alt="Tea Time Kadiri Logo"
+                            className="h-10 w-auto object-contain"
+                        />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">

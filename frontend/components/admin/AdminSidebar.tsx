@@ -47,13 +47,17 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
         >
             {/* Top Brand */}
             <div>
-                <div className="p-5 border-b border-espresso-800 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-terracotta-500 text-white flex items-center justify-center shadow-md shadow-terracotta-500/20">
-                        <Coffee className="w-5 h-5" />
+                <div className="p-4 border-b border-espresso-800 flex items-center gap-3">
+                    <div className="h-10 px-2 py-1 rounded-xl bg-white flex items-center justify-center shadow-md shrink-0">
+                        <img
+                            src="/logo.png"
+                            alt="Tea Time Kadiri Logo"
+                            className="h-8 w-auto object-contain"
+                        />
                     </div>
                     <div>
                         <h2 className="font-extrabold text-sm tracking-tight text-white">{t("app_title")}</h2>
-                        <span className="text-[11px] text-terracotta-400 font-bold uppercase tracking-wider block">
+                        <span className="text-[10px] text-terracotta-400 font-bold uppercase tracking-wider block">
                             Kadiri Cockpit
                         </span>
                     </div>

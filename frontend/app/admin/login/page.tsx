@@ -41,16 +41,20 @@ export default function AdminLoginPage() {
         <main className="min-h-screen bg-cream-100 flex flex-col justify-center items-center p-4 selection:bg-terracotta-500 selection:text-white">
             <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-cream-300 shadow-xl space-y-6">
                 {/* Brand Header */}
-                <div className="text-center space-y-2">
-                    <div className="w-14 h-14 rounded-2xl bg-terracotta-500 text-white flex items-center justify-center mx-auto shadow-md shadow-terracotta-500/25">
-                        <Coffee className="w-7 h-7" />
+                <div className="text-center space-y-3 flex flex-col items-center">
+                    <img
+                        src="/logo.png"
+                        alt="Tea Time Kadiri Logo"
+                        className="h-20 w-auto object-contain mx-auto"
+                    />
+                    <div>
+                        <h1 className="text-xl font-black text-espresso-950 tracking-tight">
+                            Admin Operations Cockpit
+                        </h1>
+                        <p className="text-xs text-espresso-600 font-medium mt-0.5">
+                            Kadiri Outlet &bull; Staff & Owner Portal
+                        </p>
                     </div>
-                    <h1 className="text-2xl font-extrabold text-espresso-950 tracking-tight">
-                        Tea Time Cockpit
-                    </h1>
-                    <p className="text-xs text-espresso-600 font-medium">
-                        Admin & Staff Operations Login &bull; Kadiri Outlet
-                    </p>
                 </div>
 
                 {/* Login Form */}
