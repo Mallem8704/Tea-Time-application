@@ -690,7 +690,7 @@ def seed_database():
                 image_url=None,
                 is_veg=raw.get("is_veg", True),
                 is_available=True,
-                track_stock=False,
+                track_stock=True,
                 stock_qty=100,
                 low_stock_threshold=10,
                 is_special=raw.get("is_special", False),
@@ -699,6 +699,17 @@ def seed_database():
             created_items.append(item)
 
         db.flush()
+
+        # Seed initial stock log records
+        for item in created_items:
+            stock_log = StockLog(
+                outlet_id=outlet.id,
+                item_id=item.id,
+                change_qty=100,
+                reason="restock",
+                notes="Initial store opening inventory",
+            )
+            db.add(stock_log)
         print(f"✓ Seeded {len(created_items)} Authentic Menu Items across {len(category_map)} Categories")
 
         db.commit()

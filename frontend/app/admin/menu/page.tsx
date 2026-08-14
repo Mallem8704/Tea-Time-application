@@ -386,7 +386,7 @@ export default function AdminMenuManagementPage() {
                                                     <div className="w-10 h-10 rounded-xl bg-cream-100 border border-cream-200 flex items-center justify-center overflow-hidden shrink-0">
                                                         {item.image_url ? (
                                                             <img
-                                                                src={item.image_url.startsWith("http") ? item.image_url : `http://127.0.0.1:8000${item.image_url}`}
+                                                                src={api.getImageUrl(item.image_url)}
                                                                 alt={item.name}
                                                                 className="w-full h-full object-cover"
                                                             />

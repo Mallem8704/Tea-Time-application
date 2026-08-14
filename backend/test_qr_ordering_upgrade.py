@@ -57,6 +57,15 @@ def run_upgrade_acceptance_tests():
     assert chicken_puff is not None, "Chicken Puff missing from menu"
     assert chocolate_shake is not None, "Chocolate Shake missing from menu"
 
+    # Ensure clean baseline prices and availability
+    requests.patch(f"{BASE_URL}/menu/{masala_tea['id']}/price", json={"price_paise": 1500}, headers=owner_headers)
+    requests.patch(f"{BASE_URL}/menu/{masala_tea['id']}/availability", json={"is_available": True}, headers=staff_headers)
+    requests.patch(f"{BASE_URL}/menu/{chocolate_shake['id']}/availability", json={"is_available": True}, headers=staff_headers)
+    
+    masala_tea = requests.get(f"{BASE_URL}/menu/{masala_tea['id']}").json()
+    chicken_puff = requests.get(f"{BASE_URL}/menu/{chicken_puff['id']}").json()
+    chocolate_shake = requests.get(f"{BASE_URL}/menu/{chocolate_shake['id']}").json()
+
     print(f"  • Masala Tea: ₹{masala_tea['price_paise']/100:.2f} (Available: {masala_tea['is_available']})")
     print(f"  • Chicken Puff: ₹{chicken_puff['price_paise']/100:.2f} (Available: {chicken_puff['is_available']})")
     print(f"  • Chocolate Shake: ₹{chocolate_shake['price_paise']/100:.2f} (Available: {chocolate_shake['is_available']})")

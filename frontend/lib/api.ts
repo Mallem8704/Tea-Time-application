@@ -2,7 +2,7 @@
  * Reusable API Client for Tea Time Cafe Backend.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 interface FetchOptions extends RequestInit {
     params?: Record<string, string | number | boolean | undefined>;
@@ -112,6 +112,11 @@ export const api = {
         apiFetch(`/api/menu/${id}`, { method: "DELETE" }),
     uploadImage: (formData: FormData) =>
         apiFetch("/api/menu/upload-image", { method: "POST", body: formData }),
+    getImageUrl: (path?: string | null) => {
+        if (!path) return "";
+        if (path.startsWith("http")) return path;
+        return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+    },
 
     // Tables
     getTables: () => apiFetch("/api/tables"),

@@ -13,6 +13,7 @@ TEST_FILES = [
     "test_remaining_routers.py",
     "test_admin_operations.py",
     "test_final_verification.py",
+    "test_qr_ordering_upgrade.py",
 ]
 
 def run_all():

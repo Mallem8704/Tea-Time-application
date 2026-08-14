@@ -5,6 +5,7 @@ import { Plus, Minus, ChefHat, Sparkles } from "lucide-react";
 import { VegBadge, SpecialBadge, StockBadge } from "@/components/ui/Badge";
 import { formatRupees } from "@/lib/formatters";
 import { useLanguage } from "@/context/LanguageContext";
+import { api } from "@/lib/api";
 
 export interface MenuItemData {
     id: number;
@@ -50,7 +51,7 @@ export function MenuItemCard({ item, cartQty, onAdd, onRemove }: MenuItemCardPro
                 <div className="h-40 bg-linear-to-br from-cream-100 to-cream-200 relative flex items-center justify-center overflow-hidden">
                     {item.image_url ? (
                         <img
-                            src={item.image_url.startsWith("http") ? item.image_url : `http://127.0.0.1:8000${item.image_url}`}
+                            src={api.getImageUrl(item.image_url)}
                             alt={displayName}
                             className="w-full h-full object-cover"
                         />
