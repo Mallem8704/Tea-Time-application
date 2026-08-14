@@ -130,8 +130,8 @@ export const api = {
         apiFetch(`/api/tables/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
     deleteTable: (id: number) =>
         apiFetch(`/api/tables/${id}`, { method: "DELETE" }),
-    getTableQrUrl: (id: number) => {
-        const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "";
+    getTableQrUrl: (id: number, overrideUrl?: string) => {
+        const origin = overrideUrl || (typeof window !== "undefined" && window.location.origin ? window.location.origin : "");
         const param = origin ? `?frontend_url=${encodeURIComponent(origin)}` : "";
         return `${API_BASE}/api/tables/${id}/qr${param}`;
     },

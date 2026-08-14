@@ -46,6 +46,7 @@ export default function AdminTablesPage() {
     const [editTableStatus, setEditTableStatus] = useState("free");
     const [deletingTable, setDeletingTable] = useState<any | null>(null);
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [qrTargetDomain, setQrTargetDomain] = useState("https://tea-time-application.vercel.app");
 
     // Auth Guard
     useEffect(() => {
@@ -545,13 +546,39 @@ export default function AdminTablesPage() {
                         <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-cream-300 overflow-hidden flex flex-col">
                             {/* Modal Header */}
                             <div className="p-4 bg-cream-50 border-b border-cream-200 flex items-center justify-between no-print">
-                                <h3 className="text-sm font-bold text-espresso-950">Print Table Stand Card</h3>
+                                <div>
+                                    <h3 className="text-sm font-bold text-espresso-950">Print Table Stand Card</h3>
+                                    <p className="text-[11px] text-espresso-500">Select target domain for mobile scanning</p>
+                                </div>
                                 <button
                                     onClick={() => setSelectedTableForQr(null)}
                                     className="p-1 rounded-lg text-espresso-400 hover:text-espresso-800 hover:bg-cream-200 transition cursor-pointer"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
+                            </div>
+
+                            {/* Domain Selector Bar (No-Print) */}
+                            <div className="p-3 bg-cream-100/70 border-b border-cream-200 no-print flex flex-col gap-1.5 text-xs">
+                                <label className="font-bold text-espresso-800 text-[11px]">QR Scan Destination:</label>
+                                <select
+                                    value={qrTargetDomain}
+                                    onChange={(e) => setQrTargetDomain(e.target.value)}
+                                    className="w-full p-2 rounded-xl border border-cream-300 bg-white font-mono text-xs font-semibold"
+                                >
+                                    <option value="https://tea-time-application.vercel.app">
+                                        Production (Vercel): https://tea-time-application.vercel.app
+                                    </option>
+                                    <option value="http://192.168.101.4:3000">
+                                        Local Wi-Fi Network: http://192.168.101.4:3000
+                                    </option>
+                                    <option value="http://localhost:3000">
+                                        Localhost (This PC only): http://localhost:3000
+                                    </option>
+                                </select>
+                                <span className="text-[10px] text-espresso-500 font-mono">
+                                    Encodes: {qrTargetDomain}/order?table={selectedTableForQr.label}
+                                </span>
                             </div>
 
                             {/* PRINTABLE CARD CONTENT */}
@@ -579,7 +606,7 @@ export default function AdminTablesPage() {
                                     {/* QR Code */}
                                     <div className="bg-white p-4 rounded-2xl border-2 border-cream-300 shadow-md inline-block">
                                         <img
-                                            src={api.getTableQrUrl(selectedTableForQr.id)}
+                                            src={api.getTableQrUrl(selectedTableForQr.id, qrTargetDomain)}
                                             alt={`QR Code for Table ${selectedTableForQr.label}`}
                                             className="w-48 h-48 object-contain"
                                         />
