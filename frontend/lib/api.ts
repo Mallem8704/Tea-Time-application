@@ -137,7 +137,7 @@ export const api = {
     // Stock & Inventory
     getStockOverview: () => apiFetch("/api/stock"),
     getLowStockItems: () => apiFetch("/api/stock/low"),
-    getStockLogs: (params?: { item_id?: number; reason?: string }) =>
+    getStockLogs: (params?: { item_id?: number; reason?: string; limit?: number }) =>
         apiFetch("/api/stock/logs", { params }),
     adjustStockManual: (data: { item_id: number; change_qty: number; reason: string; notes?: string }) =>
         apiFetch("/api/stock/adjust", { method: "POST", body: JSON.stringify(data) }),
