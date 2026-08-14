@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/api";
+import { useOutlet } from "@/context/OutletContext";
 
 interface AdminHeaderProps {
     wsConnected: boolean;
@@ -21,6 +22,7 @@ export function AdminHeader({
 }: AdminHeaderProps) {
     const { user, isOwner } = useAuth();
     const { t } = useLanguage();
+    const { outlet } = useOutlet();
 
     const pendingCount = pendingServiceCalls.length;
 
@@ -30,7 +32,7 @@ export function AdminHeader({
                 <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />
                     <span className="text-xs font-extrabold text-espresso-950 uppercase tracking-wide">
-                        Kadiri Live Stream
+                        {outlet?.name || "Cafe"} Live Stream
                     </span>
                 </div>
 

@@ -14,6 +14,7 @@ import {
     ArrowRight,
     MapPin,
     QrCode,
+    X,
 } from "lucide-react";
 import { MenuItemCard, MenuItemData } from "@/components/order/MenuItemCard";
 import { CartDrawer, CartItem } from "@/components/order/CartDrawer";
@@ -24,10 +25,13 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
 import { formatRupees } from "@/lib/formatters";
 import { api } from "@/lib/api";
+import { useOutlet } from "@/context/OutletContext";
+import { openRazorpayCheckout } from "@/lib/razorpay";
 
 function CustomerOrderContent() {
     const searchParams = useSearchParams();
     const { language, t } = useLanguage();
+    const { taxRate } = useOutlet();
     const toast = useToast();
 
     // Table State
@@ -129,7 +133,7 @@ function CustomerOrderContent() {
     // Cart Helpers
     const cartCount = cart.reduce((sum, it) => sum + it.qty, 0);
     const cartSubtotalPaise = cart.reduce((sum, it) => sum + it.price_paise * it.qty, 0);
-    const cartTaxPaise = Math.round(cartSubtotalPaise * 0.05);
+    const cartTaxPaise = Math.round(cartSubtotalPaise * taxRate);
     const cartTotalPaise = cartSubtotalPaise + cartTaxPaise;
 
     const handleAddToCart = (item: MenuItemData) => {
@@ -196,17 +200,29 @@ function CustomerOrderContent() {
 
             const createdOrder = await api.createOrder(payload);
 
-            // If Pay Online, trigger Razorpay payment
+            // If Pay Online, trigger Razorpay payment via SDK
             if (paymentMethod === "upi") {
                 const rzpOrder = await api.createRazorpayOrder(createdOrder.id);
-                await api.verifyRazorpayPayment({
-                    order_id: createdOrder.id,
-                    razorpay_order_id: rzpOrder.razorpay_order_id,
-                    razorpay_payment_id: `pay_${Date.now()}`,
-                    razorpay_signature: "mock_sig_online_checkout_success",
-                });
-                createdOrder.payment_status = "paid";
-                createdOrder.payment_method = "upi";
+                try {
+                    const paymentResult = await openRazorpayCheckout({
+                        razorpayOrderId: rzpOrder.razorpay_order_id,
+                        amountPaise: createdOrder.total_paise,
+                        orderNumber: createdOrder.order_number,
+                        outletName: outlet?.name || "Tea Time Cafe",
+                    });
+                    await api.verifyRazorpayPayment({
+                        order_id: createdOrder.id,
+                        razorpay_order_id: paymentResult.razorpay_order_id,
+                        razorpay_payment_id: paymentResult.razorpay_payment_id,
+                        razorpay_signature: paymentResult.razorpay_signature,
+                    });
+                    createdOrder.payment_status = "paid";
+                    createdOrder.payment_method = "upi";
+                } catch (payErr: any) {
+                    // Payment cancelled or failed — order still exists with "pending" payment
+                    toast.error(payErr.message || "Payment was not completed. You can pay at the counter.");
+                    createdOrder.payment_method = "counter";
+                }
             }
 
             // Clear Cart and Switch to Tracker
@@ -246,7 +262,7 @@ function CustomerOrderContent() {
                         <div className="flex items-center gap-3">
                             <img
                                 src="/logo.png"
-                                alt="Tea Time Kadiri Logo"
+                                alt="Tea Time Cafe Logo"
                                 className="h-10 w-auto object-contain"
                             />
                         </div>
@@ -256,7 +272,12 @@ function CustomerOrderContent() {
 
                 <OrderTracker
                     initialOrder={activeOrder}
-                    onOrderMore={() => setActiveOrder(null)}
+                    onOrderMore={() => {
+                        setActiveOrder(null);
+                        if (typeof window !== "undefined") {
+                            sessionStorage.removeItem("teatime_active_order_id");
+                        }
+                    }}
                 />
             </main>
         );
@@ -270,7 +291,7 @@ function CustomerOrderContent() {
                     <div className="flex items-center gap-3">
                         <img
                             src="/logo.png"
-                            alt="Tea Time Kadiri Logo"
+                            alt="Tea Time Cafe Logo"
                             className="h-11 sm:h-12 w-auto object-contain"
                         />
                     </div>
@@ -318,20 +339,20 @@ function CustomerOrderContent() {
                         </button>
                         <button
                             onClick={() => setVegFilter("veg")}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                                 vegFilter === "veg" ? "bg-emerald-600 text-white" : "text-emerald-800 hover:bg-emerald-50"
                             }`}
                         >
-                            <span>🟢</span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
                             <span>{t("veg")}</span>
                         </button>
                         <button
                             onClick={() => setVegFilter("non_veg")}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                                 vegFilter === "non_veg" ? "bg-red-600 text-white" : "text-red-800 hover:bg-red-50"
                             }`}
                         >
-                            <span>🔴</span>
+                            <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
                             <span>{t("non_veg")}</span>
                         </button>
                     </div>
@@ -459,9 +480,9 @@ function CustomerOrderContent() {
                             </div>
                             <button
                                 onClick={() => setShowTablePicker(false)}
-                                className="text-espresso-400 hover:text-espresso-800 text-sm font-bold"
+                                className="p-1 rounded-lg text-espresso-400 hover:text-espresso-800 hover:bg-cream-100 transition cursor-pointer"
                             >
-                                ✕
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
 

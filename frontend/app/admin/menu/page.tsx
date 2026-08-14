@@ -28,12 +28,14 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
 import { formatRupees } from "@/lib/formatters";
 import { api } from "@/lib/api";
+import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 
 export default function AdminMenuManagementPage() {
     const { isAuthenticated, isOwner, isLoading: authLoading } = useAuth();
     const { t } = useLanguage();
     const toast = useToast();
     const router = useRouter();
+    const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
 
     const [categories, setCategories] = useState<any[]>([]);
     const [items, setItems] = useState<any[]>([]);
@@ -216,7 +218,7 @@ export default function AdminMenuManagementPage() {
                 const fd = new FormData();
                 fd.append("file", imageFile);
                 const uploadRes = await api.uploadImage(fd);
-                uploadedImageUrl = uploadRes.image_url;
+                uploadedImageUrl = uploadRes.url || uploadRes.image_url;
             }
 
             const payload: any = {
@@ -275,9 +277,9 @@ export default function AdminMenuManagementPage() {
 
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <AdminHeader
-                    wsConnected={true}
-                    pendingServiceCalls={[]}
-                    onAttendServiceCall={() => {}}
+                    wsConnected={wsConnected}
+                    pendingServiceCalls={pendingServiceCalls}
+                    onAttendServiceCall={handleAttendServiceCall}
                 />
 
                 {/* Top Actions Bar */}
@@ -292,11 +294,13 @@ export default function AdminMenuManagementPage() {
                                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-cream-200 text-espresso-800 font-extrabold">
                                     Total: {items.length}
                                 </span>
-                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold border border-emerald-200">
-                                    🟢 Available: {items.filter((i) => i.is_available).length}
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-extrabold border border-emerald-200 inline-flex items-center">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 inline-block" />
+                                    Available: {items.filter((i) => i.is_available).length}
                                 </span>
-                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 font-extrabold border border-red-200">
-                                    🔴 Unavailable: {items.filter((i) => !i.is_available).length}
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-50 text-red-800 font-extrabold border border-red-200 inline-flex items-center">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 mr-1.5 inline-block" />
+                                    Unavailable: {items.filter((i) => !i.is_available).length}
                                 </span>
                             </div>
                         </div>
@@ -457,13 +461,14 @@ export default function AdminMenuManagementPage() {
                                             <td className="py-3.5 px-4">
                                                 <button
                                                     onClick={() => handleToggleAvailability(item)}
-                                                    className={`px-3 py-1 rounded-full text-[11px] font-extrabold border transition cursor-pointer ${
+                                                    className={`px-3 py-1 rounded-full text-[11px] font-extrabold border transition cursor-pointer inline-flex items-center gap-1 ${
                                                         item.is_available
                                                             ? "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
                                                             : "bg-red-50 border-red-300 text-red-800 hover:bg-red-100"
                                                     }`}
                                                 >
-                                                    {item.is_available ? "✓ Available" : "✕ Disabled"}
+                                                    {item.is_available ? <Check className="w-3 h-3 text-emerald-700" /> : <X className="w-3 h-3 text-red-700" />}
+                                                    <span>{item.is_available ? "Available" : "Disabled"}</span>
                                                 </button>
                                             </td>
 
@@ -507,9 +512,9 @@ export default function AdminMenuManagementPage() {
                                 </h3>
                                 <button
                                     onClick={() => setShowItemModal(false)}
-                                    className="text-espresso-400 hover:text-espresso-800 text-sm font-bold"
+                                    className="p-1 rounded-lg text-espresso-400 hover:text-espresso-800 hover:bg-cream-100 transition cursor-pointer"
                                 >
-                                    ✕
+                                    <X className="w-4 h-4" />
                                 </button>
                             </div>
 
@@ -600,7 +605,10 @@ export default function AdminMenuManagementPage() {
                                             onChange={(e) => setFormData({ ...formData, is_veg: e.target.checked })}
                                             className="accent-emerald-600"
                                         />
-                                        <span>🟢 Pure Veg</span>
+                                        <span className="flex items-center gap-1">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
+                                            Pure Veg
+                                        </span>
                                     </label>
 
                                     <label className="flex items-center gap-2 font-bold text-espresso-800 cursor-pointer">
@@ -610,7 +618,10 @@ export default function AdminMenuManagementPage() {
                                             onChange={(e) => setFormData({ ...formData, is_special: e.target.checked })}
                                             className="accent-saffron-500"
                                         />
-                                        <span>⭐ Special</span>
+                                        <span className="flex items-center gap-1">
+                                            <Star className="w-3.5 h-3.5 text-saffron-500 fill-saffron-500" />
+                                            Special
+                                        </span>
                                     </label>
 
                                     <label className="flex items-center gap-2 font-bold text-espresso-800 cursor-pointer">
@@ -689,9 +700,9 @@ export default function AdminMenuManagementPage() {
                                 <h3 className="text-base font-bold text-espresso-950">Update Price (₹)</h3>
                                 <button
                                     onClick={() => setShowPriceModal(false)}
-                                    className="text-espresso-400 hover:text-espresso-800 text-sm font-bold"
+                                    className="p-1 rounded-lg text-espresso-400 hover:text-espresso-800 hover:bg-cream-100 transition cursor-pointer"
                                 >
-                                    ✕
+                                    <X className="w-4 h-4" />
                                 </button>
                             </div>
 

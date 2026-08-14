@@ -85,7 +85,7 @@ class ConnectionManager:
                 await self.disconnect_order(ws, order_id)
 
         # 2. Also notify admins so live Kanban board stays synchronized
-        await self.broadcast_to_admin(outlet_id=outlet_id, event_type="order_updated", data=data)
+        await self.broadcast_to_admin(outlet_id=outlet_id, event_type=event_type, data=data)
 
     async def broadcast_service_call(self, outlet_id: int, data: Any):
         """Broadcast service calls (waiter, bill, water) to admin dashboard."""
@@ -107,6 +107,7 @@ async def websocket_hub(
     client_type: str = Query("admin", description="'admin' or 'customer'"),
     order_id: Optional[int] = Query(None, description="Order ID required for customer tracking"),
     outlet_id: int = Query(1, description="Outlet ID"),
+    token: Optional[str] = Query(None, description="Admin auth token"),
 ):
     """Unified WebSocket endpoint for live admin Kanban and customer order tracking."""
     client_type_clean = client_type.strip().lower()
@@ -135,6 +136,19 @@ async def websocket_hub(
 
     else:
         # Admin connection
+        import os
+        is_production = os.getenv("ENVIRONMENT", "development") == "production"
+        if token:
+            from app.routers.auth import decode_access_token
+            user_data = decode_access_token(token)
+            if not user_data:
+                await websocket.close(code=1008, reason="Invalid admin token")
+                return
+            outlet_id = user_data.get("outlet_id", outlet_id)
+        elif is_production:
+            await websocket.close(code=1008, reason="Missing admin token")
+            return
+            
         await manager.connect_admin(websocket, outlet_id)
         try:
             await websocket.send_text(json.dumps({

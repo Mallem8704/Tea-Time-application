@@ -14,6 +14,7 @@ import {
     ShieldAlert,
     CheckCircle2,
     Layers,
+    X,
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -23,11 +24,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { formatDateTime, formatRelativeTime } from "@/lib/formatters";
 import { api } from "@/lib/api";
+import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 
 export default function AdminStockManagementPage() {
     const { isAuthenticated, isLoading: authLoading } = useAuth();
     const toast = useToast();
     const router = useRouter();
+    const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
 
     const [stockItems, setStockItems] = useState<any[]>([]);
     const [lowStockItems, setLowStockItems] = useState<any[]>([]);
@@ -123,9 +126,9 @@ export default function AdminStockManagementPage() {
 
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <AdminHeader
-                    wsConnected={true}
-                    pendingServiceCalls={[]}
-                    onAttendServiceCall={() => {}}
+                    wsConnected={wsConnected}
+                    pendingServiceCalls={pendingServiceCalls}
+                    onAttendServiceCall={handleAttendServiceCall}
                 />
 
                 {/* Top Bar */}
@@ -317,9 +320,9 @@ export default function AdminStockManagementPage() {
                                 <h3 className="text-base font-bold text-espresso-950">Adjust Item Stock</h3>
                                 <button
                                     onClick={() => setShowAdjustModal(false)}
-                                    className="text-espresso-400 hover:text-espresso-800 text-sm font-bold"
+                                    className="p-1 rounded-lg text-espresso-400 hover:text-espresso-800 hover:bg-cream-100 transition cursor-pointer"
                                 >
-                                    ✕
+                                    <X className="w-4 h-4" />
                                 </button>
                             </div>
 
@@ -339,9 +342,9 @@ export default function AdminStockManagementPage() {
                                         onChange={(e) => setAdjustReason(e.target.value)}
                                         className="w-full p-2.5 rounded-xl border border-cream-300 bg-white font-bold"
                                     >
-                                        <option value="restock">📦 Restock (Delivery arrived)</option>
-                                        <option value="wastage">🗑️ Wastage / Spoilage / Breakage</option>
-                                        <option value="adjustment">⚙️ Audit Inventory Adjustment</option>
+                                        <option value="restock">Restock (Inward Delivery)</option>
+                                        <option value="wastage">Wastage / Spoilage / Breakage</option>
+                                        <option value="adjustment">Audit Inventory Adjustment</option>
                                     </select>
                                 </div>
 

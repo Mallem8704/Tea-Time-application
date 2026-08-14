@@ -4,16 +4,25 @@
 
 export function formatRupees(paise: number, includeDecimals = true): string {
     if (paise === undefined || paise === null || isNaN(paise)) return "₹0";
-    const rupees = paise / 100;
-    if (!includeDecimals && Number.isInteger(rupees)) {
-        return `₹${rupees}`;
+    const isNegative = paise < 0;
+    const absRupees = Math.abs(paise) / 100;
+    const prefix = isNegative ? "-₹" : "₹";
+    if (!includeDecimals && Number.isInteger(absRupees)) {
+        return `${prefix}${absRupees}`;
     }
-    return `₹${rupees.toFixed(2)}`;
+    return `${prefix}${absRupees.toFixed(2)}`;
+}
+
+export function normalizeDate(dateInput: string | Date): Date {
+    if (!dateInput) return new Date();
+    if (typeof dateInput === "object") return dateInput;
+    const normalized = dateInput.includes("Z") || dateInput.includes("+") ? dateInput : `${dateInput}Z`;
+    return new Date(normalized);
 }
 
 export function formatDateTime(dateStr: string | Date): string {
     if (!dateStr) return "";
-    const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+    const date = normalizeDate(dateStr);
     return date.toLocaleDateString("en-IN", {
         day: "numeric",
         month: "short",
@@ -25,7 +34,7 @@ export function formatDateTime(dateStr: string | Date): string {
 
 export function formatTimeOnly(dateStr: string | Date): string {
     if (!dateStr) return "";
-    const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+    const date = normalizeDate(dateStr);
     return date.toLocaleTimeString("en-IN", {
         hour: "2-digit",
         minute: "2-digit",
@@ -34,9 +43,9 @@ export function formatTimeOnly(dateStr: string | Date): string {
 
 export function formatRelativeTime(dateStr: string | Date): string {
     if (!dateStr) return "";
-    const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+    const date = normalizeDate(dateStr);
     const now = new Date();
-    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    const diffSeconds = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
 
     if (diffSeconds < 10) return "Just now";
     if (diffSeconds < 60) return `${diffSeconds}s ago`;

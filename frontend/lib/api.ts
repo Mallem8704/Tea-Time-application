@@ -74,7 +74,8 @@ export async function apiFetch<T = any>(endpoint: string, options: FetchOptions 
         return {} as T;
     }
 
-    return response.json();
+    const text = await response.text();
+    return text ? JSON.parse(text) : {};
 }
 
 export const api = {
@@ -123,8 +124,12 @@ export const api = {
     getTable: (id: number) => apiFetch(`/api/tables/${id}`),
     createTable: (data: { label: string; qr_code_url?: string }) =>
         apiFetch("/api/tables", { method: "POST", body: JSON.stringify(data) }),
+    updateTable: (id: number, data: { label?: string; status?: string }) =>
+        apiFetch(`/api/tables/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     updateTableStatus: (id: number, status: string) =>
         apiFetch(`/api/tables/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+    deleteTable: (id: number) =>
+        apiFetch(`/api/tables/${id}`, { method: "DELETE" }),
     getTableQrUrl: (id: number) => `${API_BASE}/api/tables/${id}/qr`,
     callService: (tableId: number, call_type: string) =>
         apiFetch(`/api/tables/${tableId}/call`, { method: "POST", body: JSON.stringify({ call_type }) }),
@@ -182,4 +187,10 @@ export const api = {
     // Audit Logs
     getAuditLogs: (params?: { entity_type?: string; limit?: number }) =>
         apiFetch("/api/audit", { params }),
+
+    // Outlet Settings
+    getOutlet: (outletId = 1) =>
+        apiFetch("/api/outlets", { params: { outlet_id: outletId } }),
+    updateOutlet: (outletId: number, data: any) =>
+        apiFetch(`/api/outlets?outlet_id=${outletId}`, { method: "PUT", body: JSON.stringify(data) }),
 };

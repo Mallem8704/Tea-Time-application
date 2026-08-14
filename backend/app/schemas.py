@@ -1,6 +1,7 @@
+from __future__ import annotations
 import datetime
 from typing import Optional, List, Any, Dict
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 
 # ==========================================
@@ -54,6 +55,26 @@ class OutletOut(BaseModel):
     phone: Optional[str] = None
     currency: str
     tax_rate_percent: int
+    opening_hours: Optional[str] = None
+    tagline: Optional[str] = None
+    logo_url: Optional[str] = None
+    gstin: Optional[str] = None
+    fssai_license_number: Optional[str] = None
+    upi_vpa: Optional[str] = None
+
+
+class OutletUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    currency: Optional[str] = None
+    tax_rate_percent: Optional[int] = Field(None, ge=0, le=100)
+    opening_hours: Optional[str] = None
+    tagline: Optional[str] = None
+    logo_url: Optional[str] = None
+    gstin: Optional[str] = None
+    fssai_license_number: Optional[str] = None
+    upi_vpa: Optional[str] = None
 
 
 class TableBase(BaseModel):
@@ -125,13 +146,13 @@ class MenuItemBase(BaseModel):
     name_te: Optional[str] = None
     description: Optional[str] = None
     description_te: Optional[str] = None
-    price_paise: int
+    price_paise: int = Field(..., gt=0, description="Price in paise must be positive")
     image_url: Optional[str] = None
     is_veg: bool = True
     is_available: bool = True
     track_stock: bool = False
-    stock_qty: int = 100
-    low_stock_threshold: int = 10
+    stock_qty: int = Field(default=100, ge=0)
+    low_stock_threshold: int = Field(default=10, ge=0)
     is_special: bool = False
 
 
@@ -160,7 +181,7 @@ class MenuItemAvailabilityUpdate(BaseModel):
 
 
 class MenuItemPriceUpdate(BaseModel):
-    price_paise: int
+    price_paise: int = Field(..., gt=0, description="Price in paise must be positive")
 
 
 class MenuItemStockUpdate(BaseModel):
@@ -184,8 +205,8 @@ class MenuItemOut(MenuItemBase):
 
 class OrderItemCreate(BaseModel):
     item_id: int
-    qty: int = 1
-    notes: Optional[str] = None
+    qty: int = Field(default=1, ge=1, le=100)
+    notes: Optional[str] = Field(None, max_length=255)
 
 
 class OrderItemOut(BaseModel):
@@ -203,8 +224,8 @@ class OrderItemOut(BaseModel):
 
 class OrderCreate(BaseModel):
     table_id: int
-    items: List[OrderItemCreate]
-    customer_notes: Optional[str] = None
+    items: List[OrderItemCreate] = Field(..., min_length=1)
+    customer_notes: Optional[str] = Field(None, max_length=500)
     payment_method: str = "counter"  # 'upi', 'card', 'cash', 'counter'
 
 

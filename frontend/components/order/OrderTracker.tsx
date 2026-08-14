@@ -19,10 +19,12 @@ import {
 } from "lucide-react";
 import { formatRupees, formatDateTime } from "@/lib/formatters";
 import { useLanguage } from "@/context/LanguageContext";
+import { useOutlet } from "@/context/OutletContext";
 import { useToast } from "@/context/ToastContext";
 import { useOrderSocket } from "@/hooks/useSockets";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
+import { openRazorpayCheckout } from "@/lib/razorpay";
 
 export interface OrderDetail {
     id: number;
@@ -64,7 +66,8 @@ const STEPS = [
 ];
 
 export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
-    const { t } = useLanguage();
+    const { language, t } = useLanguage();
+    const { outlet } = useOutlet();
     const toast = useToast();
     const [order, setOrder] = useState<OrderDetail>(initialOrder);
     const [callingService, setCallingService] = useState<string | null>(null);
@@ -99,17 +102,23 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
         setIsPayingOnline(true);
         try {
             const rzpOrder = await api.createRazorpayOrder(order.id);
-            // Simulate / complete payment
-            const verifyRes = await api.verifyRazorpayPayment({
+            const paymentResult = await openRazorpayCheckout({
+                razorpayOrderId: rzpOrder.razorpay_order_id,
+                amountPaise: order.total_paise,
+                orderNumber: order.order_number,
+                outletName: outlet?.name || "Tea Time Cafe",
+                description: `Payment for Order ${order.order_number}`,
+            });
+            await api.verifyRazorpayPayment({
                 order_id: order.id,
-                razorpay_order_id: rzpOrder.razorpay_order_id,
-                razorpay_payment_id: `pay_${Date.now()}`,
-                razorpay_signature: "mock_sig_online_checkout_success",
+                razorpay_order_id: paymentResult.razorpay_order_id,
+                razorpay_payment_id: paymentResult.razorpay_payment_id,
+                razorpay_signature: paymentResult.razorpay_signature,
             });
             setOrder((prev) => ({ ...prev, payment_status: "paid", payment_method: "upi" }));
             toast.success("Payment verified! Paid online via UPI.");
         } catch (err: any) {
-            toast.error(err.message || "Online payment failed");
+            toast.error(err.message || "Online payment failed or cancelled");
         } finally {
             setIsPayingOnline(false);
         }
@@ -123,7 +132,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                     <div className="w-12 h-12 rounded-2xl bg-white border border-cream-200 p-1 flex items-center justify-center shadow-xs shrink-0">
                         <img
                             src="/logo.png"
-                            alt="Tea Time Kadiri Logo"
+                            alt="Tea Time Cafe Logo"
                             className="h-10 w-auto object-contain"
                         />
                     </div>
@@ -299,7 +308,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                         <span className="font-semibold text-espresso-900">{formatRupees(order.subtotal_paise)}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>{t("tax_gst")}</span>
+                        <span>GST ({outlet?.tax_rate_percent || 5}%)</span>
                         <span className="font-semibold text-espresso-900">{formatRupees(order.tax_paise)}</span>
                     </div>
                     <div className="flex justify-between text-sm font-extrabold text-espresso-950 pt-2 border-t border-cream-200">
@@ -314,8 +323,18 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                         <span className="text-[11px] font-bold uppercase tracking-wider text-espresso-500 block">
                             Payment Method
                         </span>
-                        <span className="text-xs font-extrabold text-espresso-900 capitalize">
-                            {order.payment_status === "paid" ? `✓ ${t("payment_status_paid")} (${order.payment_method.toUpperCase()})` : `⏳ ${t("payment_status_pending")}`}
+                        <span className="text-xs font-extrabold text-espresso-900 capitalize inline-flex items-center gap-1.5 mt-0.5">
+                            {order.payment_status === "paid" ? (
+                                <>
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    <span>{t("payment_status_paid")} ({order.payment_method.toUpperCase()})</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Clock className="w-3.5 h-3.5 text-saffron-600 shrink-0" />
+                                    <span>{t("payment_status_pending")}</span>
+                                </>
+                            )}
                         </span>
                     </div>
 

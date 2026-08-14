@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X, Trash2, Plus, Minus, CreditCard, Banknote, ShoppingBag, ArrowRight } from "lucide-react";
 import { formatRupees } from "@/lib/formatters";
 import { useLanguage } from "@/context/LanguageContext";
+import { useOutlet } from "@/context/OutletContext";
 import { Button } from "@/components/ui/Button";
 
 export interface CartItem {
@@ -39,13 +40,14 @@ export function CartDrawer({
     isPlacingOrder,
 }: CartDrawerProps) {
     const { language, t } = useLanguage();
+    const { taxRate, outlet } = useOutlet();
     const [customerNotes, setCustomerNotes] = useState("");
     const [selectedPayment, setSelectedPayment] = useState<"counter" | "upi">("counter");
 
     if (!isOpen) return null;
 
     const subtotalPaise = items.reduce((acc, it) => acc + it.price_paise * it.qty, 0);
-    const taxPaise = Math.round(subtotalPaise * 0.05); // 5% GST
+    const taxPaise = Math.round(subtotalPaise * taxRate);
     const totalPaise = subtotalPaise + taxPaise;
 
     const handleCheckoutSubmit = async () => {
@@ -184,7 +186,7 @@ export function CartDrawer({
                                 <span className="font-semibold text-espresso-950">{formatRupees(subtotalPaise)}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span>{t("tax_gst")}</span>
+                                <span>GST ({outlet?.tax_rate_percent || 5}%)</span>
                                 <span className="font-semibold text-espresso-950">{formatRupees(taxPaise)}</span>
                             </div>
                             <div className="flex justify-between text-sm font-extrabold text-espresso-950 pt-2 border-t border-cream-200">

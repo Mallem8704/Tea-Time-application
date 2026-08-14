@@ -5,9 +5,11 @@ import { Coffee, Lock, Mail, ShieldCheck, UserCheck, ArrowRight } from "lucide-r
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { Button } from "@/components/ui/Button";
+import { useOutlet } from "@/context/OutletContext";
 
 export default function AdminLoginPage() {
     const { login } = useAuth();
+    const { outlet } = useOutlet();
     const toast = useToast();
 
     const [email, setEmail] = useState("");
@@ -44,7 +46,7 @@ export default function AdminLoginPage() {
                 <div className="text-center space-y-3 flex flex-col items-center">
                     <img
                         src="/logo.png"
-                        alt="Tea Time Kadiri Logo"
+                        alt="Tea Time Cafe Logo"
                         className="h-20 w-auto object-contain mx-auto"
                     />
                     <div>
@@ -52,7 +54,7 @@ export default function AdminLoginPage() {
                             Admin Operations Cockpit
                         </h1>
                         <p className="text-xs text-espresso-600 font-medium mt-0.5">
-                            Kadiri Outlet &bull; Staff & Owner Portal
+                            {outlet?.name || "Cafe"} &bull; Staff & Owner Portal
                         </p>
                     </div>
                 </div>

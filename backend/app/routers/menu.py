@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import MenuItem, Category, StockLog, User
+from app.models import MenuItem, Category, StockLog, OrderItem, User
 from app.schemas import (
     MenuItemCreate,
     MenuItemUpdate,
@@ -83,18 +83,34 @@ def upload_menu_image(
     current_user: User = Depends(require_staff_or_owner),
 ):
     """Upload photo for menu item and store locally under /uploads."""
+    ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
+    
+    contents = file.file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File size exceeds 5MB limit",
+        )
+    file.file.seek(0)
+    
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must be an image (JPEG, PNG, WEBP)",
+        )
+
     if not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Uploaded file must be an image (JPEG, PNG, WEBP)",
         )
 
-    ext = os.path.splitext(file.filename)[1] or ".jpg"
     unique_filename = f"menu_{uuid.uuid4().hex[:12]}{ext}"
     file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(contents)
 
     image_url = f"/uploads/{unique_filename}"
     return {
@@ -181,7 +197,7 @@ def update_menu_item(
     db: Session = Depends(get_db),
 ):
     """Update menu item. Price modification is restricted to Owner role."""
-    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.outlet_id == current_user.outlet_id).first()
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -250,7 +266,7 @@ async def toggle_availability(
     db: Session = Depends(get_db),
 ):
     """Toggle menu item availability on the customer app (Staff or Owner)."""
-    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.outlet_id == current_user.outlet_id).first()
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -280,7 +296,7 @@ async def toggle_availability(
     try:
         await manager.broadcast_to_admin(
             outlet_id=current_user.outlet_id,
-            event="menu:availability_changed",
+            event_type="menu:availability_changed",
             data={
                 "item_id": item.id,
                 "name": item.name,
@@ -301,7 +317,7 @@ async def update_item_price(
     db: Session = Depends(get_db),
 ):
     """Update item price in paise (Owner only). Writes audit log."""
-    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.outlet_id == current_user.outlet_id).first()
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -333,7 +349,7 @@ async def update_item_price(
     try:
         await manager.broadcast_to_admin(
             outlet_id=current_user.outlet_id,
-            event="menu:price_changed",
+            event_type="menu:price_changed",
             data={
                 "item_id": item.id,
                 "name": item.name,
@@ -355,7 +371,7 @@ def adjust_stock(
     db: Session = Depends(get_db),
 ):
     """Adjust item stock with reason (restock, wastage, adjustment) and log transaction."""
-    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.outlet_id == current_user.outlet_id).first()
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -406,7 +422,7 @@ def delete_menu_item(
     db: Session = Depends(get_db),
 ):
     """Delete a menu item (Owner only)."""
-    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.outlet_id == current_user.outlet_id).first()
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -414,6 +430,13 @@ def delete_menu_item(
         )
 
     item_name = item.name
+    
+    # Nullify item reference in historical order items to preserve receipts
+    db.query(OrderItem).filter(OrderItem.item_id == item_id).update({"item_id": None})
+    
+    # Delete associated stock logs
+    db.query(StockLog).filter(StockLog.item_id == item_id).delete()
+    
     db.delete(item)
 
     log_audit(

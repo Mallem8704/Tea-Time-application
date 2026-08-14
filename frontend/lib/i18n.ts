@@ -95,6 +95,7 @@ export const dictionary = {
         audit_log: "Audit Log",
         login: "Sign In",
         logout: "Sign Out",
+        store_settings: "Store Settings",
     },
     te: {
         // App & Header
@@ -186,6 +187,7 @@ export const dictionary = {
         audit_log: "ఆడిట్ లాగ్",
         login: "లాగిన్",
         logout: "లాగ్ అవుట్",
+        store_settings: "స్టోర్ సెట్టింగ్స్",
     },
 };
 

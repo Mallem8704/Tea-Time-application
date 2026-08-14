@@ -16,11 +16,12 @@ router = APIRouter(prefix="", tags=["Orders"])
 VALID_STATUSES = ["placed", "accepted", "preparing", "ready", "served", "cancelled"]
 
 
-def generate_order_number() -> str:
-    """Generate a clean, readable cafe order number e.g. TT-260814-7821."""
-    date_part = datetime.datetime.utcnow().strftime("%y%m%d")
-    rand_part = random.randint(1000, 9999)
-    return f"TT-{date_part}-{rand_part}"
+def generate_order_number():
+    """Generate a unique order number with retry on collision."""
+    import uuid
+    date_part = datetime.date.today().strftime("%y%m%d")
+    unique_part = uuid.uuid4().hex[:6].upper()
+    return f"TT-{date_part}-{unique_part}"
 
 
 def format_order_response(order: Order) -> OrderOut:
@@ -102,11 +103,16 @@ async def create_order(
                 detail="Item quantity must be greater than 0",
             )
 
-        menu_item = db.query(MenuItem).filter(MenuItem.id == item_req.item_id).first()
+        menu_item = (
+            db.query(MenuItem)
+            .filter(MenuItem.id == item_req.item_id, MenuItem.outlet_id == table.outlet_id)
+            .with_for_update()
+            .first()
+        )
         if not menu_item:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Menu item with ID {item_req.item_id} not found",
+                detail=f"Menu item with ID {item_req.item_id} not found in this outlet",
             )
 
         if not menu_item.is_available:
@@ -245,7 +251,7 @@ async def update_order_status(
     order = (
         db.query(Order)
         .options(joinedload(Order.items), joinedload(Order.table))
-        .filter(Order.id == order_id)
+        .filter(Order.id == order_id, Order.outlet_id == current_user.outlet_id)
         .first()
     )
     if not order:
@@ -316,7 +322,6 @@ def list_orders(
     payment_status: Optional[str] = Query(None, description="Filter by payment status"),
     date: Optional[str] = Query(None, description="Filter by date YYYY-MM-DD"),
     limit: int = Query(100, ge=1, le=500),
-    outlet_id: int = Query(1, description="Outlet ID"),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
@@ -324,7 +329,7 @@ def list_orders(
     query = (
         db.query(Order)
         .options(joinedload(Order.items), joinedload(Order.table))
-        .filter(Order.outlet_id == outlet_id)
+        .filter(Order.outlet_id == current_user.outlet_id)
     )
 
     if status:

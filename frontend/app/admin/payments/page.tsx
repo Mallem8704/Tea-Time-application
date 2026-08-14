@@ -23,11 +23,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { formatRupees, formatDateTime, formatRelativeTime } from "@/lib/formatters";
 import { api } from "@/lib/api";
+import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 
 export default function AdminPaymentsPage() {
     const { isAuthenticated, isLoading: authLoading, user } = useAuth();
     const toast = useToast();
     const router = useRouter();
+    const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
 
     const [payments, setPayments] = useState<any[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
@@ -77,16 +79,18 @@ export default function AdminPaymentsPage() {
     };
 
     // Calculate Summary Metrics
+    const isPaymentCompleted = (status: string) => status === "paid" || status === "completed";
+
     const totalCollectedPaise = payments
-        .filter((p) => p.status === "paid")
+        .filter((p) => isPaymentCompleted(p.status))
         .reduce((sum, p) => sum + p.amount_paise, 0);
 
     const upiCollectedPaise = payments
-        .filter((p) => p.status === "paid" && (p.method === "upi" || p.method === "card"))
+        .filter((p) => isPaymentCompleted(p.status) && (p.method === "upi" || p.method === "card"))
         .reduce((sum, p) => sum + p.amount_paise, 0);
 
     const cashCollectedPaise = payments
-        .filter((p) => p.status === "paid" && (p.method === "cash" || p.method === "counter"))
+        .filter((p) => isPaymentCompleted(p.status) && (p.method === "cash" || p.method === "counter"))
         .reduce((sum, p) => sum + p.amount_paise, 0);
 
     // Pending Orders (awaiting counter payment)
@@ -98,12 +102,15 @@ export default function AdminPaymentsPage() {
     // Filter Payments List
     const filteredPayments = payments.filter((p) => {
         if (filterMethod !== "all" && p.method !== filterMethod) return false;
-        if (filterStatus !== "all" && p.status !== filterStatus) return false;
+        if (filterStatus !== "all") {
+            if (filterStatus === "paid" && !isPaymentCompleted(p.status)) return false;
+            if (filterStatus === "pending" && isPaymentCompleted(p.status)) return false;
+        }
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             const mId = String(p.id).includes(q);
             const mOrder = String(p.order_id).includes(q);
-            const mRef = p.gateway_payment_id?.toLowerCase().includes(q) ?? false;
+            const mRef = (p.txn_id || p.gateway_payment_id || p.notes)?.toLowerCase().includes(q) ?? false;
             if (!mId && !mOrder && !mRef) return false;
         }
         return true;
@@ -117,9 +124,9 @@ export default function AdminPaymentsPage() {
 
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <AdminHeader
-                    wsConnected={true}
-                    pendingServiceCalls={[]}
-                    onAttendServiceCall={() => {}}
+                    wsConnected={wsConnected}
+                    pendingServiceCalls={pendingServiceCalls}
+                    onAttendServiceCall={handleAttendServiceCall}
                 />
 
                 {/* Top Bar */}
@@ -280,7 +287,7 @@ export default function AdminPaymentsPage() {
                                                 onClick={() => handleMarkCashPaid(order.id, order.order_number)}
                                                 leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
                                             >
-                                                Mark Cash Paid ✓
+                                                Mark Cash Paid
                                             </Button>
                                         </div>
                                     </div>
@@ -343,7 +350,7 @@ export default function AdminPaymentsPage() {
                                     </tr>
                                 ) : (
                                     filteredPayments.map((p) => {
-                                        const isPaid = p.status === "paid";
+                                        const isPaid = isPaymentCompleted(p.status);
                                         const isUpi = p.method === "upi" || p.method === "card";
 
                                         return (
@@ -375,18 +382,28 @@ export default function AdminPaymentsPage() {
 
                                                 <td className="py-3.5 px-4">
                                                     <span
-                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
                                                             isPaid
                                                                 ? "bg-emerald-100 text-emerald-800"
                                                                 : "bg-saffron-100 text-saffron-900"
                                                         }`}
                                                     >
-                                                        {isPaid ? "✓ Paid" : "⏳ Pending"}
+                                                        {isPaid ? (
+                                                            <>
+                                                                <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                                                                <span>Paid</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Clock className="w-3 h-3 text-saffron-700" />
+                                                                <span>Pending</span>
+                                                            </>
+                                                        )}
                                                     </span>
                                                 </td>
 
                                                 <td className="py-3.5 px-4 text-espresso-600 font-mono text-[11px]">
-                                                    {p.gateway_payment_id || p.gateway_order_id || "Cash Counter Reconciliation"}
+                                                    {p.txn_id || p.gateway_payment_id || p.notes || "Cash Counter Reconciliation"}
                                                 </td>
 
                                                 <td className="py-3.5 px-4 text-right text-espresso-500 font-medium">

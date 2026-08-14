@@ -88,7 +88,15 @@ async def verify_razorpay_payment(
     ).hexdigest()
 
     # In test sandbox mode, allow simulated signatures or verified HMAC signatures
-    is_valid = (data.razorpay_signature == generated_sig) or data.razorpay_signature.startswith("mock_sig_") or (len(data.razorpay_signature) >= 10)
+    is_production = os.getenv("ENVIRONMENT", "development") == "production"
+    if is_production:
+        is_valid = hmac.compare_digest(generated_sig, data.razorpay_signature)
+    else:
+        # In development/sandbox, allow mock signatures for testing
+        is_valid = (
+            hmac.compare_digest(generated_sig, data.razorpay_signature)
+            or data.razorpay_signature.startswith("mock_sig_")
+        )
 
     if not is_valid:
         raise HTTPException(
@@ -162,7 +170,7 @@ async def mark_cash_payment_paid(
     db: Session = Depends(get_db),
 ):
     """Mark an order as paid in cash at counter (Cashier reconciliation)."""
-    order = db.query(Order).options(joinedload(Order.items), joinedload(Order.table)).filter(Order.id == order_id).first()
+    order = db.query(Order).options(joinedload(Order.items), joinedload(Order.table)).filter(Order.id == order_id, Order.outlet_id == current_user.outlet_id).first()
     if not order:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

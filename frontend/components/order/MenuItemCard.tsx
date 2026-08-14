@@ -102,9 +102,10 @@ export function MenuItemCard({ item, cartQty, onAdd, onRemove }: MenuItemCardPro
 
             {/* Bottom Actions */}
             <div className="px-4 pb-4 pt-1 flex items-center justify-between border-t border-cream-100 mt-auto">
-                <span className="text-xs font-semibold text-espresso-400">
-                    {item.is_veg ? "🟢 100% Veg" : "🔴 Non-Veg"}
-                </span>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-espresso-500">
+                    <span className={`w-2 h-2 rounded-full ${item.is_veg ? "bg-emerald-500" : "bg-red-500"}`} />
+                    <span>{item.is_veg ? "100% Veg" : "Non-Veg"}</span>
+                </div>
 
                 {isOutOfStock ? (
                     <button

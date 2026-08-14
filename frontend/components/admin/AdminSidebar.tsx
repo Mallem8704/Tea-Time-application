@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/navigation";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
@@ -16,14 +16,17 @@ import {
     LogOut,
     Shield,
     User,
+    Settings,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useOutlet } from "@/context/OutletContext";
 
 export function AdminSidebar({ className = "" }: { className?: string }) {
     const pathname = usePathname();
     const { user, isOwner, logout } = useAuth();
     const { t } = useLanguage();
+    const { outlet } = useOutlet();
 
     const navLinks = [
         { href: "/admin", labelKey: "live_orders", icon: LayoutDashboard, exact: true },
@@ -34,6 +37,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
         { href: "/admin/payments", labelKey: "payments_cashier", icon: CreditCard },
         { href: "/admin/analytics", labelKey: "sales_analytics", icon: BarChart3 },
         { href: "/admin/audit", labelKey: "audit_log", icon: History },
+        { href: "/admin/settings", labelKey: "store_settings", icon: Settings },
     ];
 
     const isActive = (href: string, exact = false) => {
@@ -51,14 +55,14 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                     <div className="h-10 px-2 py-1 rounded-xl bg-white flex items-center justify-center shadow-md shrink-0">
                         <img
                             src="/logo.png"
-                            alt="Tea Time Kadiri Logo"
+                            alt="Tea Time Cafe Logo"
                             className="h-8 w-auto object-contain"
                         />
                     </div>
                     <div>
                         <h2 className="font-extrabold text-sm tracking-tight text-white">{t("app_title")}</h2>
                         <span className="text-[10px] text-terracotta-400 font-bold uppercase tracking-wider block">
-                            Kadiri Cockpit
+                            {outlet?.name || "Admin"} Cockpit
                         </span>
                     </div>
                 </div>
@@ -70,7 +74,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                         const Icon = item.icon;
 
                         return (
-                            <a
+                            <Link
                                 key={item.href}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
@@ -81,7 +85,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                             >
                                 <Icon className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-espresso-400"}`} />
                                 <span>{t(item.labelKey as any)}</span>
-                            </a>
+                            </Link>
                         );
                     })}
                 </nav>

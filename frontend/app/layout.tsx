@@ -3,6 +3,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { OutletProvider } from "@/context/OutletContext";
 
 export const metadata: Metadata = {
   title: "Tea Time Cafe — QR Ordering & Admin SaaS",
@@ -21,11 +22,13 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          <LanguageProvider>
-            <ToastProvider>
-              {children}
-            </ToastProvider>
-          </LanguageProvider>
+          <OutletProvider>
+            <LanguageProvider>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+            </LanguageProvider>
+          </OutletProvider>
         </AuthProvider>
       </body>
     </html>

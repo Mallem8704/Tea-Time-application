@@ -20,9 +20,11 @@ import {
 import { Button } from "@/components/ui/Button";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useLanguage } from "@/context/LanguageContext";
+import { useOutlet } from "@/context/OutletContext";
 
 export default function HomePage() {
     const { language, t } = useLanguage();
+    const { outlet } = useOutlet();
 
     const portalCards = [
         {
@@ -32,7 +34,7 @@ export default function HomePage() {
             badgeColor: "bg-terracotta-100 text-terracotta-800 border-terracotta-200",
             href: "/order?table=T1",
             icon: QrCode,
-            cta: language === "en" ? "Open Customer Menu (Table T1) →" : "మెనూ తెరవండి (టేబుల్ T1) →",
+            cta: language === "en" ? "Open Customer Menu (Table T1)" : "మెనూ తెరవండి (టేబుల్ T1)",
             buttonVariant: "primary" as const,
             bgGlow: "group-hover:border-terracotta-400 group-hover:shadow-terracotta-500/10",
         },
@@ -43,7 +45,7 @@ export default function HomePage() {
             badgeColor: "bg-espresso-100 text-espresso-900 border-espresso-200",
             href: "/admin/login",
             icon: LayoutDashboard,
-            cta: language === "en" ? "Launch Admin Cockpit →" : "అడ్మిన్ పోర్టల్ తెరవండి →",
+            cta: language === "en" ? "Launch Admin Cockpit" : "అడ్మిన్ పోర్టల్ తెరవండి",
             buttonVariant: "secondary" as const,
             bgGlow: "group-hover:border-espresso-400 group-hover:shadow-espresso-500/10",
         },
@@ -54,7 +56,7 @@ export default function HomePage() {
             badgeColor: "bg-saffron-100 text-saffron-900 border-saffron-300",
             href: "/admin/kds",
             icon: ChefHat,
-            cta: language === "en" ? "Open Kitchen Screen →" : "కిచెన్ స్క్రీన్ తెరవండి →",
+            cta: language === "en" ? "Open Kitchen Screen" : "కిచెన్ స్క్రీన్ తెరవండి",
             buttonVariant: "outline" as const,
             bgGlow: "group-hover:border-saffron-400 group-hover:shadow-saffron-500/10",
         },
@@ -75,7 +77,7 @@ export default function HomePage() {
                     <Link href="/" className="flex items-center gap-3">
                         <img
                             src="/logo.png"
-                            alt="Tea Time Kadiri Logo"
+                            alt="Tea Time Cafe Logo"
                             className="h-12 w-auto object-contain"
                         />
                     </Link>
@@ -96,7 +98,7 @@ export default function HomePage() {
                 <div className="text-center max-w-2xl mx-auto space-y-4">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-terracotta-50 border border-terracotta-200 text-terracotta-800 text-xs font-bold shadow-2xs">
                         <Sparkles className="w-3.5 h-3.5 text-terracotta-600" />
-                        <span>Kadiri Outlet • Authentic Irani Chai & Cafe SaaS</span>
+                        <span>{outlet?.name || "Cafe"} • {outlet?.tagline || t("app_tagline")}</span>
                     </div>
 
                     <h1 className="text-3xl sm:text-5xl font-black text-espresso-950 tracking-tight leading-tight">
@@ -152,6 +154,7 @@ export default function HomePage() {
                                         <Button
                                             variant={p.buttonVariant}
                                             size="md"
+                                            rightIcon={<ArrowRight className="w-4 h-4" />}
                                             className="w-full shadow-sm"
                                         >
                                             {p.cta}
@@ -177,7 +180,7 @@ export default function HomePage() {
 
                         <div className="flex items-center gap-2 text-xs font-bold text-espresso-700 bg-cream-100 px-3 py-1.5 rounded-xl">
                             <ShieldCheck className="w-4 h-4 text-terracotta-600" />
-                            <span>Kadiri Master Outlet</span>
+                            <span>{outlet?.name || "Master Outlet"}</span>
                         </div>
                     </div>
 
@@ -206,7 +209,7 @@ export default function HomePage() {
                         <MapPin className="w-5 h-5 text-terracotta-600 shrink-0" />
                         <div>
                             <p className="text-[11px] font-bold uppercase text-espresso-500">Location</p>
-                            <p className="text-xs font-bold text-espresso-900">Main Road, Kadiri, Andhra Pradesh</p>
+                            <p className="text-xs font-bold text-espresso-900">{outlet?.address || "Address not set"}</p>
                         </div>
                     </div>
 
@@ -214,7 +217,7 @@ export default function HomePage() {
                         <Clock className="w-5 h-5 text-terracotta-600 shrink-0" />
                         <div>
                             <p className="text-[11px] font-bold uppercase text-espresso-500">Hours</p>
-                            <p className="text-xs font-bold text-espresso-900">6:00 AM – 11:00 PM (Daily)</p>
+                            <p className="text-xs font-bold text-espresso-900">{outlet?.opening_hours || "Hours not set"}</p>
                         </div>
                     </div>
 
@@ -222,7 +225,7 @@ export default function HomePage() {
                         <Coffee className="w-5 h-5 text-terracotta-600 shrink-0" />
                         <div>
                             <p className="text-[11px] font-bold uppercase text-espresso-500">Specialty</p>
-                            <p className="text-xs font-bold text-espresso-900">Irani Chai, Osmania Biscuits & Bun Maska</p>
+                            <p className="text-xs font-bold text-espresso-900">{outlet?.tagline || t("app_tagline")}</p>
                         </div>
                     </div>
                 </div>
@@ -230,7 +233,7 @@ export default function HomePage() {
 
             {/* Footer */}
             <footer className="border-t border-cream-200 bg-white py-6 text-center text-xs text-espresso-500 font-medium">
-                <p>&copy; {new Date().getFullYear()} Tea Time Cafe &bull; Kadiri Outlet. All rights reserved.</p>
+                <p>&copy; {new Date().getFullYear()} {outlet?.name || t("app_title")} &bull; All rights reserved.</p>
             </footer>
         </main>
     );

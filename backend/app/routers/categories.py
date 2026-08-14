@@ -78,7 +78,7 @@ def update_category(
     db: Session = Depends(get_db),
 ):
     """Update category details (Staff or Owner)."""
-    cat = db.query(Category).filter(Category.id == category_id).first()
+    cat = db.query(Category).filter(Category.id == category_id, Category.outlet_id == current_user.outlet_id).first()
     if not cat:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -122,7 +122,7 @@ def delete_category(
     db: Session = Depends(get_db),
 ):
     """Delete a category (Owner only). Blocked if menu items are linked."""
-    cat = db.query(Category).filter(Category.id == category_id).first()
+    cat = db.query(Category).filter(Category.id == category_id, Category.outlet_id == current_user.outlet_id).first()
     if not cat:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

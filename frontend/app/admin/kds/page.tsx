@@ -14,6 +14,7 @@ import {
     Utensils,
     Flame,
     ArrowRight,
+    AlertTriangle,
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -24,10 +25,17 @@ import { useToast } from "@/context/ToastContext";
 import { useAdminSocket } from "@/hooks/useSockets";
 import { soundManager } from "@/lib/sound";
 import { api } from "@/lib/api";
+import { useOutlet } from "@/context/OutletContext";
+
+function parseUtcDate(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    const normalized = dateStr.includes("Z") || dateStr.includes("+") ? dateStr : `${dateStr}Z`;
+    return new Date(normalized);
+}
 
 function getElapsedSeconds(dateStr: string): number {
     if (!dateStr) return 0;
-    const orderTime = new Date(dateStr).getTime();
+    const orderTime = parseUtcDate(dateStr).getTime();
     const now = new Date().getTime();
     return Math.max(0, Math.floor((now - orderTime) / 1000));
 }
@@ -43,8 +51,10 @@ export default function KitchenDisplaySystemPage() {
     const { t } = useLanguage();
     const toast = useToast();
     const router = useRouter();
+    const { outlet } = useOutlet();
 
     const [orders, setOrders] = useState<any[]>([]);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(true);
     const [pendingServiceCalls, setPendingServiceCalls] = useState<any[]>([]);
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -68,6 +78,8 @@ export default function KitchenDisplaySystemPage() {
             setPendingServiceCalls(callsData);
         } catch {
             toast.error("Failed to load KDS orders");
+        } finally {
+            setIsLoadingOrders(false);
         }
     }, [toast]);
 
@@ -86,17 +98,19 @@ export default function KitchenDisplaySystemPage() {
     }, []);
 
     // WebSocket Hook
-    const { isConnected: wsConnected } = useAdminSocket(1, (event) => {
+    const { isConnected: wsConnected } = useAdminSocket(outlet?.id || 1, (event) => {
         if (event.event === "new_order" && event.data) {
             soundManager.playNewOrderChime();
             setOrders((prev) => [event.data, ...prev.filter((o) => o.id !== event.data.id)]);
-            toast.success(`🍳 New Kitchen Ticket #${event.data.order_number} for Table ${event.data.table_label}`);
-        } else if (event.event === "order_status_updated" && event.data) {
+            toast.success(`New Kitchen Ticket #${event.data.order_number} for Table ${event.data.table_label}`);
+        } else if ((event.event === "order_status_updated" || event.event === "order_updated") && event.data) {
             setOrders((prev) =>
                 prev.map((o) => (o.id === event.data.id ? { ...o, status: event.data.status } : o))
             );
         } else if (event.event === "service_call" && event.data) {
             setPendingServiceCalls((prev) => [event.data, ...prev.filter((c) => c.id !== event.data.id)]);
+        } else if (event.event === "service_call_attended" && event.data) {
+            setPendingServiceCalls((prev) => prev.filter((c) => c.id !== event.data.id));
         }
     });
 
@@ -133,7 +147,7 @@ export default function KitchenDisplaySystemPage() {
                 <AdminHeader
                     wsConnected={wsConnected}
                     pendingServiceCalls={pendingServiceCalls}
-                    onAttendServiceCall={(id) => setPendingServiceCalls((prev) => prev.filter((c) => c.id !== id))}
+                    onAttendServiceCall={async (id) => { try { await api.attendServiceCall(id); setPendingServiceCalls((prev) => prev.filter((c) => c.id !== id)); } catch (err) { console.error('Failed to attend service call', err); } }}
                 />
 
                 {/* KDS Header Controls */}
@@ -180,7 +194,23 @@ export default function KitchenDisplaySystemPage() {
 
                 {/* KDS Tickets Grid */}
                 <main className="flex-1 overflow-y-auto p-6 bg-espresso-950">
-                    {kdsOrders.length === 0 ? (
+                    {isLoadingOrders ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="h-64 rounded-3xl bg-espresso-900/60 border border-espresso-800 animate-pulse p-5 flex flex-col justify-between">
+                                    <div className="space-y-3">
+                                        <div className="h-5 w-24 bg-espresso-800 rounded-lg"></div>
+                                        <div className="h-4 w-36 bg-espresso-800/60 rounded-md"></div>
+                                        <div className="space-y-2 pt-4">
+                                            <div className="h-3 w-full bg-espresso-800/40 rounded"></div>
+                                            <div className="h-3 w-3/4 bg-espresso-800/40 rounded"></div>
+                                        </div>
+                                    </div>
+                                    <div className="h-10 w-full bg-espresso-800 rounded-xl"></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : kdsOrders.length === 0 ? (
                         <div className="h-96 flex flex-col items-center justify-center text-espresso-400 text-center border-2 border-dashed border-espresso-800 rounded-3xl p-8">
                             <Utensils className="w-16 h-16 mb-4 opacity-30 text-saffron-400" />
                             <h3 className="text-lg font-bold text-white">All Kitchen Orders Cleared!</h3>
@@ -267,8 +297,9 @@ export default function KitchenDisplaySystemPage() {
                                                                         </span>
                                                                     </div>
                                                                     {it.notes && (
-                                                                        <span className="text-xs text-saffron-300 font-bold block mt-0.5">
-                                                                            ⚠️ {it.notes}
+                                                                        <span className="text-xs text-saffron-300 font-bold flex items-center gap-1 mt-0.5">
+                                                                            <AlertTriangle className="w-3.5 h-3.5 text-saffron-400 shrink-0" />
+                                                                            <span>{it.notes}</span>
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -305,14 +336,15 @@ export default function KitchenDisplaySystemPage() {
                                                     className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition cursor-pointer active:scale-98"
                                                 >
                                                     <CheckCircle2 className="w-4 h-4" />
-                                                    <span>Mark Order Ready ✓</span>
+                                                    <span>Mark Order Ready</span>
                                                 </button>
                                             ) : (
                                                 <button
                                                     onClick={() => handleAdvanceStatus(order.id, "served")}
                                                     className="w-full py-3 rounded-2xl bg-espresso-800 hover:bg-espresso-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                                                 >
-                                                    <span>Mark Served ➔</span>
+                                                    <span>Mark Served</span>
+                                                    <ArrowRight className="w-3.5 h-3.5" />
                                                 </button>
                                             )}
                                         </div>

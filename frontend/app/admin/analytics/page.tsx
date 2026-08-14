@@ -23,11 +23,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { formatRupees } from "@/lib/formatters";
 import { api } from "@/lib/api";
+import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 
 export default function AdminAnalyticsDashboardPage() {
     const { isAuthenticated, isLoading: authLoading } = useAuth();
     const toast = useToast();
     const router = useRouter();
+    const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
 
     const [summary, setSummary] = useState<any>(null);
     const [revenueTrend, setRevenueTrend] = useState<any[]>([]);
@@ -89,9 +91,9 @@ export default function AdminAnalyticsDashboardPage() {
 
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <AdminHeader
-                    wsConnected={true}
-                    pendingServiceCalls={[]}
-                    onAttendServiceCall={() => {}}
+                    wsConnected={wsConnected}
+                    pendingServiceCalls={pendingServiceCalls}
+                    onAttendServiceCall={handleAttendServiceCall}
                 />
 
                 {/* Top Bar */}

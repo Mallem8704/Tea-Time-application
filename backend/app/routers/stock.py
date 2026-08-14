@@ -13,7 +13,6 @@ router = APIRouter(prefix="", tags=["Inventory & Stock"])
 
 @router.get("", response_model=List[StockItemOverview])
 def get_stock_overview(
-    outlet_id: int = Query(1, description="Outlet ID"),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
@@ -21,7 +20,7 @@ def get_stock_overview(
     items = (
         db.query(MenuItem)
         .options(joinedload(MenuItem.category))
-        .filter(MenuItem.outlet_id == outlet_id)
+        .filter(MenuItem.outlet_id == current_user.outlet_id)
         .order_by(MenuItem.category_id.asc(), MenuItem.id.asc())
         .all()
     )
@@ -54,7 +53,6 @@ def get_stock_overview(
 
 @router.get("/low", response_model=List[StockItemOverview])
 def get_low_stock_items(
-    outlet_id: int = Query(1, description="Outlet ID"),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
@@ -63,7 +61,7 @@ def get_low_stock_items(
         db.query(MenuItem)
         .options(joinedload(MenuItem.category))
         .filter(
-            MenuItem.outlet_id == outlet_id,
+            MenuItem.outlet_id == current_user.outlet_id,
             MenuItem.track_stock == True,
             MenuItem.stock_qty <= MenuItem.low_stock_threshold,
         )
@@ -93,7 +91,6 @@ def get_stock_logs(
     item_id: Optional[int] = Query(None, description="Filter by menu item ID"),
     reason: Optional[str] = Query(None, description="Filter by reason: restock/sale/wastage/adjustment"),
     limit: int = Query(100, ge=1, le=500),
-    outlet_id: int = Query(1, description="Outlet ID"),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
@@ -101,7 +98,7 @@ def get_stock_logs(
     query = (
         db.query(StockLog)
         .options(joinedload(StockLog.item))
-        .filter(StockLog.outlet_id == outlet_id)
+        .filter(StockLog.outlet_id == current_user.outlet_id)
     )
 
     if item_id is not None:
@@ -135,7 +132,7 @@ def adjust_stock_manual(
     db: Session = Depends(get_db),
 ):
     """Record manual restock, wastage, or adjustment for an item."""
-    item = db.query(MenuItem).filter(MenuItem.id == data.item_id).first()
+    item = db.query(MenuItem).filter(MenuItem.id == data.item_id, MenuItem.outlet_id == current_user.outlet_id).first()
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

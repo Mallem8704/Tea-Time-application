@@ -16,6 +16,7 @@ from app.routers import (
     analytics,
     ws,
     audit,
+    outlets,
 )
 
 # Initialize database schema tables
@@ -27,22 +28,33 @@ app = FastAPI(
     version="1.0.0",
 )
 
+@app.on_event("startup")
+def on_startup():
+    """Ensure database schema tables exist and seed initial store data if database is empty."""
+    Base.metadata.create_all(bind=engine)
+    try:
+        from app.seed import auto_seed_if_empty
+        auto_seed_if_empty()
+    except Exception as e:
+        print(f"[STARTUP] Auto-seed warning: {e}")
+
 # CORS configuration
-frontend_env_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+frontend_env_raw = os.getenv("FRONTEND_URL", "http://localhost:3000")
+frontend_origins = [u.strip() for u in frontend_env_raw.split(",") if u.strip()]
 
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
-    frontend_env_url,
     "https://tea-time-application.vercel.app",
+    *frontend_origins,
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"https://tea-time-[a-zA-Z0-9_-]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,6 +96,9 @@ app.include_router(ws.router, tags=["WebSockets"])
 
 app.include_router(audit.router, prefix="/api/audit", tags=["Audit Logs"])
 app.include_router(audit.router, prefix="/audit", tags=["Audit Logs (Alias)"])
+
+app.include_router(outlets.router, prefix="/api/outlets", tags=["Outlet Settings"])
+app.include_router(outlets.router, prefix="/outlets", tags=["Outlet Settings (Alias)"])
 
 
 @app.get("/")

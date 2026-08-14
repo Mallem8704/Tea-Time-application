@@ -15,9 +15,9 @@ from app.models import Outlet, User, CafeTable, Category, MenuItem, StockLog, Au
 from app.auth_utils import get_password_hash
 
 
-def seed_database():
+def seed_database(clear_existing: bool = True):
     print("=" * 70)
-    print("☕ SEEDING TEA TIME CAFE DATABASE — FULL 58-ITEM BILINGUAL MENU")
+    print("[SEED] SEEDING TEA TIME CAFE DATABASE — FULL 58-ITEM BILINGUAL MENU")
     print("=" * 70)
 
     # Recreate tables cleanly
@@ -25,20 +25,21 @@ def seed_database():
     db = SessionLocal()
 
     try:
-        # Check if already seeded and clear cleanly
-        print("[INFO] Clearing existing data to seed fresh authentic menu...")
-        db.query(AuditLog).delete()
-        db.query(ServiceCall).delete()
-        db.query(Payment).delete()
-        db.query(OrderItem).delete()
-        db.query(Order).delete()
-        db.query(StockLog).delete()
-        db.query(MenuItem).delete()
-        db.query(Category).delete()
-        db.query(CafeTable).delete()
-        db.query(User).delete()
-        db.query(Outlet).delete()
-        db.commit()
+        if clear_existing:
+            # Check if already seeded and clear cleanly
+            print("[INFO] Clearing existing data to seed fresh authentic menu...")
+            db.query(AuditLog).delete()
+            db.query(ServiceCall).delete()
+            db.query(Payment).delete()
+            db.query(OrderItem).delete()
+            db.query(Order).delete()
+            db.query(StockLog).delete()
+            db.query(MenuItem).delete()
+            db.query(Category).delete()
+            db.query(CafeTable).delete()
+            db.query(User).delete()
+            db.query(Outlet).delete()
+            db.commit()
 
         # 1. Seed Outlet
         outlet = Outlet(
@@ -46,11 +47,17 @@ def seed_database():
             address="Main Bazaar Road, Kadiri, Andhra Pradesh - 515591",
             phone="+91 98765 43210",
             currency="INR",
-            tax_rate_percent=5,  # 5% GST
+            tax_rate_percent=5,
+            opening_hours="6:00 AM – 11:00 PM (Daily)",
+            tagline="Authentic Irani Chai & Fresh Bakes",
+            logo_url="/logo.png",
+            gstin="37AAAAA0000A1Z5",
+            fssai_license_number="10123999000123",
+            upi_vpa="teatimecafe@upi",
         )
         db.add(outlet)
         db.flush()
-        print(f"✓ Created Outlet: {outlet.name} (ID: {outlet.id}, Location: Kadiri)")
+        print(f"[OK] Created Outlet: {outlet.name} (ID: {outlet.id}, Location: Kadiri)")
 
         # 2. Seed Users (Owner & Staff)
         owner_password = "admin123"
@@ -74,7 +81,7 @@ def seed_database():
         db.flush()
 
         print("\n" + "-" * 50)
-        print("🔑 DEMO LOGIN CREDENTIALS:")
+        print("[CREDENTIALS] DEMO LOGIN CREDENTIALS:")
         print(f"  • OWNER:  Email: owner@teatime.com | Password: {owner_password}")
         print(f"  • STAFF:  Email: staff@teatime.com | Password: {staff_password}")
         print("-" * 50 + "\n")
@@ -93,7 +100,7 @@ def seed_database():
             tables.append(table)
         db.add_all(tables)
         db.flush()
-        print(f"✓ Created {len(tables)} Cafe Tables (T1 through T8) with QR URLs")
+        print(f"[OK] Created {len(tables)} Cafe Tables (T1 through T8) with QR URLs")
 
         # 4. Seed Categories (6 exact categories from menu prompt)
         categories_data = [
@@ -117,7 +124,7 @@ def seed_database():
             db.add(c)
             db.flush()
             category_map[cat["name"]] = c.id
-        print(f"✓ Created {len(category_map)} Categories")
+        print(f"[OK] Created {len(category_map)} Categories")
 
         # 5. Full 58 Menu Items from Prompt
         menu_items_raw = [
@@ -710,11 +717,11 @@ def seed_database():
                 notes="Initial store opening inventory",
             )
             db.add(stock_log)
-        print(f"✓ Seeded {len(created_items)} Authentic Menu Items across {len(category_map)} Categories")
+        print(f"[OK] Seeded {len(created_items)} Authentic Menu Items across {len(category_map)} Categories")
 
         db.commit()
         print("\n" + "=" * 70)
-        print("🎉 TEA TIME CAFE DATABASE SEEDING COMPLETED PERFECTLY!")
+        print("[SUCCESS] TEA TIME CAFE DATABASE SEEDING COMPLETED SUCCESSFULLY!")
         print("=" * 70)
 
     except Exception as e:
@@ -725,5 +732,21 @@ def seed_database():
         db.close()
 
 
+def auto_seed_if_empty():
+    """Checks if database has an outlet; if empty, automatically seeds it."""
+    db = SessionLocal()
+    try:
+        existing_outlet = db.query(Outlet).first()
+        if existing_outlet is None:
+            print("[AUTO-SEED] Database is empty. Running initial database seed...")
+            seed_database(clear_existing=False)
+        else:
+            print(f"[AUTO-SEED] Database already populated with outlet: {existing_outlet.name}")
+    except Exception as e:
+        print(f"[AUTO-SEED] Warning: Auto-seed check encountered: {e}")
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
-    seed_database()
+    seed_database(clear_existing=True)

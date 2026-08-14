@@ -67,21 +67,21 @@ async def create_service_call(
 @router.get("", response_model=List[ServiceCallOut])
 def list_service_calls(
     status: Optional[str] = Query(None, description="Filter by status: pending, attended"),
-    outlet_id: int = Query(1, description="Outlet ID"),
+    limit: int = Query(50, ge=1, le=200),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
-    """Staff/Admin queue of incoming service calls."""
+    """Admin endpoint to list all service buzzer requests."""
     query = (
         db.query(ServiceCall)
         .options(joinedload(ServiceCall.table))
-        .filter(ServiceCall.outlet_id == outlet_id)
+        .filter(ServiceCall.outlet_id == current_user.outlet_id)
     )
 
     if status:
         query = query.filter(ServiceCall.status == status.strip().lower())
 
-    calls = query.order_by(ServiceCall.created_at.desc()).limit(100).all()
+    calls = query.order_by(ServiceCall.created_at.desc()).limit(limit).all()
 
     return [
         ServiceCallOut(
@@ -98,13 +98,18 @@ def list_service_calls(
 
 
 @router.patch("/{call_id}/attend", response_model=ServiceCallOut)
-def attend_service_call(
+async def attend_service_call(
     call_id: int,
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Mark a service call as attended by staff."""
-    call = db.query(ServiceCall).options(joinedload(ServiceCall.table)).filter(ServiceCall.id == call_id).first()
+    call = (
+        db.query(ServiceCall)
+        .options(joinedload(ServiceCall.table))
+        .filter(ServiceCall.id == call_id, ServiceCall.outlet_id == current_user.outlet_id)
+        .first()
+    )
     if not call:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -114,6 +119,16 @@ def attend_service_call(
     call.status = "attended"
     db.commit()
     db.refresh(call)
+
+    # Broadcast to admin sockets to clear alert banner across screens
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=call.outlet_id,
+            event_type="service_call_attended",
+            data={"id": call.id},
+        )
+    except Exception:
+        pass
 
     return ServiceCallOut(
         id=call.id,

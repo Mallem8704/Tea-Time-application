@@ -30,6 +30,7 @@ import { useAdminSocket } from "@/hooks/useSockets";
 import { formatRupees, formatRelativeTime, formatTimeOnly } from "@/lib/formatters";
 import { soundManager } from "@/lib/sound";
 import { api } from "@/lib/api";
+import { useOutlet } from "@/context/OutletContext";
 
 const KANBAN_COLUMNS = [
     { key: "placed", titleKey: "status_placed", color: "border-blue-300 bg-blue-50/50", headerBg: "bg-blue-500", nextStatus: "accepted", nextLabel: "Accept" },
@@ -44,6 +45,7 @@ export default function AdminLiveOrdersKanbanPage() {
     const { t } = useLanguage();
     const toast = useToast();
     const router = useRouter();
+    const { outlet } = useOutlet();
 
     const [orders, setOrders] = useState<any[]>([]);
     const [pendingServiceCalls, setPendingServiceCalls] = useState<any[]>([]);
@@ -80,23 +82,25 @@ export default function AdminLiveOrdersKanbanPage() {
     }, [isAuthenticated, fetchOrders]);
 
     // Real-Time WebSocket Hook with Audio Chimes
-    const { isConnected: wsConnected } = useAdminSocket(1, (event) => {
+    const { isConnected: wsConnected } = useAdminSocket(outlet?.id || 1, (event) => {
         console.log("[AdminKanban] Received event:", event);
 
         if (event.event === "new_order" && event.data) {
             soundManager.playNewOrderChime();
             setOrders((prev) => [event.data, ...prev.filter((o) => o.id !== event.data.id)]);
             setAnimatingOrderId(event.data.id);
-            toast.success(`🛎️ New Order #${event.data.order_number} placed at Table ${event.data.table_label}!`);
+            toast.success(`New Order #${event.data.order_number} placed at Table ${event.data.table_label}!`);
             setTimeout(() => setAnimatingOrderId(null), 4000);
-        } else if (event.event === "order_status_updated" && event.data) {
+        } else if ((event.event === "order_status_updated" || event.event === "order_updated") && event.data) {
             setOrders((prev) =>
-                prev.map((o) => (o.id === event.data.id ? { ...o, status: event.data.status } : o))
+                prev.map((o) => (o.id === event.data.id ? { ...o, status: event.data.status, payment_status: event.data.payment_status || o.payment_status } : o))
             );
         } else if (event.event === "service_call" && event.data) {
             soundManager.playServiceCallAlert();
             setPendingServiceCalls((prev) => [event.data, ...prev.filter((c) => c.id !== event.data.id)]);
-            toast.info(`🔔 Alert: Table ${event.data.table_label} requested ${event.data.call_type.toUpperCase()}`);
+            toast.info(`Table Alert: Table ${event.data.table_label} requested ${event.data.call_type.toUpperCase()}`);
+        } else if (event.event === "service_call_attended" && event.data) {
+            setPendingServiceCalls((prev) => prev.filter((c) => c.id !== event.data.id));
         }
     });
 
@@ -189,9 +193,9 @@ export default function AdminLiveOrdersKanbanPage() {
                                     </span>
                                     <button
                                         onClick={() => handleAttendServiceCall(call.id)}
-                                        className="px-2 py-0.5 rounded-full bg-white text-red-600 hover:bg-cream-100 text-[10px] font-extrabold cursor-pointer transition"
+                                        className="px-2.5 py-0.5 rounded-full bg-white text-red-600 hover:bg-cream-100 text-[10px] font-extrabold cursor-pointer transition"
                                     >
-                                        Attend ✓
+                                        Attend
                                     </button>
                                 </div>
                             ))}
@@ -246,7 +250,17 @@ export default function AdminLiveOrdersKanbanPage() {
 
                                     {/* Cards Scrollable Area */}
                                     <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                                        {columnOrders.length === 0 ? (
+                                        {isLoadingOrders ? (
+                                            <div className="space-y-3">
+                                                {[1, 2].map((k) => (
+                                                    <div key={k} className="bg-white rounded-xl p-3.5 border border-cream-200 shadow-2xs space-y-2.5 animate-pulse">
+                                                        <div className="h-4 w-24 bg-cream-200 rounded"></div>
+                                                        <div className="h-3 w-32 bg-cream-100 rounded"></div>
+                                                        <div className="h-8 w-full bg-cream-100 rounded-lg"></div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : columnOrders.length === 0 ? (
                                             <div className="h-32 flex items-center justify-center text-espresso-400 text-xs font-medium border border-dashed border-cream-300 rounded-xl">
                                                 No orders in {col.key}
                                             </div>
@@ -308,25 +322,27 @@ export default function AdminLiveOrdersKanbanPage() {
                                                                 <span className="font-extrabold text-espresso-950 block">
                                                                     {formatRupees(order.total_paise)}
                                                                 </span>
-                                                                <span
-                                                                    className={`text-[10px] font-bold ${
-                                                                        order.payment_status === "paid"
-                                                                            ? "text-emerald-700"
-                                                                            : "text-saffron-700"
-                                                                    }`}
-                                                                >
-                                                                    {order.payment_status === "paid"
-                                                                        ? `✓ Paid (${order.payment_method.toUpperCase()})`
-                                                                        : "⏳ Pay at Counter"}
+                                                                <span className="text-[10px] font-bold inline-flex items-center gap-1">
+                                                                    {order.payment_status === "paid" ? (
+                                                                        <>
+                                                                            <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                                                                            <span className="text-emerald-700">Paid ({order.payment_method.toUpperCase()})</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Clock className="w-3 h-3 text-saffron-600 shrink-0" />
+                                                                            <span className="text-saffron-700">Pay at Counter</span>
+                                                                        </>
+                                                                    )}
                                                                 </span>
                                                             </div>
 
                                                             {order.payment_status !== "paid" && (
                                                                 <button
                                                                     onClick={() => handleMarkCashPaid(order.id)}
-                                                                    className="px-2 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold transition cursor-pointer"
+                                                                    className="px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold transition cursor-pointer"
                                                                 >
-                                                                    Cash Paid ✓
+                                                                    Mark Paid
                                                                 </button>
                                                             )}
                                                         </div>

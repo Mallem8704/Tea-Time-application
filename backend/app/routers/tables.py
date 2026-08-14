@@ -1,12 +1,14 @@
 import io
 import os
+import urllib.parse
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 import qrcode
 
 from app.database import get_db
-from app.models import CafeTable, ServiceCall, User
+from app.models import CafeTable, ServiceCall, Order, User
 from app.schemas import (
     TableCreate,
     TableUpdate,
@@ -17,10 +19,12 @@ from app.schemas import (
 )
 from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
+from app.routers.ws import manager
 
 router = APIRouter(prefix="", tags=["Tables & QR"])
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+VALID_TABLE_STATUSES = {"free", "occupied", "reserved"}
 
 
 # ==========================================
@@ -54,18 +58,26 @@ def get_table(table_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=TableOut, status_code=status.HTTP_201_CREATED)
-def create_table(
+async def create_table(
     data: TableCreate,
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Create a new cafe table and generate its QR target URL."""
     label_clean = data.label.strip()
+    if not label_clean:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Table label cannot be empty",
+        )
 
-    # Check for duplicate label in same outlet
+    # Check for duplicate label in same outlet (case-insensitive)
     existing = (
         db.query(CafeTable)
-        .filter(CafeTable.outlet_id == current_user.outlet_id, CafeTable.label == label_clean)
+        .filter(
+            CafeTable.outlet_id == current_user.outlet_id,
+            func.lower(CafeTable.label) == label_clean.lower(),
+        )
         .first()
     )
     if existing:
@@ -74,7 +86,8 @@ def create_table(
             detail=f"Table '{label_clean}' already exists in this outlet",
         )
 
-    qr_url = f"{FRONTEND_URL}/order?table={label_clean}"
+    encoded_label = urllib.parse.quote(label_clean)
+    qr_url = f"{FRONTEND_URL}/order?table={encoded_label}"
     new_table = CafeTable(
         outlet_id=current_user.outlet_id,
         label=label_clean,
@@ -95,18 +108,34 @@ def create_table(
     )
     db.commit()
     db.refresh(new_table)
+
+    # Broadcast real-time update to connected admin dashboards
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=current_user.outlet_id,
+            event_type="table_created",
+            data={
+                "id": new_table.id,
+                "label": new_table.label,
+                "status": new_table.status,
+                "qr_code_url": new_table.qr_code_url,
+            },
+        )
+    except Exception:
+        pass
+
     return new_table
 
 
 @router.put("/{table_id}", response_model=TableOut)
-def update_table(
+async def update_table(
     table_id: int,
     data: TableUpdate,
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
-    """Update table label or QR configuration."""
-    table = db.query(CafeTable).filter(CafeTable.id == table_id).first()
+    """Update table label or status."""
+    table = db.query(CafeTable).filter(CafeTable.id == table_id, CafeTable.outlet_id == current_user.outlet_id).first()
     if not table:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -114,35 +143,100 @@ def update_table(
         )
 
     if data.label is not None:
-        table.label = data.label.strip()
-        table.qr_code_url = f"{FRONTEND_URL}/order?table={table.label}"
+        label_clean = data.label.strip()
+        if not label_clean:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Table label cannot be empty",
+            )
+        # Duplicate label check
+        existing = (
+            db.query(CafeTable)
+            .filter(
+                CafeTable.outlet_id == current_user.outlet_id,
+                func.lower(CafeTable.label) == label_clean.lower(),
+                CafeTable.id != table_id,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Table '{label_clean}' already exists in this outlet",
+            )
+        table.label = label_clean
+        encoded_label = urllib.parse.quote(label_clean)
+        table.qr_code_url = f"{FRONTEND_URL}/order?table={encoded_label}"
+
     if data.status is not None:
-        table.status = data.status
+        status_clean = data.status.strip().lower()
+        if status_clean not in VALID_TABLE_STATUSES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status '{data.status}'. Must be one of: free, occupied, reserved",
+            )
+        table.status = status_clean
+        if status_clean == "free":
+            table.active_order_id = None
+
     if data.qr_code_url is not None:
         table.qr_code_url = data.qr_code_url
 
+    log_audit(
+        db=db,
+        outlet_id=current_user.outlet_id,
+        user_id=current_user.id,
+        action="update_table",
+        entity_type="table",
+        entity_id=table.id,
+        details={"label": table.label, "status": table.status},
+    )
     db.commit()
     db.refresh(table)
+
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=current_user.outlet_id,
+            event_type="table_updated",
+            data={
+                "id": table.id,
+                "label": table.label,
+                "status": table.status,
+                "active_order_id": table.active_order_id,
+            },
+        )
+    except Exception:
+        pass
+
     return table
 
 
 @router.patch("/{table_id}/status", response_model=TableOut)
-def update_table_status(
+async def update_table_status(
     table_id: int,
     data: TableStatusUpdate,
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Toggle table occupancy status (free, occupied, reserved)."""
-    table = db.query(CafeTable).filter(CafeTable.id == table_id).first()
+    table = db.query(CafeTable).filter(CafeTable.id == table_id, CafeTable.outlet_id == current_user.outlet_id).first()
     if not table:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Table with ID {table_id} not found",
         )
 
+    status_clean = data.status.strip().lower()
+    if status_clean not in VALID_TABLE_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status '{data.status}'. Must be one of: free, occupied, reserved",
+        )
+
     old_status = table.status
-    table.status = data.status
+    table.status = status_clean
+    if status_clean == "free":
+        table.active_order_id = None
 
     log_audit(
         db=db,
@@ -151,26 +245,61 @@ def update_table_status(
         action="table_status_change",
         entity_type="table",
         entity_id=table.id,
-        details={"label": table.label, "old_status": old_status, "new_status": data.status},
+        details={"label": table.label, "old_status": old_status, "new_status": status_clean},
     )
     db.commit()
     db.refresh(table)
+
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=current_user.outlet_id,
+            event_type="table_updated",
+            data={
+                "id": table.id,
+                "label": table.label,
+                "status": table.status,
+                "active_order_id": table.active_order_id,
+            },
+        )
+    except Exception:
+        pass
+
     return table
 
 
 @router.delete("/{table_id}", status_code=status.HTTP_200_OK)
-def delete_table(
+async def delete_table(
     table_id: int,
     current_user: User = Depends(require_owner),
     db: Session = Depends(get_db),
 ):
     """Delete a table (Owner only)."""
-    table = db.query(CafeTable).filter(CafeTable.id == table_id).first()
+    table = db.query(CafeTable).filter(CafeTable.id == table_id, CafeTable.outlet_id == current_user.outlet_id).first()
     if not table:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Table with ID {table_id} not found",
         )
+
+    # Check for active in-progress orders
+    active_orders = (
+        db.query(Order)
+        .filter(
+            Order.table_id == table_id,
+            Order.status.in_(["placed", "accepted", "preparing", "ready"]),
+        )
+        .count()
+    )
+    if active_orders > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete table '{table.label}' because it has {active_orders} active order(s). Please complete or cancel them first.",
+        )
+
+    # Nullify historical orders referencing this table
+    db.query(Order).filter(Order.table_id == table_id).update({"table_id": None})
+    # Remove service calls for this table
+    db.query(ServiceCall).filter(ServiceCall.table_id == table_id).delete()
 
     label = table.label
     db.delete(table)
@@ -185,6 +314,16 @@ def delete_table(
         details={"label": label},
     )
     db.commit()
+
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=current_user.outlet_id,
+            event_type="table_deleted",
+            data={"id": table_id, "label": label},
+        )
+    except Exception:
+        pass
+
     return {"message": f"Table '{label}' successfully deleted"}
 
 
@@ -204,17 +343,17 @@ def generate_table_qr(table_id: int, db: Session = Depends(get_db)):
 
     target_url = table.qr_code_url or f"{FRONTEND_URL}/order?table={table.label}"
 
-    # Generate QR Code image with cafe brand colors
+    # Generate QR Code image with cafe brand colors (crisp 15 box size)
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
-        box_size=10,
-        border=4,
+        box_size=15,
+        border=3,
     )
     qr.add_data(target_url)
     qr.make(fit=True)
 
-    img = qr.make_image(fill_color="#1a0f0a", back_color="#fdfaf6")
+    img = qr.make_image(fill_color="#1a0f0a", back_color="#ffffff")
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)
@@ -229,9 +368,6 @@ def generate_table_qr(table_id: int, db: Session = Depends(get_db)):
     )
 
 
-from app.routers.ws import manager
-
-
 # ==========================================
 # CUSTOMER SERVICE CALLS (WAITER, WATER, BILL)
 # ==========================================
@@ -242,7 +378,7 @@ async def request_table_service(
     data: ServiceCallCreate,
     db: Session = Depends(get_db),
 ):
-    """Customer 1-tap call for assistance (water, bill, waiter, clean). Broadcasts to admin."""
+    """Customer buzzer endpoint to request waiter, water, or bill from table."""
     table = db.query(CafeTable).filter(CafeTable.id == table_id).first()
     if not table:
         raise HTTPException(
@@ -250,9 +386,30 @@ async def request_table_service(
             detail=f"Table with ID {table_id} not found",
         )
 
+    # Check for existing pending call of same type to prevent spam
+    existing_call = (
+        db.query(ServiceCall)
+        .filter(
+            ServiceCall.table_id == table_id,
+            ServiceCall.call_type == data.call_type,
+            ServiceCall.status == "pending",
+        )
+        .first()
+    )
+    if existing_call:
+        return ServiceCallOut(
+            id=existing_call.id,
+            outlet_id=existing_call.outlet_id,
+            table_id=existing_call.table_id,
+            table_label=table.label,
+            call_type=existing_call.call_type,
+            status=existing_call.status,
+            created_at=existing_call.created_at,
+        )
+
     service_call = ServiceCall(
         outlet_id=table.outlet_id,
-        table_id=table.id,
+        table_id=table_id,
         call_type=data.call_type,
         status="pending",
     )
@@ -260,45 +417,69 @@ async def request_table_service(
     db.commit()
     db.refresh(service_call)
 
-    # Broadcast live alert to admin dashboards
+    # Broadcast buzzer event to Admin/Staff dashboard in real-time
     await manager.broadcast_service_call(
         outlet_id=table.outlet_id,
         data={
             "id": service_call.id,
-            "table_id": table.id,
+            "table_id": table_id,
             "table_label": table.label,
             "call_type": service_call.call_type,
-            "status": service_call.status,
             "created_at": service_call.created_at.isoformat(),
         },
     )
 
-    return service_call
+    return ServiceCallOut(
+        id=service_call.id,
+        outlet_id=service_call.outlet_id,
+        table_id=service_call.table_id,
+        table_label=table.label,
+        call_type=service_call.call_type,
+        status=service_call.status,
+        created_at=service_call.created_at,
+    )
 
 
 @router.get("/service-calls/active", response_model=List[ServiceCallOut])
 def get_active_service_calls(
-    outlet_id: int = Query(1, description="Outlet ID"),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Fetch pending service calls for staff notification bar."""
-    return (
+    calls = (
         db.query(ServiceCall)
-        .filter(ServiceCall.outlet_id == outlet_id, ServiceCall.status == "pending")
+        .options(joinedload(ServiceCall.table))
+        .filter(ServiceCall.outlet_id == current_user.outlet_id, ServiceCall.status == "pending")
         .order_by(ServiceCall.created_at.desc())
         .all()
     )
+    return [
+        ServiceCallOut(
+            id=c.id,
+            outlet_id=c.outlet_id,
+            table_id=c.table_id,
+            table_label=c.table.label if c.table else f"T{c.table_id}",
+            call_type=c.call_type,
+            status=c.status,
+            created_at=c.created_at,
+        )
+        for c in calls
+    ]
 
 
 @router.patch("/service-calls/{call_id}/attend", response_model=ServiceCallOut)
-def attend_service_call(
+async def attend_service_call(
     call_id: int,
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Mark a service call as attended by staff."""
-    call = db.query(ServiceCall).filter(ServiceCall.id == call_id).first()
+    call = (
+        db.query(ServiceCall)
+        .options(joinedload(ServiceCall.table))
+        .filter(ServiceCall.id == call_id, ServiceCall.outlet_id == current_user.outlet_id)
+        .first()
+    )
     if not call:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -308,4 +489,22 @@ def attend_service_call(
     call.status = "attended"
     db.commit()
     db.refresh(call)
-    return call
+
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=call.outlet_id,
+            event_type="service_call_attended",
+            data={"id": call.id},
+        )
+    except Exception:
+        pass
+
+    return ServiceCallOut(
+        id=call.id,
+        outlet_id=call.outlet_id,
+        table_id=call.table_id,
+        table_label=call.table.label if call.table else f"T{call.table_id}",
+        call_type=call.call_type,
+        status=call.status,
+        created_at=call.created_at,
+    )

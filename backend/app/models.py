@@ -7,6 +7,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -22,6 +23,12 @@ class Outlet(Base):
     phone = Column(String(20), nullable=True)
     currency = Column(String(10), default="INR")
     tax_rate_percent = Column(Integer, default=5)  # e.g., 5% GST
+    opening_hours = Column(String(100), nullable=True)  # e.g., "6:00 AM – 11:00 PM"
+    tagline = Column(String(255), nullable=True)  # e.g., "Authentic Irani Chai & Fresh Bakes"
+    logo_url = Column(String(500), nullable=True)  # e.g., "/uploads/logo.png"
+    gstin = Column(String(30), nullable=True)  # GST Identification Number
+    fssai_license_number = Column(String(30), nullable=True)  # FSSAI License Number
+    upi_vpa = Column(String(100), nullable=True)  # e.g. "teatime@upi"
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relationships
@@ -36,7 +43,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
     name = Column(String(100), nullable=False)
     email = Column(String(150), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
@@ -49,9 +56,12 @@ class User(Base):
 
 class CafeTable(Base):
     __tablename__ = "tables"
+    __table_args__ = (
+        UniqueConstraint("outlet_id", "label", name="uq_table_outlet_label"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
-    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
     label = Column(String(50), nullable=False)  # e.g. "T1", "T2"
     qr_code_url = Column(String(255), nullable=True)
     status = Column(String(20), default="free")  # 'free', 'occupied', 'reserved'
@@ -60,14 +70,17 @@ class CafeTable(Base):
 
     outlet = relationship("Outlet", back_populates="tables")
     orders = relationship("Order", back_populates="table")
-    service_calls = relationship("ServiceCall", back_populates="table")
+    service_calls = relationship("ServiceCall", back_populates="table", cascade="all, delete-orphan")
 
 
 class Category(Base):
     __tablename__ = "categories"
+    __table_args__ = (
+        UniqueConstraint("outlet_id", "name", name="uq_category_outlet_name"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
-    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
     name = Column(String(100), nullable=False)
     name_te = Column(String(100), nullable=True)  # Telugu category name
     sort_order = Column(Integer, default=0)
@@ -75,15 +88,15 @@ class Category(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     outlet = relationship("Outlet", back_populates="categories")
-    items = relationship("MenuItem", back_populates="category")
+    items = relationship("MenuItem", back_populates="category", cascade="all, delete-orphan")
 
 
 class MenuItem(Base):
     __tablename__ = "menu_items"
 
     id = Column(Integer, primary_key=True, index=True)
-    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), index=True, nullable=False)
     name = Column(String(120), nullable=False)
     name_te = Column(String(120), nullable=True)  # Telugu name
     description = Column(Text, nullable=True)
@@ -100,38 +113,38 @@ class MenuItem(Base):
 
     outlet = relationship("Outlet", back_populates="menu_items")
     category = relationship("Category", back_populates="items")
-    stock_logs = relationship("StockLog", back_populates="item")
+    stock_logs = relationship("StockLog", back_populates="item", cascade="all, delete-orphan")
 
 
 class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
-    table_id = Column(Integer, ForeignKey("tables.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
+    table_id = Column(Integer, ForeignKey("tables.id", ondelete="SET NULL"), index=True, nullable=True)
     order_number = Column(String(30), unique=True, index=True, nullable=False)
-    status = Column(String(30), default="placed")  # 'placed', 'accepted', 'preparing', 'ready', 'served', 'cancelled'
+    status = Column(String(30), default="placed", index=True)  # 'placed', 'accepted', 'preparing', 'ready', 'served', 'cancelled'
     subtotal_paise = Column(Integer, default=0)
     tax_paise = Column(Integer, default=0)
     total_paise = Column(Integer, default=0)
     payment_status = Column(String(20), default="pending")  # 'pending', 'paid', 'failed'
     payment_method = Column(String(20), default="counter")  # 'upi', 'card', 'cash', 'counter'
     customer_notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     outlet = relationship("Outlet", back_populates="orders")
     table = relationship("CafeTable", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
-    payments = relationship("Payment", back_populates="order")
+    payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
 
 
 class OrderItem(Base):
     __tablename__ = "order_items"
 
     id = Column(Integer, primary_key=True, index=True)
-    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
-    item_id = Column(Integer, ForeignKey("menu_items.id"), nullable=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), index=True, nullable=False)
+    item_id = Column(Integer, ForeignKey("menu_items.id", ondelete="SET NULL"), index=True, nullable=True)
     item_name = Column(String(120), nullable=False)
     qty = Column(Integer, default=1)
     unit_price_paise = Column(Integer, nullable=False)
@@ -145,7 +158,7 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id = Column(Integer, primary_key=True, index=True)
-    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    order_id = Column(Integer, ForeignKey("orders.id"), index=True, nullable=False)
     method = Column(String(30), default="counter")  # 'upi', 'card', 'cash'
     txn_id = Column(String(100), nullable=True)
     amount_paise = Column(Integer, nullable=False)
@@ -161,8 +174,8 @@ class StockLog(Base):
     __tablename__ = "stock_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
-    item_id = Column(Integer, ForeignKey("menu_items.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
+    item_id = Column(Integer, ForeignKey("menu_items.id", ondelete="CASCADE"), index=True, nullable=False)
     change_qty = Column(Integer, nullable=False)  # positive for restock, negative for sale/waste
     reason = Column(String(50), nullable=False)  # 'sale', 'restock', 'wastage', 'adjustment'
     staff_id = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -176,10 +189,10 @@ class ServiceCall(Base):
     __tablename__ = "service_calls"
 
     id = Column(Integer, primary_key=True, index=True)
-    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
-    table_id = Column(Integer, ForeignKey("tables.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
+    table_id = Column(Integer, ForeignKey("tables.id"), index=True, nullable=False)
     call_type = Column(String(50), default="waiter")  # 'waiter', 'bill', 'water', 'clean'
-    status = Column(String(20), default="pending")  # 'pending', 'attended'
+    status = Column(String(20), default="pending", index=True)  # 'pending', 'attended'
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     table = relationship("CafeTable", back_populates="service_calls")
@@ -189,7 +202,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     action = Column(String(100), nullable=False)  # e.g., 'price_change', 'stock_adjustment', 'cancel_order'
     entity_type = Column(String(50), nullable=False)  # e.g., 'menu_item', 'order', 'table'
