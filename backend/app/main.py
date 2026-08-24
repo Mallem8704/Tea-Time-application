@@ -134,8 +134,29 @@ def root():
 
 @app.get("/api/health")
 def health_check():
+    try:
+        from app.seed import auto_seed_if_empty
+        auto_seed_if_empty()
+    except Exception as e:
+        print(f"[HEALTH] Auto-seed warning: {e}")
     return {
         "status": "healthy",
         "service": "tea-time-backend",
         "timestamp": "ok",
     }
+
+
+@app.get("/api/seed")
+@app.post("/api/seed")
+def trigger_seed(key: str = "admin123"):
+    if key != "admin123":
+        return {"error": "Invalid key"}
+    try:
+        from app.seed import seed_database
+        seed_database(clear_existing=True)
+        return {
+            "status": "success",
+            "message": "Seeded full 198-item Arabieq Restaurant menu with 11 categories and 10 tables",
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
