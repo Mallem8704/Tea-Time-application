@@ -37,26 +37,37 @@ def seed_database(clear_existing: bool = True):
             db.query(Category).delete()
             db.query(CafeTable).delete()
             db.query(User).delete()
-            db.query(Outlet).delete()
             db.commit()
 
-        # 1. Seed Outlet
-        outlet = Outlet(
-            name="Arabic Restaurant",
-            address="Main Bazaar Road, Kadiri, Andhra Pradesh - 515591",
-            phone="+91 98765 43210",
-            currency="INR",
-            tax_rate_percent=5,
-            opening_hours="11:00 AM – 11:30 PM (Daily)",
-            tagline="Authentic Arabian Cuisine, Mandi & Grills",
-            logo_url="/logo.png",
-            gstin="37AAAAA0000A1Z5",
-            fssai_license_number="10123999000123",
-            upi_vpa="arabicrestaurant@upi",
-        )
-        db.add(outlet)
-        db.flush()
-        print(f"[OK] Created Outlet: {outlet.name} (ID: {outlet.id})")
+        # 1. Seed or Update Master Outlet
+        outlet = db.query(Outlet).first()
+        if not outlet:
+            outlet = Outlet(
+                id=1,
+                name="Arabic Restaurant",
+                address="Main Bazaar Road, Kadiri, Andhra Pradesh - 515591",
+                phone="+91 98765 43210",
+                currency="INR",
+                tax_rate_percent=5,
+                opening_hours="11:00 AM – 11:30 PM (Daily)",
+                tagline="Authentic Arabian Cuisine, Mandi & Grills",
+                logo_url="/logo.png",
+                gstin="37AAAAA0000A1Z5",
+                fssai_license_number="10123999000123",
+                upi_vpa="arabicrestaurant@upi",
+            )
+            db.add(outlet)
+            db.flush()
+        else:
+            outlet.name = "Arabic Restaurant"
+            outlet.address = "Main Bazaar Road, Kadiri, Andhra Pradesh - 515591"
+            outlet.tagline = "Authentic Arabian Cuisine, Mandi & Grills"
+            outlet.opening_hours = "11:00 AM – 11:30 PM (Daily)"
+            outlet.phone = "+91 98765 43210"
+            outlet.tax_rate_percent = 5
+            db.flush()
+
+        print(f"[OK] Master Outlet Ready: {outlet.name} (ID: {outlet.id})")
 
         # 2. Seed Users (Owner & Staff)
         owner_password = "admin123"

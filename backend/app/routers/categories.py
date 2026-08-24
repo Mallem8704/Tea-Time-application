@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Category, MenuItem, User
+from app.models import Category, MenuItem, User, Outlet
 from app.schemas import CategoryCreate, CategoryUpdate, CategoryOut
 from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
@@ -14,11 +14,20 @@ router = APIRouter(prefix="", tags=["Categories"])
 @router.get("", response_model=List[CategoryOut])
 def list_categories(
     active_only: bool = Query(True, description="Filter active categories"),
-    outlet_id: int = Query(1, description="Outlet ID"),
+    outlet_id: Optional[int] = Query(None, description="Outlet ID"),
     db: Session = Depends(get_db),
 ):
     """List all categories for customer and admin views."""
-    query = db.query(Category).filter(Category.outlet_id == outlet_id)
+    target_id = outlet_id
+    if target_id is None or db.query(Category).filter(Category.outlet_id == target_id).count() == 0:
+        first_cat = db.query(Category).first()
+        if first_cat:
+            target_id = first_cat.outlet_id
+        else:
+            first_outlet = db.query(Outlet).first()
+            target_id = first_outlet.id if first_outlet else 1
+
+    query = db.query(Category).filter(Category.outlet_id == target_id)
     if active_only:
         query = query.filter(Category.is_active == True)
     return query.order_by(Category.sort_order.asc(), Category.id.asc()).all()

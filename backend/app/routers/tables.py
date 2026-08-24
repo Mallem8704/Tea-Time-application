@@ -8,7 +8,7 @@ from sqlalchemy import func
 import qrcode
 
 from app.database import get_db
-from app.models import CafeTable, ServiceCall, Order, User
+from app.models import CafeTable, ServiceCall, Order, User, Outlet
 from app.schemas import (
     TableCreate,
     TableUpdate,
@@ -33,13 +33,22 @@ VALID_TABLE_STATUSES = {"free", "occupied", "reserved"}
 
 @router.get("", response_model=List[TableOut])
 def list_tables(
-    outlet_id: int = Query(1, description="Outlet ID"),
+    outlet_id: Optional[int] = Query(None, description="Outlet ID"),
     db: Session = Depends(get_db),
 ):
     """List all cafe tables with status and QR link."""
+    target_id = outlet_id
+    if target_id is None or db.query(CafeTable).filter(CafeTable.outlet_id == target_id).count() == 0:
+        first_table = db.query(CafeTable).first()
+        if first_table:
+            target_id = first_table.outlet_id
+        else:
+            first_outlet = db.query(Outlet).first()
+            target_id = first_outlet.id if first_outlet else 1
+
     return (
         db.query(CafeTable)
-        .filter(CafeTable.outlet_id == outlet_id)
+        .filter(CafeTable.outlet_id == target_id)
         .order_by(CafeTable.id.asc())
         .all()
     )

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import MenuItem, Category, StockLog, OrderItem, User
+from app.models import MenuItem, Category, StockLog, OrderItem, User, Outlet
 from app.schemas import (
     MenuItemCreate,
     MenuItemUpdate,
@@ -35,11 +35,20 @@ def list_menu_items(
     is_available: Optional[bool] = Query(None, description="Filter by availability"),
     is_veg: Optional[bool] = Query(None, description="Filter by vegetarian status"),
     search: Optional[str] = Query(None, description="Search by item name or description"),
-    outlet_id: int = Query(1, description="Outlet ID"),
+    outlet_id: Optional[int] = Query(None, description="Outlet ID"),
     db: Session = Depends(get_db),
 ):
     """Retrieve categorized menu items with stock and availability filters."""
-    query = db.query(MenuItem).filter(MenuItem.outlet_id == outlet_id)
+    target_id = outlet_id
+    if target_id is None or db.query(MenuItem).filter(MenuItem.outlet_id == target_id).count() == 0:
+        first_item = db.query(MenuItem).first()
+        if first_item:
+            target_id = first_item.outlet_id
+        else:
+            first_outlet = db.query(Outlet).first()
+            target_id = first_outlet.id if first_outlet else 1
+
+    query = db.query(MenuItem).filter(MenuItem.outlet_id == target_id)
 
     if category_id is not None:
         query = query.filter(MenuItem.category_id == category_id)

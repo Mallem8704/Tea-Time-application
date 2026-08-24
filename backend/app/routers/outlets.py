@@ -13,6 +13,8 @@ router = APIRouter()
 def get_outlet(outlet_id: int = 1, db: Session = Depends(get_db)):
     outlet = db.query(Outlet).filter(Outlet.id == outlet_id).first()
     if not outlet:
+        outlet = db.query(Outlet).first()
+    if not outlet:
         raise HTTPException(status_code=404, detail="Outlet not found")
     return outlet
 
