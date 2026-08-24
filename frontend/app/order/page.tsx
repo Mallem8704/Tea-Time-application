@@ -329,7 +329,7 @@ function CustomerOrderContent() {
                         <Search className="w-4 h-4 text-espresso-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <input
                             type="text"
-                            placeholder={language === "en" ? "Search Irani chai, samosa, puffs..." : "చాయ్, సమోసా, స్నాక్స్ వెతకండి..."}
+                            placeholder={language === "en" ? "Search Mandi, Biryani, Shawarma, Grills, Starters..." : "మండి, బిర్యానీ, షవర్మా, గ్రిల్స్ వెతకండి..."}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-cream-300 bg-white placeholder:text-espresso-400 text-xs sm:text-sm focus:outline-none focus:border-terracotta-500 shadow-2xs"

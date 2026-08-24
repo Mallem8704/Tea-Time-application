@@ -47,6 +47,7 @@ origins = [
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    "https://arabic-restaurant-dineos.vercel.app",
     "https://tea-time-application.vercel.app",
     *frontend_origins,
 ]
@@ -54,7 +55,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https://tea-time-[a-zA-Z0-9_-]+\.vercel\.app",
+    allow_origin_regex=r"https://(arabic-restaurant|tea-time)[a-zA-Z0-9_-]*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,6 +64,13 @@ app.add_middleware(
 # Ensure uploads directory exists and mount static files
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    dishes_dir = os.path.join(static_dir, "dishes")
+    if os.path.exists(dishes_dir):
+        app.mount("/dishes", StaticFiles(directory=dishes_dir), name="dishes")
 
 # Include Routers with standard /api prefix and root aliases
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])

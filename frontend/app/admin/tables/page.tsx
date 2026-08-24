@@ -46,7 +46,7 @@ export default function AdminTablesPage() {
     const [editTableStatus, setEditTableStatus] = useState("free");
     const [deletingTable, setDeletingTable] = useState<any | null>(null);
     const [isActionLoading, setIsActionLoading] = useState(false);
-    const [qrTargetDomain, setQrTargetDomain] = useState("https://tea-time-application.vercel.app");
+    const [qrTargetDomain, setQrTargetDomain] = useState("https://arabic-restaurant-dineos.vercel.app");
 
     // Auth Guard
     useEffect(() => {
@@ -566,8 +566,8 @@ export default function AdminTablesPage() {
                                     onChange={(e) => setQrTargetDomain(e.target.value)}
                                     className="w-full p-2 rounded-xl border border-cream-300 bg-white font-mono text-xs font-semibold"
                                 >
-                                    <option value="https://tea-time-application.vercel.app">
-                                        Production (Vercel): https://tea-time-application.vercel.app
+                                    <option value="https://arabic-restaurant-dineos.vercel.app">
+                                        Production (Vercel): https://arabic-restaurant-dineos.vercel.app
                                     </option>
                                     <option value="http://192.168.101.4:3000">
                                         Local Wi-Fi Network: http://192.168.101.4:3000
