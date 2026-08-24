@@ -43,17 +43,17 @@ def seed_database(clear_existing: bool = True):
 
         # 1. Seed Outlet
         outlet = Outlet(
-            name="Tea Time Cafe",
+            name="Arabic Restaurant",
             address="Main Bazaar Road, Kadiri, Andhra Pradesh - 515591",
             phone="+91 98765 43210",
             currency="INR",
             tax_rate_percent=5,
-            opening_hours="6:00 AM – 11:00 PM (Daily)",
-            tagline="Authentic Irani Chai & Fresh Bakes",
+            opening_hours="11:00 AM – 11:30 PM (Daily)",
+            tagline="Authentic Arabian Cuisine, Mandi & Grills",
             logo_url="/logo.png",
             gstin="37AAAAA0000A1Z5",
             fssai_license_number="10123999000123",
-            upi_vpa="teatimecafe@upi",
+            upi_vpa="arabicrestaurant@upi",
         )
         db.add(outlet)
         db.flush()
@@ -742,6 +742,13 @@ def auto_seed_if_empty():
             seed_database(clear_existing=False)
         else:
             print(f"[AUTO-SEED] Database already populated with outlet: {existing_outlet.name}")
+            # Ensure outlet name is synchronized to Arabic Restaurant
+            if existing_outlet.name != "Arabic Restaurant":
+                print(f"[STORE-SYNC] Updating outlet name from '{existing_outlet.name}' to 'Arabic Restaurant'")
+                existing_outlet.name = "Arabic Restaurant"
+                existing_outlet.tagline = "Authentic Arabian Cuisine, Mandi & Grills"
+                existing_outlet.opening_hours = "11:00 AM – 11:30 PM (Daily)"
+                db.commit()
             # Ensure owner name is synchronized to Sreenivasulu
             owner = db.query(User).filter(User.role == "owner").first()
             if owner and owner.name != "Sreenivasulu":

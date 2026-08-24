@@ -106,7 +106,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                 razorpayOrderId: rzpOrder.razorpay_order_id,
                 amountPaise: order.total_paise,
                 orderNumber: order.order_number,
-                outletName: outlet?.name || "Tea Time Cafe",
+                outletName: outlet?.name || "Arabic Restaurant",
                 description: `Payment for Order ${order.order_number}`,
             });
             await api.verifyRazorpayPayment({
@@ -132,7 +132,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                     <div className="w-12 h-12 rounded-2xl bg-white border border-cream-200 p-1 flex items-center justify-center shadow-xs shrink-0">
                         <img
                             src="/logo.png"
-                            alt="Tea Time Cafe Logo"
+                            alt="Arabic Restaurant Logo"
                             className="h-10 w-auto object-contain"
                         />
                     </div>

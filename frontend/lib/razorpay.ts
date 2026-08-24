@@ -65,7 +65,7 @@ export async function openRazorpayCheckout(
         amountPaise,
         currency = "INR",
         orderNumber,
-        outletName = "Tea Time Cafe",
+        outletName = "Arabic Restaurant",
         description,
     } = options;
 

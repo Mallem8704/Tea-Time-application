@@ -55,7 +55,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                     <div className="h-10 px-2 py-1 rounded-xl bg-white flex items-center justify-center shadow-md shrink-0">
                         <img
                             src="/logo.png"
-                            alt="Tea Time Cafe Logo"
+                            alt="Arabic Restaurant Logo"
                             className="h-8 w-auto object-contain"
                         />
                     </div>
@@ -119,7 +119,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                 </div>
 
                 <div className="text-[10px] text-espresso-500 text-center font-medium">
-                    Tea Time SaaS v1.0 &bull; Single Outlet
+                    Arabic Restaurant SaaS v1.0 &bull; Single Outlet
                 </div>
             </div>
         </aside>

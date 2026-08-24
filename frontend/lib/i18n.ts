@@ -7,18 +7,18 @@ export type Language = "en" | "te";
 export const dictionary = {
     en: {
         // App & Header
-        app_title: "Tea Time Cafe",
-        app_tagline: "Authentic Irani Chai & Fresh Bakes",
+        app_title: "Arabic Restaurant",
+        app_tagline: "Authentic Arabian Cuisine, Mandi & Grills",
         table: "Table",
         welcome_table: "Welcome to Table",
 
         // Categories & Navigation
         all_items: "All Items",
         all_categories: "All Categories",
-        chai_hot_drinks: "Chai & Hot Beverages",
-        bakery_biscuits: "Bakery & Biscuits",
-        savory_snacks: "Savory Snacks",
-        coolers_drinks: "Coolers & Refreshers",
+        chai_hot_drinks: "Beverages & Refreshers",
+        bakery_biscuits: "Starters & Platters",
+        savory_snacks: "Grills & Mandi",
+        coolers_drinks: "Desserts & Drinks",
 
         // Badges & Filters
         veg: "Veg",
@@ -99,18 +99,18 @@ export const dictionary = {
     },
     te: {
         // App & Header
-        app_title: "టీ టైమ్ కేఫ్",
-        app_tagline: "అసలైన ఇరానీ చాయ్ & తాజా బేకరీ",
+        app_title: "అరబిక్ రెస్టారెంట్",
+        app_tagline: "అసలైన అరేబియన్ వంటకాలు, మండి & గ్రిల్స్",
         table: "టేబుల్",
         welcome_table: "స్వాగతం - టేబుల్",
 
         // Categories & Navigation
         all_items: "అన్ని రకాలు",
         all_categories: "అన్ని విభాగాలు",
-        chai_hot_drinks: "చాయ్ & వేడి పానీయాలు",
-        bakery_biscuits: "స్నాక్స్ & బేకరీ",
-        savory_snacks: "హాట్ స్నాక్స్",
-        coolers_drinks: "కూలర్స్ & పానీయాలు",
+        chai_hot_drinks: "పానీయాలు & కూలర్స్",
+        bakery_biscuits: "స్టార్టర్స్ & ప్లాటర్స్",
+        savory_snacks: "గ్రిల్స్ & మండి",
+        coolers_drinks: "డెజర్ట్స్ & డ్రింక్స్",
 
         // Badges & Filters
         veg: "శాకాహారం",

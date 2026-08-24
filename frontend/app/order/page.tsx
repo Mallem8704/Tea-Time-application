@@ -217,7 +217,7 @@ function CustomerOrderContent() {
                         razorpayOrderId: rzpOrder.razorpay_order_id,
                         amountPaise: createdOrder.total_paise,
                         orderNumber: createdOrder.order_number,
-                        outletName: outlet?.name || "Tea Time Cafe",
+                        outletName: outlet?.name || "Arabic Restaurant",
                     });
                     await api.verifyRazorpayPayment({
                         order_id: createdOrder.id,
@@ -271,7 +271,7 @@ function CustomerOrderContent() {
                         <div className="flex items-center gap-3">
                             <img
                                 src="/logo.png"
-                                alt="Tea Time Cafe Logo"
+                                alt="Arabic Restaurant Logo"
                                 className="h-10 w-auto object-contain"
                             />
                         </div>
@@ -300,7 +300,7 @@ function CustomerOrderContent() {
                     <div className="flex items-center gap-3">
                         <img
                             src="/logo.png"
-                            alt="Tea Time Cafe Logo"
+                            alt="Arabic Restaurant Logo"
                             className="h-11 sm:h-12 w-auto object-contain"
                         />
                     </div>
@@ -548,7 +548,7 @@ function CustomerOrderContent() {
 
 export default function CustomerOrderPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-espresso-600">Loading Tea Time...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-espresso-600 font-medium">Loading Arabic Restaurant...</div>}>
             <CustomerOrderContent />
         </Suspense>
     );

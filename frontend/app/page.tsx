@@ -77,7 +77,7 @@ export default function HomePage() {
                     <Link href="/" className="flex items-center gap-3">
                         <img
                             src="/logo.png"
-                            alt="Tea Time Cafe Logo"
+                            alt="Arabic Restaurant Logo"
                             className="h-12 w-auto object-contain"
                         />
                     </Link>

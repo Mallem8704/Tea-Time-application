@@ -6,8 +6,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { OutletProvider } from "@/context/OutletContext";
 
 export const metadata: Metadata = {
-  title: "Tea Time Cafe — QR Ordering & Admin SaaS",
-  description: "Next-gen QR ordering, live kitchen Kanban, and cafe operations management",
+  title: "Arabic Restaurant — QR Ordering & Dining SaaS",
+  description: "Next-gen QR table ordering, live kitchen Kanban, and restaurant operations management",
 };
 
 export default function RootLayout({

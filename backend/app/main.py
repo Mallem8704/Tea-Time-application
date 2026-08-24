@@ -23,8 +23,8 @@ from app.routers import (
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Tea Time Cafe API",
-    description="Backend API for Tea Time Cafe QR Ordering & Admin SaaS",
+    title="Arabic Restaurant API",
+    description="Backend API for Arabic Restaurant QR Ordering & Admin SaaS",
     version="1.0.0",
 )
 
@@ -104,7 +104,7 @@ app.include_router(outlets.router, prefix="/outlets", tags=["Outlet Settings (Al
 @app.get("/")
 def root():
     return {
-        "app": "Tea Time Cafe API",
+        "app": "Arabic Restaurant API",
         "status": "online",
         "version": "1.0.0",
         "docs_url": "/docs",

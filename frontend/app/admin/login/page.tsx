@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
         setIsLoading(true);
         try {
             await login(email, password);
-            toast.success("Welcome to Tea Time Cockpit!");
+            toast.success("Welcome to Restaurant Cockpit!");
         } catch (err: any) {
             toast.error(err.message || "Invalid credentials. Please check your email and password.");
         } finally {
@@ -46,7 +46,7 @@ export default function AdminLoginPage() {
                 <div className="text-center space-y-3 flex flex-col items-center">
                     <img
                         src="/logo.png"
-                        alt="Tea Time Cafe Logo"
+                        alt="Arabic Restaurant Logo"
                         className="h-20 w-auto object-contain mx-auto"
                     />
                     <div>
