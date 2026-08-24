@@ -52,7 +52,7 @@ export default function HomePage() {
         {
             title: language === "en" ? "Kitchen Display System (KDS)" : "కిచెన్ డిస్‌ప్లే సిస్టమ్ (KDS)",
             subtitle: language === "en" ? "High-contrast prep tickets, elapsed timers, checklists" : "వంటగది టిక్కెట్లు, టైమర్లు మరియు చెక్‌లిస్ట్‌లు",
-            badge: language === "en" ? "Cooks & Chai Masters" : "వంటగది వీక్షణ",
+            badge: language === "en" ? "Chefs & Kitchen Staff" : "చెఫ్‌లు & కిచెన్ సిబ్బంది",
             badgeColor: "bg-saffron-100 text-saffron-900 border-saffron-300",
             href: "/admin/kds",
             icon: ChefHat,
@@ -98,25 +98,25 @@ export default function HomePage() {
                 <div className="text-center max-w-2xl mx-auto space-y-4">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-terracotta-50 border border-terracotta-200 text-terracotta-800 text-xs font-bold shadow-2xs">
                         <Sparkles className="w-3.5 h-3.5 text-terracotta-600" />
-                        <span>{outlet?.name || "Cafe"} • {outlet?.tagline || t("app_tagline")}</span>
+                        <span>{outlet?.name || "Arabic Restaurant"} • {outlet?.tagline || t("app_tagline")}</span>
                     </div>
 
                     <h1 className="text-3xl sm:text-5xl font-black text-espresso-950 tracking-tight leading-tight">
                         {language === "en" ? (
                             <>
-                                Good Tea. <span className="text-terracotta-600">Good Time.</span>
+                                Authentic Arabian Flavors. <span className="text-terracotta-600">Royal Taste.</span>
                             </>
                         ) : (
                             <>
-                                మంచి టీ. <span className="text-terracotta-600">మంచి సమయం.</span>
+                                అసలైన అరేబియన్ రుచులు. <span className="text-terracotta-600">రాచరిక ఆతిథ్యం.</span>
                             </>
                         )}
                     </h1>
 
                     <p className="text-sm sm:text-base text-espresso-700 font-medium">
                         {language === "en"
-                            ? "Complete smart cafe platform with zero-login QR ordering, real-time Kitchen Kanban, stock automation, and analytics."
-                            : "కస్టమర్ QR ఆర్డరింగ్, లైవ్ కిచెన్ కాన్బన్ మరియు పూర్తి కేఫ్ నిర్వహణ ప్లాట్‌ఫారమ్."}
+                            ? "Complete smart dining & restaurant platform with zero-login QR table ordering, real-time Kitchen KDS, stock automation, and analytics."
+                            : "కస్టమర్ QR టేబుల్ ఆర్డరింగ్, లైవ్ కిచెన్ KDS మరియు పూర్తి రెస్టారెంట్ నిర్వహణ ప్లాట్‌ఫారమ్."}
                     </p>
                 </div>
 
@@ -222,7 +222,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="p-4 rounded-2xl bg-cream-100/70 border border-cream-200 flex items-center gap-3">
-                        <Coffee className="w-5 h-5 text-terracotta-600 shrink-0" />
+                        <Sparkles className="w-5 h-5 text-terracotta-600 shrink-0" />
                         <div>
                             <p className="text-[11px] font-bold uppercase text-espresso-500">Specialty</p>
                             <p className="text-xs font-bold text-espresso-900">{outlet?.tagline || t("app_tagline")}</p>
