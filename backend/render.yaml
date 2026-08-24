@@ -21,7 +21,7 @@ services:
           name: tea-time-db
           property: connectionString
       - key: FRONTEND_URL
-        value: https://tea-time-application.vercel.app,http://localhost:3000
+        value: https://arabic-restaurant-dineos.vercel.app,https://tea-time-application.vercel.app,http://localhost:3000
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: 1440
       - key: RAZORPAY_KEY_ID
