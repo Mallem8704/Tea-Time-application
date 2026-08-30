@@ -17,7 +17,9 @@ import {
     X,
     RefreshCw,
 } from "lucide-react";
-import { MenuItemCard, MenuItemData } from "@/components/order/MenuItemCard";
+import { MenuItemCard3D } from "@/components/order/MenuItemCard3D";
+import { CategorySection3D, FOCUS_CATEGORY_IDS } from "@/components/order/CategorySection3D";
+import { Cart3DFab } from "@/components/order/Cart3DFab";
 import { CartDrawer, CartItem } from "@/components/order/CartDrawer";
 import { OrderTracker, OrderDetail } from "@/components/order/OrderTracker";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -28,6 +30,7 @@ import { formatRupees } from "@/lib/formatters";
 import { api } from "@/lib/api";
 import { useOutlet } from "@/context/OutletContext";
 import { openRazorpayCheckout } from "@/lib/razorpay";
+import type { MenuItemData } from "@/components/order/MenuItemCard";
 
 function CustomerOrderContent() {
     const searchParams = useSearchParams();
@@ -138,6 +141,45 @@ function CustomerOrderContent() {
             return true;
         });
     }, [menuItems, selectedCategory, vegFilter, searchQuery]);
+
+    // Group filtered items by category for the 3D section view
+    const groupedByCategory = useMemo(() => {
+        const groups: { categoryId: number; category: any; items: MenuItemData[] }[] = [];
+        const catMap = new Map<number, MenuItemData[]>();
+
+        for (const item of filteredItems) {
+            if (!catMap.has(item.category_id)) {
+                catMap.set(item.category_id, []);
+            }
+            catMap.get(item.category_id)!.push(item);
+        }
+
+        // Sort categories by their sort_order
+        const sortedCatIds = categories
+            .filter((c) => catMap.has(c.id))
+            .map((c) => c.id);
+
+        // Add any categories not in the categories array
+        for (const catId of catMap.keys()) {
+            if (!sortedCatIds.includes(catId)) {
+                sortedCatIds.push(catId);
+            }
+        }
+
+        for (const catId of sortedCatIds) {
+            const cat = categories.find((c) => c.id === catId);
+            const items = catMap.get(catId);
+            if (items && items.length > 0) {
+                groups.push({
+                    categoryId: catId,
+                    category: cat || { id: catId, name: "Other", name_te: "" },
+                    items,
+                });
+            }
+        }
+
+        return groups;
+    }, [filteredItems, categories]);
 
     // Cart Helpers
     const cartCount = cart.reduce((sum, it) => sum + it.qty, 0);
@@ -320,7 +362,7 @@ function CustomerOrderContent() {
                 </div>
             </header>
 
-            {/* Menu Banner */}
+            {/* Menu Content */}
             <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 w-full">
                 {/* Search Bar & Dietary Filter */}
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -395,7 +437,7 @@ function CustomerOrderContent() {
                     ))}
                 </div>
 
-                {/* Menu Items Grid */}
+                {/* Menu Items */}
                 {isLoadingMenu ? (
                     <div className="text-center py-20 text-espresso-500">
                         <Coffee className="w-10 h-10 mx-auto mb-3 text-terracotta-400 animate-pulse" />
@@ -435,51 +477,55 @@ function CustomerOrderContent() {
                             Reset Filters
                         </Button>
                     </div>
+                ) : selectedCategory === "all" ? (
+                    /* ═══ GROUPED BY CATEGORY — 3D Sections ═══ */
+                    <div>
+                        {groupedByCategory.map((group, sectionIdx) => (
+                            <CategorySection3D
+                                key={group.categoryId}
+                                categoryId={group.categoryId}
+                                categoryName={group.category.name}
+                                categoryNameTe={group.category.name_te}
+                                items={group.items}
+                                cart={cart}
+                                onAdd={handleAddToCart}
+                                onRemove={handleRemoveFromCart}
+                                sectionIndex={sectionIdx}
+                            />
+                        ))}
+                    </div>
                 ) : (
+                    /* ═══ SINGLE CATEGORY — 3D Grid ═══ */
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {filteredItems.map((item) => {
+                        {filteredItems.map((item, idx) => {
                             const cartItem = cart.find((i) => i.id === item.id);
                             return (
-                                <MenuItemCard
-                                    key={item.id}
-                                    item={item}
-                                    cartQty={cartItem?.qty || 0}
-                                    onAdd={() => handleAddToCart(item)}
-                                    onRemove={() => handleRemoveFromCart(item.id)}
-                                />
+                                <div key={item.id} style={{ height: "380px" }}>
+                                    <MenuItemCard3D
+                                        item={item}
+                                        cartQty={cartItem?.qty || 0}
+                                        onAdd={() => handleAddToCart(item)}
+                                        onRemove={() => handleRemoveFromCart(item.id)}
+                                        staggerIndex={idx}
+                                        themeColor={
+                                            FOCUS_CATEGORY_IDS.includes(item.category_id)
+                                                ? undefined
+                                                : "terracotta"
+                                        }
+                                    />
+                                </div>
                             );
                         })}
                     </div>
                 )}
             </section>
 
-            {/* FLOATING CART BAR AT BOTTOM */}
-            {cartCount > 0 && (
-                <div className="fixed bottom-4 inset-x-0 z-40 max-w-lg mx-auto px-4 animate-in slide-in-from-bottom-3 duration-200">
-                    <div className="bg-espresso-900 text-white rounded-2xl p-3.5 px-5 shadow-2xl border border-espresso-800 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-saffron-500 text-espresso-950 flex items-center justify-center font-extrabold text-xs shadow-xs">
-                                {cartCount}
-                            </div>
-                            <div>
-                                <span className="text-xs text-espresso-300 block">{t("total")}</span>
-                                <span className="text-base font-extrabold text-white">
-                                    {formatRupees(cartTotalPaise)}
-                                </span>
-                            </div>
-                        </div>
-
-                        <Button
-                            variant="saffron"
-                            size="md"
-                            onClick={() => setIsCartOpen(true)}
-                            rightIcon={<ArrowRight className="w-4 h-4" />}
-                        >
-                            {t("view_cart")}
-                        </Button>
-                    </div>
-                </div>
-            )}
+            {/* ═══ 3D FLOATING CART FAB ═══ */}
+            <Cart3DFab
+                cartCount={cartCount}
+                cartTotalPaise={cartTotalPaise}
+                onClick={() => setIsCartOpen(true)}
+            />
 
             {/* Cart Drawer */}
             <CartDrawer
