@@ -1,240 +1,472 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-    QrCode,
-    LayoutDashboard,
-    ChefHat,
-    Utensils,
-    CreditCard,
-    BarChart3,
-    ArrowRight,
-    Sparkles,
-    ShieldCheck,
-    Coffee,
-    Clock,
-    MapPin,
-    Phone,
+    QrCode, ChefHat, MapPin, Clock, Phone, ArrowRight, Star, Flame,
+    Leaf, Coffee, Utensils, ShieldCheck, Menu, X, Instagram, Facebook,
+    Twitter, Sparkles, ChevronDown,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { LanguageToggle } from "@/components/LanguageToggle";
 import { useLanguage } from "@/context/LanguageContext";
-import { useOutlet } from "@/context/OutletContext";
+
+function BranchCard({ branch }: { branch: any }) {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <div
+            className={`relative rounded-3xl overflow-hidden border-2 transition-all duration-500 cursor-pointer ${hovered ? "border-amber-400 shadow-2xl -translate-y-2" : "border-white/20 shadow-xl"}`}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+        >
+            <div className={`absolute inset-0 ${branch.gradient}`} />
+            <div className="absolute inset-0 bg-black/50" />
+            <div className="relative z-10 p-8">
+                <div className="flex items-center gap-2 mb-5">
+                    <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${branch.badgeColor}`}>{branch.badge}</span>
+                    {branch.isNew && (
+                        <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" /> NEW
+                        </span>
+                    )}
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-white mb-2">{branch.name}</h3>
+                <p className="text-amber-300 text-sm font-bold mb-5">{branch.tagline}</p>
+                <div className="space-y-3 mb-5">
+                    <div className="flex items-start gap-3">
+                        <MapPin className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                        <span className="text-white/80 text-sm">{branch.address}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="text-white/80 text-sm">{branch.hours}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Phone className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="text-white/80 text-sm">{branch.phone}</span>
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {branch.features.map((f: string, i: number) => (
+                        <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-white/90">{f}</span>
+                    ))}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <Link href={branch.orderLink} className="flex-1">
+                        <button className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-sm transition-all hover:scale-105 shadow-lg">
+                            <QrCode className="w-4 h-4" /> Order Online <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </Link>
+                    <Link href={branch.orderLink} className="flex-1">
+                        <button className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-sm transition-all">
+                            <Utensils className="w-4 h-4" /> View Menu
+                        </button>
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function HomePage() {
-    const { language, t } = useLanguage();
-    const { outlet } = useOutlet();
+    const { language } = useLanguage();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [scrollY, setScrollY] = useState(0);
 
-    const portalCards = [
+    useEffect(() => {
+        const h = () => setScrollY(window.scrollY);
+        window.addEventListener("scroll", h, { passive: true });
+        return () => window.removeEventListener("scroll", h);
+    }, []);
+
+    const branches = [
         {
-            title: language === "en" ? "Customer QR Ordering" : "కస్టమర్ QR ఆర్డరింగ్",
-            subtitle: language === "en" ? "Browse bilingual menu, order, & track live" : "మెనూ చూడండి, ఆర్డర్ చేయండి మరియు లైవ్ ట్రాక్ చేయండి",
-            badge: language === "en" ? "Zero Login • Table T1" : "లాగిన్ అవసరం లేదు",
-            badgeColor: "bg-terracotta-100 text-terracotta-800 border-terracotta-200",
-            href: "/order?table=T1",
-            icon: QrCode,
-            cta: language === "en" ? "Open Customer Menu (Table T1)" : "మెనూ తెరవండి (టేబుల్ T1)",
-            buttonVariant: "primary" as const,
-            bgGlow: "group-hover:border-terracotta-400 group-hover:shadow-terracotta-500/10",
+            id: 1,
+            name: "Old Arabieq Restaurant",
+            address: "2nd Floor, Near More Super Market, Rahmath Tower, Madanapalli Road, Kadiri",
+            hours: "12:00 PM – 11:30 PM (Daily)",
+            phone: "+91 98765 43210",
+            tagline: "Authentic Mandi, Biryani & Arabian Grills",
+            badge: "BRANCH 1 • KADIRI",
+            badgeColor: "bg-amber-500/20 border-amber-400/50 text-amber-300",
+            orderLink: "/order?branch=1&table=T1",
+            features: ["Mandi", "Biryani", "Grills", "Starters", "Soups", "Shakes"],
+            isNew: false,
+            gradient: "bg-gradient-to-br from-amber-900 via-orange-800 to-red-900",
         },
         {
-            title: language === "en" ? "Live Orders & Operations Cockpit" : "లైవ్ ఆర్డర్లు & ఆపరేషన్స్ కాక్‌పిట్",
-            subtitle: language === "en" ? "5-stage Kanban board, audio chimes, table alerts" : "లైవ్ కాన్బన్ బోర్డ్, సౌండ్ అలర్ట్స్, టేబుల్ సర్వీస్",
-            badge: language === "en" ? "Owner & Staff Portal" : "యజమాని & సిబ్బంది",
-            badgeColor: "bg-espresso-100 text-espresso-900 border-espresso-200",
-            href: "/admin/login",
-            icon: LayoutDashboard,
-            cta: language === "en" ? "Launch Admin Cockpit" : "అడ్మిన్ పోర్టల్ తెరవండి",
-            buttonVariant: "secondary" as const,
-            bgGlow: "group-hover:border-espresso-400 group-hover:shadow-espresso-500/10",
-        },
-        {
-            title: language === "en" ? "Kitchen Display System (KDS)" : "కిచెన్ డిస్‌ప్లే సిస్టమ్ (KDS)",
-            subtitle: language === "en" ? "High-contrast prep tickets, elapsed timers, checklists" : "వంటగది టిక్కెట్లు, టైమర్లు మరియు చెక్‌లిస్ట్‌లు",
-            badge: language === "en" ? "Chefs & Kitchen Staff" : "చెఫ్‌లు & కిచెన్ సిబ్బంది",
-            badgeColor: "bg-saffron-100 text-saffron-900 border-saffron-300",
-            href: "/admin/kds",
-            icon: ChefHat,
-            cta: language === "en" ? "Open Kitchen Screen" : "కిచెన్ స్క్రీన్ తెరవండి",
-            buttonVariant: "outline" as const,
-            bgGlow: "group-hover:border-saffron-400 group-hover:shadow-saffron-500/10",
+            id: 2,
+            name: "New Arabieq Restaurant & Cafe",
+            address: "Opposite to Girls High School, Kadiri, Andhra Pradesh",
+            hours: "7:00 AM – 11:30 PM (Daily)",
+            phone: "+91 98765 43211",
+            tagline: "Full Menu • Breakfast • Cafe • Fine Dining",
+            badge: "BRANCH 2 • KADIRI",
+            badgeColor: "bg-emerald-500/20 border-emerald-400/50 text-emerald-300",
+            orderLink: "/order?branch=2&table=T1",
+            features: ["Breakfast", "Tiffins", "Mandi", "Cafe Drinks", "Biryani", "Full Menu"],
+            isNew: true,
+            gradient: "bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900",
         },
     ];
 
-    const quickLinks = [
-        { href: "/admin/menu", label: "Menu & Price CRUD", icon: Utensils },
-        { href: "/admin/tables", label: "Tables & QR Stands", icon: QrCode },
-        { href: "/admin/payments", label: "Cashier & UPI Ledger", icon: CreditCard },
-        { href: "/admin/analytics", label: "Sales & Analytics", icon: BarChart3 },
+    const menuCats = [
+        { name: "Tiffin & Breakfast", emoji: "🍳" },
+        { name: "Dosa Specials", emoji: "🪴" },
+        { name: "Mandi", emoji: "🥖" },
+        { name: "Dum Biryanis", emoji: "🍚" },
+        { name: "Arabian Grills", emoji: "🔥" },
+        { name: "Veg Starters", emoji: "🥗" },
+        { name: "Non-Veg Starters", emoji: "🍗" },
+        { name: "Soups", emoji: "🍲" },
+        { name: "Indian Breads", emoji: "🪴" },
+        { name: "Fresh Juices", emoji: "🥤" },
+        { name: "Milkshakes", emoji: "🥛" },
+        { name: "Snacks & Sweets", emoji: "🍡" },
+    ];
+
+    const navLinks = [
+        { label: "Home", href: "#home" },
+        { label: "Our Branches", href: "#branches" },
+        { label: "Menu", href: "#menu" },
+        { label: "Order Online", href: "#order" },
+        { label: "Contact", href: "#contact" },
+    ];
+
+    const whyUs = [
+        { icon: Star, title: "Authentic Arabian Recipes", desc: "Traditional spices and cooking methods passed down through generations.", color: "text-amber-400", bg: "bg-amber-500/10 border-amber-400/20" },
+        { icon: Flame, title: "Live Fire Grills & Mandi", desc: "Slow-cooked Mandi and live-flame grills for the real taste of Arabia.", color: "text-orange-400", bg: "bg-orange-500/10 border-orange-400/20" },
+        { icon: QrCode, title: "Smart QR Table Ordering", desc: "Scan & order from your seat in English or Telugu. No app needed.", color: "text-cyan-400", bg: "bg-cyan-500/10 border-cyan-400/20" },
+        { icon: Leaf, title: "Veg & Non-Veg Options", desc: "Extensive selections to suit every palate and preference.", color: "text-green-400", bg: "bg-green-500/10 border-green-400/20" },
+        { icon: Coffee, title: "Cafe & Beverages", desc: "Handcrafted milkshakes, fresh juices, and hot cafe drinks.", color: "text-rose-400", bg: "bg-rose-500/10 border-rose-400/20" },
+        { icon: MapPin, title: "Two Convenient Locations", desc: "Both branches centrally located in Kadiri for easy access.", color: "text-purple-400", bg: "bg-purple-500/10 border-purple-400/20" },
     ];
 
     return (
-        <main className="min-h-screen bg-cream-50 text-espresso-950 flex flex-col justify-between selection:bg-terracotta-500 selection:text-white">
-            {/* Header */}
-            <header className="border-b border-cream-200 bg-white/90 backdrop-blur-md sticky top-0 z-40">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="min-h-screen bg-[#0d0a06] text-white overflow-x-hidden">
+            <style jsx global>{`
+                @keyframes floatAnim { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-20px)} }
+                @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+                @keyframes scrollX { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+                @keyframes bgPan { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+                @keyframes glowPulse { 0%,100%{box-shadow:0 0 20px rgba(245,158,11,0.3)} 50%{box-shadow:0 0 60px rgba(245,158,11,0.7)} }
+                .anim-float { animation: floatAnim 6s ease-in-out infinite; }
+                .anim-scrollX { animation: scrollX 30s linear infinite; }
+                .anim-bgPan { background-size:200% 200%; animation:bgPan 8s ease infinite; }
+                .anim-glow { animation: glowPulse 2s ease-in-out infinite; }
+                .text-shimmer {
+                    background: linear-gradient(90deg,#f59e0b,#fbbf24,#fcd34d,#f59e0b);
+                    background-size:200% auto;
+                    -webkit-background-clip:text;
+                    -webkit-text-fill-color:transparent;
+                    animation: shimmer 3s linear infinite;
+                }
+                .glass { background:rgba(255,255,255,0.05); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); }
+                .hero-bg {
+                    background:
+                        radial-gradient(ellipse at 20% 50%, rgba(245,158,11,0.15) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 20%, rgba(239,68,68,0.10) 0%, transparent 60%),
+                        #0d0a06;
+                }
+            `}</style>
+
+            {/* Navigation */}
+            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrollY > 80 ? "bg-[#0d0a06]/95 backdrop-blur-xl border-b border-white/10 shadow-2xl" : "bg-transparent"}`}>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3">
-                        <img
-                            src="/logo.png"
-                            alt="Arabic Restaurant Logo"
-                            className="h-12 w-auto object-contain"
-                        />
+                        <img src="/logo.png" alt="Arabieq" className="h-10 w-auto object-contain" />
+                        <div className="hidden sm:block">
+                            <p className="text-xs font-extrabold text-amber-400 uppercase tracking-widest leading-none">Arabieq</p>
+                            <p className="text-[10px] text-white/50 font-medium">Restaurant & Cafe · Kadiri</p>
+                        </div>
                     </Link>
-
+                    <div className="hidden lg:flex items-center gap-8">
+                        {navLinks.map(link => (
+                            <a key={link.label} href={link.href} className="text-white/70 hover:text-amber-400 text-sm font-semibold transition-colors">{link.label}</a>
+                        ))}
+                    </div>
                     <div className="flex items-center gap-3">
-                        <LanguageToggle />
                         <Link href="/admin/login">
-                            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
-                                Admin Sign In
-                            </Button>
+                            <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:border-amber-400/50 hover:text-amber-400 text-sm font-semibold transition-all">
+                                <ShieldCheck className="w-3.5 h-3.5" /> Staff Login
+                            </button>
                         </Link>
+                        <Link href="/order?branch=2&table=T1">
+                            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-extrabold transition-all shadow-lg shadow-amber-500/30 anim-glow">
+                                <QrCode className="w-3.5 h-3.5" /> Order Now
+                            </button>
+                        </Link>
+                        <button className="lg:hidden text-white/80 hover:text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        </button>
                     </div>
                 </div>
-            </header>
-
-            {/* Hero Section */}
-            <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
-                <div className="text-center max-w-2xl mx-auto space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-terracotta-50 border border-terracotta-200 text-terracotta-800 text-xs font-bold shadow-2xs">
-                        <Sparkles className="w-3.5 h-3.5 text-terracotta-600" />
-                        <span>{outlet?.name || "Arabic Restaurant"} • {outlet?.tagline || t("app_tagline")}</span>
+                {mobileMenuOpen && (
+                    <div className="lg:hidden bg-[#0d0a06]/98 border-t border-white/10 px-4 py-6 space-y-4">
+                        {navLinks.map(link => (
+                            <a key={link.label} href={link.href} className="block text-white/80 hover:text-amber-400 font-semibold py-2 border-b border-white/5" onClick={() => setMobileMenuOpen(false)}>{link.label}</a>
+                        ))}
                     </div>
+                )}
+            </nav>
 
-                    <h1 className="text-3xl sm:text-5xl font-black text-espresso-950 tracking-tight leading-tight">
-                        {language === "en" ? (
-                            <>
-                                Authentic Arabian Flavors. <span className="text-terracotta-600">Royal Taste.</span>
-                            </>
-                        ) : (
-                            <>
-                                అసలైన అరేబియన్ రుచులు. <span className="text-terracotta-600">రాచరిక ఆతిథ్యం.</span>
-                            </>
-                        )}
+            {/* HERO */}
+            <section id="home" className="relative min-h-screen hero-bg flex flex-col items-center justify-center px-4 pt-20 overflow-hidden">
+                <div className="absolute top-20 left-10 w-20 h-20 rounded-full bg-amber-500/20 anim-float" style={{ animationDelay: "0s" }} />
+                <div className="absolute top-40 right-16 w-12 h-12 rounded-full bg-red-500/20 anim-float" style={{ animationDelay: "2s" }} />
+                <div className="absolute bottom-40 left-20 w-32 h-32 rounded-full bg-emerald-500/10 anim-float" style={{ animationDelay: "4s" }} />
+                <div className="absolute bottom-20 right-10 w-16 h-16 rounded-full bg-amber-500/30 anim-float" style={{ animationDelay: "1s" }} />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] border border-amber-400/10 rounded-b-[300px] pointer-events-none" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[380px] h-[190px] border border-amber-400/10 rounded-b-[190px] pointer-events-none" />
+                <div className="relative z-10 max-w-5xl mx-auto text-center space-y-6">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-amber-400 text-xs font-extrabold tracking-widest uppercase">
+                        <Flame className="w-3.5 h-3.5 animate-pulse" />
+                        <span>Authentic Arabian Cuisine — Kadiri&apos;s Finest</span>
+                        <Flame className="w-3.5 h-3.5 animate-pulse" />
+                    </div>
+                    <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black leading-none tracking-tight">
+                        <span className="block text-white">Royal Flavors</span>
+                        <span className="block text-shimmer">of Arabia</span>
+                        <span className="block text-white/60 text-3xl sm:text-4xl lg:text-5xl font-bold mt-2">Right at Your Table</span>
                     </h1>
-
-                    <p className="text-sm sm:text-base text-espresso-700 font-medium">
-                        {language === "en"
-                            ? "Complete smart dining & restaurant platform with zero-login QR table ordering, real-time Kitchen KDS, stock automation, and analytics."
-                            : "కస్టమర్ QR టేబుల్ ఆర్డరింగ్, లైవ్ కిచెన్ KDS మరియు పూర్తి రెస్టారెంట్ నిర్వహణ ప్లాట్‌ఫారమ్."}
+                    <p className="text-white/60 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+                        Scan. Order. Enjoy — Zero waiting, zero hassle. Experience the finest Mandi, Biryani,
+                        and authentic Arabian dishes across our two Kadiri branches.
                     </p>
-                </div>
-
-                {/* Primary Portals Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-                    {portalCards.map((p, idx) => {
-                        const Icon = p.icon;
-                        return (
-                            <div
-                                key={idx}
-                                className={`group bg-white rounded-3xl p-6 border-2 border-cream-200 hover:border-terracotta-400 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between ${p.bgGlow}`}
-                            >
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="w-12 h-12 rounded-2xl bg-cream-100 group-hover:bg-terracotta-500 text-espresso-900 group-hover:text-white flex items-center justify-center transition-colors shadow-xs">
-                                            <Icon className="w-6 h-6" />
-                                        </div>
-                                        <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${p.badgeColor}`}>
-                                            {p.badge}
-                                        </span>
-                                    </div>
-
-                                    <div>
-                                        <h2 className="text-lg font-black text-espresso-950 group-hover:text-terracotta-600 transition-colors">
-                                            {p.title}
-                                        </h2>
-                                        <p className="text-xs text-espresso-600 font-medium mt-1 leading-relaxed">
-                                            {p.subtitle}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="pt-6 mt-4 border-t border-cream-100">
-                                    <Link href={p.href} className="block w-full">
-                                        <Button
-                                            variant={p.buttonVariant}
-                                            size="md"
-                                            rightIcon={<ArrowRight className="w-4 h-4" />}
-                                            className="w-full shadow-sm"
-                                        >
-                                            {p.cta}
-                                        </Button>
-                                    </Link>
-                                </div>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                        <Link href="/order?branch=2&table=T1">
+                            <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-base transition-all shadow-2xl shadow-amber-500/40 hover:scale-105 anim-glow">
+                                <QrCode className="w-5 h-5" /> Order Online Now
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </Link>
+                        <a href="#branches">
+                            <button className="flex items-center gap-3 px-8 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold text-base transition-all hover:scale-105">
+                                <MapPin className="w-5 h-5 text-amber-400" /> View Our Branches
+                            </button>
+                        </a>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 pt-6">
+                        {[{label:"Menu Items",value:"198+"},{label:"Dining Tables",value:"20+"},{label:"Branches",value:"2"},{label:"Happy Customers",value:"5000+"}].map((s,i)=>(
+                            <div key={i} className="text-center">
+                                <p className="text-2xl font-black text-amber-400">{s.value}</p>
+                                <p className="text-xs text-white/50 font-medium">{s.label}</p>
                             </div>
-                        );
-                    })}
+                        ))}
+                    </div>
                 </div>
+                <a href="#branches" className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/40 hover:text-amber-400 transition-colors">
+                    <span className="text-xs font-medium tracking-wider uppercase">Explore</span>
+                    <ChevronDown className="w-5 h-5 animate-bounce" />
+                </a>
+            </section>
 
-                {/* Direct Admin Operations Shortcuts */}
-                <div className="mt-12 bg-white rounded-3xl p-6 sm:p-8 border border-cream-200 shadow-sm">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-cream-200">
-                        <div>
-                            <h3 className="text-base font-bold text-espresso-950">
-                                Admin Operations Modules
-                            </h3>
-                            <p className="text-xs text-espresso-600 font-medium mt-0.5">
-                                Direct links for authenticated staff and owners
+            {/* MARQUEE STRIP */}
+            <div className="relative py-5 bg-amber-500/10 border-y border-amber-500/20 overflow-hidden">
+                <div className="flex gap-4 anim-scrollX w-max">
+                    {[...menuCats, ...menuCats].map((cat, i) => (
+                        <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white font-bold text-sm whitespace-nowrap">
+                            <span>{cat.emoji}</span>{cat.name}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* BRANCHES */}
+            <section id="branches" className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
+                <div className="text-center mb-16">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-amber-400 text-xs font-extrabold tracking-widest uppercase mb-4">
+                        <MapPin className="w-3.5 h-3.5" /> Two Locations, One Royal Experience
+                    </div>
+                    <h2 className="text-4xl sm:text-6xl font-black text-white mb-4">Our <span className="text-shimmer">Branches</span></h2>
+                    <p className="text-white/50 text-lg max-w-xl mx-auto">Two distinct dining experiences in the heart of Kadiri.</p>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {branches.map((branch) => <BranchCard key={branch.id} branch={branch} />)}
+                </div>
+            </section>
+
+            {/* DIGITAL MENU */}
+            <section id="menu" className="py-20 px-4 sm:px-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/5 to-transparent pointer-events-none" />
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-amber-400 text-xs font-extrabold tracking-widest uppercase mb-4">
+                            <Utensils className="w-3.5 h-3.5" /> Explore Our Digital Menu
+                        </div>
+                        <h2 className="text-4xl sm:text-6xl font-black text-white mb-4">198+ <span className="text-shimmer">Authentic</span> Dishes</h2>
+                        <p className="text-white/50 text-lg max-w-xl mx-auto">From hearty Mandi feasts to refreshing Cafe drinks.</p>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
+                        {menuCats.map((cat, i) => (
+                            <div key={i} className="group p-5 rounded-2xl glass hover:bg-amber-500/10 hover:border-amber-400/30 border border-white/5 transition-all hover:-translate-y-1 cursor-pointer text-center">
+                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{cat.emoji}</div>
+                                <p className="text-white/80 font-bold text-sm group-hover:text-amber-400 transition-colors">{cat.name}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {branches.map(branch => (
+                            <Link key={branch.id} href={branch.orderLink}>
+                                <div className="group flex items-center justify-between p-6 rounded-2xl glass hover:bg-white/10 border border-white/10 hover:border-amber-400/30 transition-all hover:-translate-y-1 cursor-pointer">
+                                    <div>
+                                        <p className="text-xs font-extrabold text-amber-400 uppercase tracking-widest mb-1">Branch {branch.id} Menu</p>
+                                        <h3 className="text-white font-black text-lg">{branch.name}</h3>
+                                        <p className="text-white/50 text-sm mt-1">{branch.id === 1 ? "10 categories • 179 items (No Breakfast)" : "11 categories • 198 items (Full Menu)"}</p>
+                                    </div>
+                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center group-hover:bg-amber-500 transition-all">
+                                        <ArrowRight className="w-5 h-5 text-amber-400 group-hover:text-black" />
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ORDER ONLINE */}
+            <section id="order" className="py-20 px-4 sm:px-6">
+                <div className="max-w-5xl mx-auto">
+                    <div className="relative rounded-3xl overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-amber-600 via-orange-600 to-red-700 anim-bgPan" />
+                        <div className="relative z-10 p-10 sm:p-16 text-center">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-xs font-extrabold tracking-widest uppercase mb-6">
+                                <QrCode className="w-3.5 h-3.5" /> Zero Login Required
+                            </div>
+                            <h2 className="text-4xl sm:text-6xl font-black text-white mb-4">Scan. Order. Enjoy.</h2>
+                            <p className="text-white/80 text-lg max-w-xl mx-auto mb-10">
+                                Sit at any table, scan the QR code, browse our bilingual menu in English & Telugu, and place your order instantly!
                             </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-xs font-bold text-espresso-700 bg-cream-100 px-3 py-1.5 rounded-xl">
-                            <ShieldCheck className="w-4 h-4 text-terracotta-600" />
-                            <span>{outlet?.name || "Master Outlet"}</span>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
-                        {quickLinks.map((q, i) => {
-                            const QIcon = q.icon;
-                            return (
-                                <Link
-                                    key={i}
-                                    href={q.href}
-                                    className="p-3.5 rounded-2xl bg-cream-50 hover:bg-terracotta-50 border border-cream-200 hover:border-terracotta-200 transition text-center group flex flex-col items-center gap-2"
-                                >
-                                    <QIcon className="w-5 h-5 text-espresso-700 group-hover:text-terracotta-600 transition" />
-                                    <span className="text-xs font-bold text-espresso-900 group-hover:text-terracotta-900">
-                                        {q.label}
-                                    </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+                                {[
+                                    { step: "01", title: "Scan QR", desc: "Scan the table QR stand at your seat", icon: QrCode },
+                                    { step: "02", title: "Browse & Order", desc: "Select dishes in English or Telugu", icon: Utensils },
+                                    { step: "03", title: "Track Live", desc: "Watch your order go from kitchen to table", icon: ChefHat },
+                                ].map((s, i) => (
+                                    <div key={i} className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm border border-white/20">
+                                        <span className="text-5xl font-black text-white/20 block mb-2">{s.step}</span>
+                                        <s.icon className="w-6 h-6 text-white mb-2" />
+                                        <h3 className="text-white font-black text-base mb-1">{s.title}</h3>
+                                        <p className="text-white/70 text-sm">{s.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <Link href="/order?branch=1&table=T1">
+                                    <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-white text-orange-700 font-extrabold text-sm transition-all hover:bg-amber-50 hover:scale-105 shadow-2xl">
+                                        <MapPin className="w-4 h-4" /> Branch 1 — Rahmath Tower
+                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    </button>
                                 </Link>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Outlet Contact Info Bar */}
-                <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
-                    <div className="p-4 rounded-2xl bg-cream-100/70 border border-cream-200 flex items-center gap-3">
-                        <MapPin className="w-5 h-5 text-terracotta-600 shrink-0" />
-                        <div>
-                            <p className="text-[11px] font-bold uppercase text-espresso-500">Location</p>
-                            <p className="text-xs font-bold text-espresso-900">{outlet?.address || "Address not set"}</p>
-                        </div>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-cream-100/70 border border-cream-200 flex items-center gap-3">
-                        <Clock className="w-5 h-5 text-terracotta-600 shrink-0" />
-                        <div>
-                            <p className="text-[11px] font-bold uppercase text-espresso-500">Hours</p>
-                            <p className="text-xs font-bold text-espresso-900">{outlet?.opening_hours || "Hours not set"}</p>
-                        </div>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-cream-100/70 border border-cream-200 flex items-center gap-3">
-                        <Sparkles className="w-5 h-5 text-terracotta-600 shrink-0" />
-                        <div>
-                            <p className="text-[11px] font-bold uppercase text-espresso-500">Specialty</p>
-                            <p className="text-xs font-bold text-espresso-900">{outlet?.tagline || t("app_tagline")}</p>
+                                <Link href="/order?branch=2&table=T1">
+                                    <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-extrabold text-sm transition-all hover:scale-105 border border-white/40">
+                                        <MapPin className="w-4 h-4" /> Branch 2 — Girls High School
+                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="border-t border-cream-200 bg-white py-6 text-center text-xs text-espresso-500 font-medium">
-                <p>&copy; {new Date().getFullYear()} {outlet?.name || t("app_title")} &bull; All rights reserved.</p>
+            {/* WHY ARABIEQ */}
+            <section className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
+                <div className="text-center mb-16">
+                    <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Why <span className="text-shimmer">Arabieq?</span></h2>
+                    <p className="text-white/50 text-lg max-w-xl mx-auto">More than just food — a complete dining experience.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {whyUs.map((f, i) => (
+                        <div key={i} className={`group p-6 rounded-2xl border ${f.bg} hover:-translate-y-2 transition-all duration-300`}>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${f.bg}`}>
+                                <f.icon className={`w-6 h-6 ${f.color}`} />
+                            </div>
+                            <h3 className="text-white font-black text-base mb-2 group-hover:text-amber-400 transition-colors">{f.title}</h3>
+                            <p className="text-white/50 text-sm leading-relaxed">{f.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* CONTACT */}
+            <section id="contact" className="py-20 px-4 sm:px-6 border-t border-white/5">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Visit <span className="text-shimmer">Us</span></h2>
+                        <p className="text-white/50 text-lg">Find us at either of our Kadiri locations</p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {branches.map(branch => (
+                            <div key={branch.id} className="glass rounded-3xl p-8 border border-white/10 hover:border-amber-400/30 transition-all duration-300">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                                        <span className="text-amber-400 font-black text-sm">B{branch.id}</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-amber-400 text-xs font-extrabold uppercase tracking-widest">Branch {branch.id}</p>
+                                        <h3 className="text-white font-black text-lg">{branch.name}</h3>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                                        <MapPin className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                                        <span className="text-white/70 text-sm">{branch.address}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                        <Clock className="w-5 h-5 text-amber-400 shrink-0" />
+                                        <span className="text-white/70 text-sm">{branch.hours}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                        <Phone className="w-5 h-5 text-amber-400 shrink-0" />
+                                        <span className="text-white/70 text-sm">{branch.phone}</span>
+                                    </div>
+                                </div>
+                                <Link href={branch.orderLink}>
+                                    <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500 border border-amber-400/30 text-amber-400 hover:text-black font-extrabold text-sm transition-all duration-300">
+                                        <QrCode className="w-4 h-4" /> Order from Branch {branch.id} <ArrowRight className="w-4 h-4" />
+                                    </button>
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* FOOTER */}
+            <footer className="border-t border-white/10 bg-black/30 px-4 sm:px-6 py-12">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
+                        <Link href="/" className="flex items-center gap-3">
+                            <img src="/logo.png" alt="Arabieq" className="h-10 w-auto object-contain" />
+                            <div>
+                                <p className="text-sm font-black text-amber-400">Arabieq Restaurant & Cafe</p>
+                                <p className="text-xs text-white/40">Two Branches • Kadiri, Andhra Pradesh</p>
+                            </div>
+                        </Link>
+                        <div className="flex items-center gap-4">
+                            {([Instagram, Facebook, Twitter] as React.ElementType[]).map((Icon, i) => (
+                                <button key={i} className="w-10 h-10 rounded-xl glass hover:bg-amber-500/20 flex items-center justify-center text-white/40 hover:text-amber-400 transition-all">
+                                    <Icon className="w-4 h-4" />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-white/5">
+                        <p className="text-white/30 text-sm">&copy; {new Date().getFullYear()} Arabieq Restaurant & Cafe — All rights reserved.</p>
+                        <div className="flex items-center gap-4">
+                            <Link href="/admin/login">
+                                <span className="text-white/30 hover:text-amber-400 text-xs font-medium transition-colors flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3" /> Staff Portal
+                                </span>
+                            </Link>
+                            <Link href="/admin/kds">
+                                <span className="text-white/30 hover:text-amber-400 text-xs font-medium transition-colors flex items-center gap-1">
+                                    <ChefHat className="w-3 h-3" /> Kitchen KDS
+                                </span>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
             </footer>
-        </main>
+        </div>
     );
 }
