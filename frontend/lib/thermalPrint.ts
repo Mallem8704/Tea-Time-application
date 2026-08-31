@@ -1,0 +1,323 @@
+/**
+ * Browser-Native Thermal POS Receipt & KOT Printing Engine
+ * Supports standard 80mm (3.125") and 58mm (2.25") Thermal Printers (ESC/POS compatible).
+ */
+
+export interface PrintOrderItem {
+    id?: number;
+    item_name: string;
+    variant_name?: string | null;
+    selected_addons_json?: string | null;
+    qty: number;
+    unit_price_paise?: number;
+    total_price_paise?: number;
+    notes?: string | null;
+}
+
+export interface PrintOrderData {
+    id: number;
+    order_number: string;
+    order_type?: string;
+    table_label?: string | null;
+    customer_name?: string | null;
+    customer_phone?: string | null;
+    delivery_address?: string | null;
+    payment_method?: string;
+    payment_status?: string;
+    subtotal_paise: number;
+    discount_paise?: number;
+    coupon_code?: string | null;
+    tax_paise: number;
+    total_paise: number;
+    customer_notes?: string | null;
+    created_at?: string;
+    items: PrintOrderItem[];
+}
+
+export interface PrintOutletData {
+    name?: string;
+    address?: string | null;
+    phone?: string | null;
+    tax_rate_percent?: number;
+    tagline?: string | null;
+}
+
+function parseAddons(jsonStr?: string | null): string[] {
+    if (!jsonStr) return [];
+    try {
+        const parsed = JSON.parse(jsonStr);
+        if (Array.isArray(parsed)) {
+            return parsed.map((a: any) => (typeof a === "string" ? a : a.name || ""));
+        }
+    } catch {
+        // Ignore JSON error
+    }
+    return [];
+}
+
+/**
+ * Print Kitchen Order Ticket (KOT) for Chefs
+ */
+export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null) {
+    const isDelivery = order.order_type === "delivery";
+    const titleTag = isDelivery ? "🛵 FREE HOME DELIVERY" : `🍽️ TABLE ${order.table_label || "COUNTER"}`;
+    const formattedTime = order.created_at
+        ? new Date(order.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        : new Date().toLocaleTimeString("en-IN");
+    const formattedDate = order.created_at
+        ? new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : new Date().toLocaleDateString("en-IN");
+
+    let itemsHtml = "";
+    order.items.forEach((item, idx) => {
+        const addons = parseAddons(item.selected_addons_json);
+        itemsHtml += `
+            <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #444;">
+                <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 900;">
+                    <span>${idx + 1}. ${item.item_name}</span>
+                    <span style="font-size: 17px; background: #000; color: #fff; padding: 0 6px; border-radius: 3px;">QTY: ${item.qty}</span>
+                </div>
+                ${item.variant_name ? `<div style="font-size: 12px; font-weight: bold; margin-left: 14px;">▶ Size: ${item.variant_name}</div>` : ""}
+                ${addons.length > 0 ? `<div style="font-size: 11px; margin-left: 14px;">+ Addons: ${addons.join(", ")}</div>` : ""}
+                ${item.notes ? `<div style="font-size: 11px; color: #d00; font-weight: bold; margin-left: 14px;">⚠️ Note: ${item.notes}</div>` : ""}
+            </div>
+        `;
+    });
+
+    const kotHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>KOT - ${order.order_number}</title>
+            <style>
+                @page { margin: 0; size: 80mm auto; }
+                body {
+                    font-family: 'Courier New', Courier, monospace;
+                    width: 76mm;
+                    margin: 2mm auto;
+                    color: #000;
+                    background: #fff;
+                    line-height: 1.25;
+                }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .bold { font-weight: bold; }
+                .divider { border-top: 2px solid #000; margin: 6px 0; }
+                .dashed-divider { border-top: 1px dashed #000; margin: 6px 0; }
+                .badge {
+                    font-size: 18px;
+                    font-weight: 900;
+                    text-align: center;
+                    border: 2px solid #000;
+                    padding: 4px 0;
+                    margin: 6px 0;
+                    text-transform: uppercase;
+                }
+                @media print {
+                    body { -webkit-print-color-adjust: exact; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="text-center bold" style="font-size: 18px;">*** KITCHEN ORDER TICKET (KOT) ***</div>
+            <div class="text-center" style="font-size: 13px; font-weight: bold;">${outlet?.name || "Arabieq Restaurant"}</div>
+            
+            <div class="badge">${titleTag}</div>
+
+            <div style="font-size: 12px; display: flex; justify-content: space-between;">
+                <span><strong>Order:</strong> #${order.order_number}</span>
+                <span><strong>Time:</strong> ${formattedTime}</span>
+            </div>
+            <div style="font-size: 11px;"><strong>Date:</strong> ${formattedDate}</div>
+            ${order.customer_name ? `<div style="font-size: 11px;"><strong>Cust:</strong> ${order.customer_name} ${order.customer_phone ? `(${order.customer_phone})` : ""}</div>` : ""}
+
+            <div class="divider"></div>
+            <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">ITEM & PORTIONS</div>
+            <div class="dashed-divider"></div>
+
+            ${itemsHtml}
+
+            ${order.customer_notes ? `
+                <div style="margin-top: 6px; padding: 4px; border: 1px solid #000; font-size: 12px;">
+                    <strong>CUSTOMER SPECIAL INSTRUCTION:</strong><br/>
+                    ${order.customer_notes}
+                </div>
+            ` : ""}
+
+            <div class="divider"></div>
+            <div class="text-center" style="font-size: 11px; margin-top: 8px;">
+                *** END OF KOT (#${order.order_number}) ***
+            </div>
+        </body>
+        </html>
+    `;
+
+    triggerBrowserPrint(kotHtml);
+}
+
+/**
+ * Print Customer POS Bill / Tax Invoice
+ */
+export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData | null) {
+    const formattedDate = order.created_at
+        ? new Date(order.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+        : new Date().toLocaleString("en-IN");
+
+    const subtotalRs = (order.subtotal_paise / 100).toFixed(2);
+    const discountRs = ((order.discount_paise || 0) / 100).toFixed(2);
+    const taxRs = (order.tax_paise / 100).toFixed(2);
+    const totalRs = (order.total_paise / 100).toFixed(2);
+    const isDelivery = order.order_type === "delivery";
+
+    let itemsRows = "";
+    order.items.forEach((it, idx) => {
+        const itemUnitPrice = ((it.unit_price_paise || (it.total_price_paise ? it.total_price_paise / it.qty : 0)) / 100).toFixed(2);
+        const itemTotalPrice = ((it.total_price_paise || 0) / 100).toFixed(2);
+        const addons = parseAddons(it.selected_addons_json);
+
+        itemsRows += `
+            <tr>
+                <td style="padding: 3px 0; vertical-align: top;">
+                    <div style="font-weight: bold;">${idx + 1}. ${it.item_name}</div>
+                    ${it.variant_name ? `<div style="font-size: 10px; color: #444;">▶ ${it.variant_name}</div>` : ""}
+                    ${addons.length > 0 ? `<div style="font-size: 10px; color: #444;">+ ${addons.join(", ")}</div>` : ""}
+                </td>
+                <td style="text-align: center; vertical-align: top; font-weight: bold;">${it.qty}</td>
+                <td style="text-align: right; vertical-align: top;">₹${itemUnitPrice}</td>
+                <td style="text-align: right; vertical-align: top; font-weight: bold;">₹${itemTotalPrice}</td>
+            </tr>
+        `;
+    });
+
+    const receiptHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Receipt - ${order.order_number}</title>
+            <style>
+                @page { margin: 0; size: 80mm auto; }
+                body {
+                    font-family: 'Courier New', Courier, monospace;
+                    width: 76mm;
+                    margin: 2mm auto;
+                    color: #000;
+                    background: #fff;
+                    font-size: 12px;
+                    line-height: 1.25;
+                }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .bold { font-weight: bold; }
+                .divider { border-top: 2px solid #000; margin: 5px 0; }
+                .dashed-divider { border-top: 1px dashed #000; margin: 5px 0; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th { border-bottom: 1px solid #000; padding: 4px 0; font-size: 10px; }
+            </style>
+        </head>
+        <body>
+            <div class="text-center bold" style="font-size: 16px; letter-spacing: 1px;">
+                ${(outlet?.name || "ARABIEQ RESTAURANT").toUpperCase()}
+            </div>
+            <div class="text-center" style="font-size: 10px; margin-top: 2px;">
+                ${outlet?.address || "Main Bazaar Road, Kadiri - 515591"}
+            </div>
+            ${outlet?.phone ? `<div class="text-center" style="font-size: 10px;">Ph: ${outlet.phone}</div>` : ""}
+            
+            <div class="divider"></div>
+            <div class="text-center bold" style="font-size: 13px;">TAX INVOICE / CASH BILL</div>
+            <div class="dashed-divider"></div>
+
+            <div style="font-size: 11px;">
+                <div><strong>Bill No:</strong> #${order.order_number}</div>
+                <div><strong>Date/Time:</strong> ${formattedDate}</div>
+                <div><strong>Type:</strong> ${isDelivery ? "🛵 Home Delivery" : `🍽️ Dine-in Table ${order.table_label || "1"}`}</div>
+                ${order.customer_name ? `<div><strong>Customer:</strong> ${order.customer_name} (${order.customer_phone || ""})</div>` : ""}
+                ${isDelivery && order.delivery_address ? `<div style="font-size: 10px; margin-top: 2px;"><strong>Address:</strong> ${order.delivery_address}</div>` : ""}
+            </div>
+
+            <div class="divider"></div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">ITEM</th>
+                        <th style="text-align: center;">QTY</th>
+                        <th style="text-align: right;">RATE</th>
+                        <th style="text-align: right;">AMT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsRows}
+                </tbody>
+            </table>
+
+            <div class="dashed-divider"></div>
+
+            <table style="font-size: 11px;">
+                <tr>
+                    <td>Item Subtotal:</td>
+                    <td class="text-right">₹${subtotalRs}</td>
+                </tr>
+                ${(order.discount_paise || 0) > 0 ? `
+                <tr style="font-weight: bold;">
+                    <td>Coupon Discount (${order.coupon_code || "PROMO"}):</td>
+                    <td class="text-right">-₹${discountRs}</td>
+                </tr>
+                ` : ""}
+                <tr>
+                    <td>GST / Tax (${outlet?.tax_rate_percent || 5}%):</td>
+                    <td class="text-right">₹${taxRs}</td>
+                </tr>
+                ${isDelivery ? `
+                <tr>
+                    <td>Delivery Charges:</td>
+                    <td class="text-right">FREE</td>
+                </tr>
+                ` : ""}
+                <tr style="font-size: 14px; font-weight: 900; border-top: 1px solid #000; border-bottom: 1px solid #000;">
+                    <td style="padding: 4px 0;">NET PAYABLE:</td>
+                    <td class="text-right" style="padding: 4px 0;">₹${totalRs}</td>
+                </tr>
+            </table>
+
+            <div style="margin-top: 6px; font-size: 11px;">
+                <div><strong>Payment:</strong> ${(order.payment_method || "COD").toUpperCase()} (${(order.payment_status || "PENDING").toUpperCase()})</div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="text-center" style="font-size: 10px; margin-top: 6px;">
+                Thank you for dining with Arabieq!<br/>
+                Visit Again & Enjoy Authentic Mandi & Chai.<br/>
+                <em>Order Online: arabic-restaurant-dineos.vercel.app</em>
+            </div>
+        </body>
+        </html>
+    `;
+
+    triggerBrowserPrint(receiptHtml);
+}
+
+function triggerBrowserPrint(htmlContent: string) {
+    const printFrame = document.createElement("iframe");
+    printFrame.style.position = "fixed";
+    printFrame.style.right = "0";
+    printFrame.style.bottom = "0";
+    printFrame.style.width = "0";
+    printFrame.style.height = "0";
+    printFrame.style.border = "0";
+    document.body.appendChild(printFrame);
+
+    const doc = printFrame.contentWindow?.document;
+    if (doc) {
+        doc.open();
+        doc.write(htmlContent);
+        doc.close();
+        setTimeout(() => {
+            printFrame.contentWindow?.focus();
+            printFrame.contentWindow?.print();
+            setTimeout(() => {
+                document.body.removeChild(printFrame);
+            }, 1000);
+        }, 300);
+    }
+}

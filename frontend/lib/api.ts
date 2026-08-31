@@ -243,4 +243,14 @@ export const api = {
         apiFetch("/api/customer/orders"),
     getReorderPayload: (orderId: number) =>
         apiFetch(`/api/customer/reorder/${orderId}`),
+
+    // Promo Codes & Coupons
+    validateCoupon: (data: { code: string; subtotal_paise: number; outlet_id?: number }) =>
+        apiFetch("/api/coupons/validate", { method: "POST", body: JSON.stringify(data) }),
+    getCoupons: (outletId?: number) =>
+        apiFetch("/api/coupons", { params: outletId ? { outlet_id: outletId } : undefined }),
+    createCoupon: (data: any) =>
+        apiFetch("/api/coupons", { method: "POST", body: JSON.stringify(data) }),
+    deleteCoupon: (id: number) =>
+        apiFetch(`/api/coupons/${id}`, { method: "DELETE" }),
 };

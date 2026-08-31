@@ -1,5 +1,10 @@
 "use client";
 
+import { printPOSReceipt } from "@/lib/thermalPrint";
+import { dispatchCustomerWhatsApp } from "@/lib/whatsapp";
+import { Printer, MessageCircle } from "lucide-react";
+
+
 import { useOutlet } from "@/context/OutletContext";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -340,8 +345,9 @@ export default function AdminPaymentsPage() {
                                         <th className="py-3 px-4">Method</th>
                                         <th className="py-3 px-4">Amount (₹)</th>
                                         <th className="py-3 px-4">Status</th>
-                                        <th className="py-3 px-4">Payment Reference / Notes</th>
+                                        <th className="py-3 px-4">Payment Notes</th>
                                         <th className="py-3 px-4 text-right">Timestamp</th>
+                                        <th className="py-3 px-4 text-center">Receipts</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-cream-100">
@@ -411,6 +417,22 @@ export default function AdminPaymentsPage() {
 
                                                 <td className="py-3.5 px-4 text-right text-espresso-500 font-medium">
                                                     {formatDateTime(p.created_at)}
+                                                </td>
+                                                <td className="py-3.5 px-4 text-center">
+                                                    <button
+                                                        onClick={() => {
+                                                            const matchOrder = orders.find(o => o.id === p.order_id);
+                                                            if (matchOrder) {
+                                                                printPOSReceipt(matchOrder, outlet);
+                                                            } else {
+                                                                toast.info("Loading order details...");
+                                                            }
+                                                        }}
+                                                        className="p-1.5 rounded-lg bg-cream-100 hover:bg-cream-200 text-espresso-800 transition cursor-pointer"
+                                                        title="Print POS Thermal Bill"
+                                                    >
+                                                        <Printer className="w-3.5 h-3.5" />
+                                                    </button>
                                                 </td>
                                             </tr>
                                         );

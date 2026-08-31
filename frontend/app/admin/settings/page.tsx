@@ -9,7 +9,7 @@ import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/api";
 import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 import { 
-    Settings, Store, MapPin, Phone, IndianRupee, Clock, Tag, Save, Shield 
+    Settings, Store, MapPin, Phone, IndianRupee, Clock, Tag, Save, Shield, Sparkles, Plus, Trash2, Percent, CheckCircle2 
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -18,6 +18,75 @@ export default function SettingsPage() {
     const toast = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
+    
+    // Coupons State
+    const [coupons, setCoupons] = useState<any[]>([]);
+    const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
+    const [showNewCouponModal, setShowNewCouponModal] = useState(false);
+    const [newCoupon, setNewCoupon] = useState({
+        code: "",
+        description: "",
+        discount_type: "flat",
+        discount_value: 50,
+        min_order: 250,
+        max_discount: 100,
+        usage_limit: 100,
+    });
+
+    const fetchCoupons = async () => {
+        setIsLoadingCoupons(true);
+        try {
+            const list = await api.getCoupons(outlet?.id);
+            setCoupons(list);
+        } catch {
+            // Ignore error
+        } finally {
+            setIsLoadingCoupons(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCoupons();
+    }, [outlet?.id]);
+
+    const handleCreateCoupon = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newCoupon.code.trim()) {
+            toast.error("Please enter a valid coupon code");
+            return;
+        }
+
+        try {
+            await api.createCoupon({
+                outlet_id: outlet?.id,
+                code: newCoupon.code.trim().toUpperCase(),
+                description: newCoupon.description.trim() || undefined,
+                discount_type: newCoupon.discount_type,
+                discount_value: newCoupon.discount_type === "flat" ? Math.round(newCoupon.discount_value * 100) : newCoupon.discount_value,
+                min_order_paise: Math.round(newCoupon.min_order * 100),
+                max_discount_paise: newCoupon.discount_type === "percent" ? Math.round(newCoupon.max_discount * 100) : undefined,
+                usage_limit: newCoupon.usage_limit || undefined,
+                is_active: true,
+            });
+            toast.success(`Coupon ${newCoupon.code.toUpperCase()} created successfully!`);
+            setShowNewCouponModal(false);
+            setNewCoupon({ code: "", description: "", discount_type: "flat", discount_value: 50, min_order: 250, max_discount: 100, usage_limit: 100 });
+            fetchCoupons();
+        } catch (err: any) {
+            toast.error(err.message || "Failed to create coupon");
+        }
+    };
+
+    const handleDeleteCoupon = async (id: number, code: string) => {
+        if (!confirm(`Are you sure you want to deactivate coupon ${code}?`)) return;
+        try {
+            await api.deleteCoupon(id);
+            toast.success(`Coupon ${code} deactivated.`);
+            fetchCoupons();
+        } catch (err: any) {
+            toast.error(err.message || "Failed to deactivate coupon");
+        }
+    };
 
     const [formData, setFormData] = useState({
         name: "",
@@ -114,7 +183,8 @@ export default function SettingsPage() {
                                 <div className="w-8 h-8 border-4 border-terracotta-200 border-t-terracotta-500 rounded-full animate-spin"></div>
                             </div>
                         ) : (
-                            <form onSubmit={handleSave} className="space-y-6">
+                            <>
+                                <form onSubmit={handleSave} className="space-y-6">
                                 {/* Basic Info */}
                                 <div className="bg-white rounded-2xl shadow-sm border border-espresso-100 overflow-hidden">
                                     <div className="bg-espresso-50 p-4 border-b border-espresso-100 flex items-center gap-2">
@@ -295,18 +365,193 @@ export default function SettingsPage() {
                                         <button
                                             type="submit"
                                             disabled={isSaving}
-                                            className="flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-white px-8 py-3 rounded-xl font-bold shadow-md shadow-terracotta-600/20 transition-all active:scale-95 disabled:opacity-70"
+                                            className="flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-white px-8 py-3 rounded-xl font-bold shadow-md shadow-terracotta-600/20 transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
                                         >
                                             {isSaving ? (
                                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                             ) : (
                                                 <Save className="w-5 h-5" />
                                             )}
-                                            {isSaving ? "Saving..." : "Save Changes"}
+                                            {isSaving ? "Saving..." : "Save Settings"}
                                         </button>
                                     </div>
                                 )}
                             </form>
+
+                            {/* PROMO CODES & DISCOUNT COUPON MANAGER */}
+                            <div className="mt-10 bg-white rounded-2xl shadow-sm border border-espresso-100 overflow-hidden">
+                                <div className="bg-espresso-50 p-4 border-b border-espresso-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Tag className="w-5 h-5 text-amber-600" />
+                                        <h2 className="font-bold text-espresso-900">Promo Codes & Discount Coupons ({coupons.length})</h2>
+                                    </div>
+                                    {isOwner && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewCouponModal(true)}
+                                            className="px-3 py-1.5 rounded-xl bg-espresso-900 hover:bg-black text-amber-400 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            <span>Create Coupon</span>
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="p-6">
+                                    {coupons.length === 0 ? (
+                                        <p className="text-sm text-espresso-400 text-center py-6">No promo codes created yet.</p>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {coupons.map((c) => (
+                                                <div
+                                                    key={c.id}
+                                                    className={`p-4 rounded-2xl border flex flex-col justify-between transition ${
+                                                        c.is_active
+                                                            ? "bg-amber-50/50 border-amber-200"
+                                                            : "bg-gray-50 border-gray-200 opacity-60"
+                                                    }`}
+                                                >
+                                                    <div>
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-black font-mono font-black text-sm tracking-wider">
+                                                                {c.code}
+                                                            </span>
+                                                            <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                                                                {c.discount_type === "percent" ? `${c.discount_value}% OFF` : `₹${(c.discount_value/100).toFixed(0)} FLAT OFF`}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs font-semibold text-espresso-800 mb-1">{c.description || "Promo discount"}</p>
+                                                        <div className="text-[11px] text-espresso-500 space-y-0.5">
+                                                            <div>Min Order: ₹{(c.min_order_paise/100).toFixed(0)}</div>
+                                                            {c.max_discount_paise && <div>Max Cap: ₹{(c.max_discount_paise/100).toFixed(0)}</div>}
+                                                            <div>Times Used: <strong>{c.times_used}</strong> {c.usage_limit ? `/ ${c.usage_limit}` : ""}</div>
+                                                        </div>
+                                                    </div>
+
+                                                    {isOwner && c.is_active && (
+                                                        <div className="pt-3 mt-3 border-t border-amber-200/60 flex justify-end">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteCoupon(c.id, c.code)}
+                                                                className="text-xs text-red-600 font-bold hover:text-red-800 flex items-center gap-1 cursor-pointer"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                <span>Deactivate</span>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Create Coupon Modal */}
+                            {showNewCouponModal && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+                                    <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-cream-200">
+                                        <h3 className="text-lg font-black text-espresso-950 mb-4 flex items-center gap-2">
+                                            <Sparkles className="w-5 h-5 text-amber-500" />
+                                            <span>Create New Promo Coupon</span>
+                                        </h3>
+
+                                        <form onSubmit={handleCreateCoupon} className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1">Coupon Code *</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. MANDI20, WELCOME50"
+                                                    value={newCoupon.code}
+                                                    onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
+                                                    required
+                                                    className="w-full px-3 py-2 rounded-xl border border-cream-300 font-mono font-bold uppercase text-sm focus:outline-none focus:border-amber-500"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1">Description</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Flat ₹50 OFF on Kadiri Deliveries"
+                                                    value={newCoupon.description}
+                                                    onChange={(e) => setNewCoupon({ ...newCoupon, description: e.target.value })}
+                                                    className="w-full px-3 py-2 rounded-xl border border-cream-300 text-xs focus:outline-none focus:border-amber-500"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1">Discount Type</label>
+                                                    <select
+                                                        value={newCoupon.discount_type}
+                                                        onChange={(e) => setNewCoupon({ ...newCoupon, discount_type: e.target.value })}
+                                                        className="w-full px-3 py-2 rounded-xl border border-cream-300 text-xs font-bold"
+                                                    >
+                                                        <option value="flat">Flat ₹ (Rupees)</option>
+                                                        <option value="percent">Percentage %</option>
+                                                    </select>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1">
+                                                        {newCoupon.discount_type === "flat" ? "Discount (₹)" : "Discount (%)"}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={newCoupon.discount_value}
+                                                        onChange={(e) => setNewCoupon({ ...newCoupon, discount_value: parseFloat(e.target.value) || 0 })}
+                                                        required
+                                                        min={1}
+                                                        className="w-full px-3 py-2 rounded-xl border border-cream-300 font-bold text-xs"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1">Min Order (₹)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={newCoupon.min_order}
+                                                        onChange={(e) => setNewCoupon({ ...newCoupon, min_order: parseFloat(e.target.value) || 0 })}
+                                                        min={0}
+                                                        className="w-full px-3 py-2 rounded-xl border border-cream-300 font-bold text-xs"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1">Usage Limit</label>
+                                                    <input
+                                                        type="number"
+                                                        value={newCoupon.usage_limit}
+                                                        onChange={(e) => setNewCoupon({ ...newCoupon, usage_limit: parseInt(e.target.value) || 100 })}
+                                                        min={1}
+                                                        className="w-full px-3 py-2 rounded-xl border border-cream-300 font-bold text-xs"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-cream-200">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowNewCouponModal(false)}
+                                                    className="px-4 py-2 rounded-xl border border-cream-300 text-espresso-700 text-xs font-bold hover:bg-cream-100 cursor-pointer"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-md cursor-pointer"
+                                                >
+                                                    Save & Publish Coupon
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+                            </>
                         )}
                     </div>
                 </div>

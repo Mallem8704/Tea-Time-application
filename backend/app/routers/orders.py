@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import Order, OrderItem, MenuItem, MenuItemVariant, MenuItemAddon, CafeTable, Outlet, StockLog, User
+from app.models import Order, OrderItem, MenuItem, MenuItemVariant, MenuItemAddon, CafeTable, Outlet, StockLog, User, Coupon
 from app.schemas import OrderCreate, OrderStatusUpdate, OrderOut, OrderItemOut
 from app.routers.auth import require_staff_or_owner
 from app.routers.ws import manager
@@ -247,9 +247,28 @@ async def create_order(
             "notes": item_req.notes.strip() if item_req.notes else None,
         })
 
+    # Coupon Discount Calculation
+    discount_paise = 0
+    applied_coupon = None
+    if data.coupon_code:
+        code_clean = data.coupon_code.strip().upper()
+        coupon = db.query(Coupon).filter(Coupon.code == code_clean, Coupon.is_active == True).first()
+        if coupon and subtotal_paise >= coupon.min_order_paise:
+            if not coupon.usage_limit or coupon.times_used < coupon.usage_limit:
+                if coupon.discount_type == "percent":
+                    computed_discount = int(round((subtotal_paise * coupon.discount_value) / 100))
+                    if coupon.max_discount_paise and computed_discount > coupon.max_discount_paise:
+                        computed_discount = coupon.max_discount_paise
+                else:
+                    computed_discount = min(coupon.discount_value, subtotal_paise)
+                discount_paise = computed_discount
+                applied_coupon = coupon
+                coupon.times_used += 1
+
     # Financial Calculations in Paise (Free Delivery = 0 delivery fee)
-    tax_paise = int(round(subtotal_paise * (tax_rate / 100.0)))
-    total_paise = subtotal_paise + tax_paise
+    discounted_subtotal = max(0, subtotal_paise - discount_paise)
+    tax_paise = int(round(discounted_subtotal * (tax_rate / 100.0)))
+    total_paise = discounted_subtotal + tax_paise
 
     # Create Order record with Idempotency Key
     new_order = Order(
@@ -266,6 +285,9 @@ async def create_order(
         status="placed",
         subtotal_paise=subtotal_paise,
         tax_paise=tax_paise,
+        discount_paise=discount_paise,
+        coupon_code=applied_coupon.code if applied_coupon else None,
+        coupon_id=applied_coupon.id if applied_coupon else None,
         total_paise=total_paise,
         payment_status="pending",
         payment_method=data.payment_method or ("cod" if order_type == "delivery" else "counter"),

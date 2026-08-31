@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Trash2, Plus, Minus, CreditCard, Banknote, ShoppingBag, ArrowRight } from "lucide-react";
+import { X, Trash2, Plus, Minus, CreditCard, Banknote, ShoppingBag, ArrowRight, Tag, Check, Sparkles, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api";
 import { formatRupees } from "@/lib/formatters";
 import { useLanguage } from "@/context/LanguageContext";
 import { useOutlet } from "@/context/OutletContext";
@@ -48,12 +49,41 @@ export function CartDrawer({
     const { taxRate, outlet } = useOutlet();
     const [customerNotes, setCustomerNotes] = useState("");
     const [selectedPayment, setSelectedPayment] = useState<"counter" | "upi">("counter");
+    const [couponInput, setCouponInput] = useState("");
+    const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_paise: number; message: string } | null>(null);
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+    const [couponError, setCouponError] = useState<string | null>(null);
 
     if (!isOpen) return null;
 
     const subtotalPaise = items.reduce((acc, it) => acc + it.price_paise * it.qty, 0);
-    const taxPaise = Math.round(subtotalPaise * taxRate);
-    const totalPaise = subtotalPaise + taxPaise;
+    const discountPaise = appliedCoupon ? appliedCoupon.discount_paise : 0;
+    const discountedSubtotal = Math.max(0, subtotalPaise - discountPaise);
+    const taxPaise = Math.round(discountedSubtotal * taxRate);
+    const totalPaise = discountedSubtotal + taxPaise;
+
+    const handleApplyCoupon = async () => {
+        if (!couponInput.trim()) return;
+        setIsValidatingCoupon(true);
+        setCouponError(null);
+        try {
+            const res = await api.validateCoupon({
+                code: couponInput.trim(),
+                subtotal_paise: subtotalPaise,
+                outlet_id: outlet?.id,
+            });
+            setAppliedCoupon({
+                code: res.code,
+                discount_paise: res.discount_paise,
+                message: res.message,
+            });
+        } catch (err: any) {
+            setCouponError(err.message || "Invalid coupon code");
+            setAppliedCoupon(null);
+        } finally {
+            setIsValidatingCoupon(false);
+        }
+    };
 
     const handleCheckoutSubmit = async () => {
         if (items.length === 0) return;
@@ -195,12 +225,74 @@ export function CartDrawer({
                 {/* Footer / Summary & Checkout */}
                 {items.length > 0 && (
                     <div className="p-6 border-t border-cream-200 bg-cream-50/80 space-y-4">
+                        {/* Promo Code Input */}
+                        <div className="p-3 rounded-2xl bg-cream-100/70 border border-cream-300 space-y-2">
+                            <div className="flex items-center justify-between text-xs font-bold text-espresso-800">
+                                <span className="flex items-center gap-1.5">
+                                    <Tag className="w-3.5 h-3.5 text-amber-600" />
+                                    <span>Have a Promo Code?</span>
+                                </span>
+                                {appliedCoupon && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAppliedCoupon(null); setCouponInput(""); }}
+                                        className="text-[10px] text-red-600 font-extrabold hover:underline"
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
+
+                            {!appliedCoupon ? (
+                                <div className="flex gap-1.5">
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. WELCOME50, MANDI10"
+                                        value={couponInput}
+                                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                        className="flex-1 px-3 py-1.5 rounded-xl border border-cream-300 bg-white font-mono uppercase text-xs text-espresso-950 focus:outline-none focus:border-amber-500"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleApplyCoupon}
+                                        disabled={isValidatingCoupon || !couponInput.trim()}
+                                        className="px-3 py-1.5 rounded-xl bg-espresso-900 hover:bg-black text-amber-400 font-extrabold text-xs disabled:opacity-50 cursor-pointer"
+                                    >
+                                        {isValidatingCoupon ? "..." : "Apply"}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center justify-between">
+                                    <span className="flex items-center gap-1">
+                                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>Code &apos;{appliedCoupon.code}&apos; Applied!</span>
+                                    </span>
+                                    <span className="font-mono text-emerald-700 font-extrabold">
+                                        -{formatRupees(appliedCoupon.discount_paise)}
+                                    </span>
+                                </div>
+                            )}
+
+                            {couponError && (
+                                <p className="text-[10px] text-red-600 font-bold flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    <span>{couponError}</span>
+                                </p>
+                            )}
+                        </div>
+
                         {/* Financial Math */}
                         <div className="space-y-1.5 text-xs text-espresso-700">
                             <div className="flex justify-between">
                                 <span>{t("subtotal")}</span>
                                 <span className="font-semibold text-espresso-950">{formatRupees(subtotalPaise)}</span>
                             </div>
+                            {appliedCoupon && (
+                                <div className="flex justify-between text-emerald-700 font-bold">
+                                    <span>Coupon Discount ({appliedCoupon.code})</span>
+                                    <span>-{formatRupees(appliedCoupon.discount_paise)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between">
                                 <span>GST ({outlet?.tax_rate_percent || 5}%)</span>
                                 <span className="font-semibold text-espresso-950">{formatRupees(taxPaise)}</span>

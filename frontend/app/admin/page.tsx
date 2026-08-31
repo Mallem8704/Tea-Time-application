@@ -25,6 +25,8 @@ import {
     User,
     Store,
     PhoneCall,
+    Printer,
+    MessageCircle,
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -33,6 +35,8 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
+import { printKOT, printPOSReceipt } from "@/lib/thermalPrint";
+import { dispatchCustomerWhatsApp } from "@/lib/whatsapp";
 import { useAdminSocket } from "@/hooks/useSockets";
 import { formatRupees, formatRelativeTime, formatTimeOnly } from "@/lib/formatters";
 import { soundManager } from "@/lib/sound";
@@ -450,6 +454,38 @@ export default function AdminLiveOrdersKanbanPage() {
                                                                 Note: {order.customer_notes}
                                                             </div>
                                                         )}
+
+                                                        {/* Thermal POS & WhatsApp Dispatch Strip */}
+                                                        <div className="flex items-center gap-1.5 py-1 px-1.5 rounded-xl bg-cream-50/80 border border-cream-200 text-[10px]">
+                                                            <button
+                                                                onClick={() => printKOT(order, outlet)}
+                                                                className="px-2 py-1 rounded-md bg-white border border-cream-300 hover:bg-cream-100 text-espresso-800 font-bold flex items-center gap-1 transition cursor-pointer"
+                                                                title="Print Kitchen Order Ticket (KOT)"
+                                                            >
+                                                                <Printer className="w-2.5 h-2.5 text-amber-600" />
+                                                                <span>KOT</span>
+                                                            </button>
+
+                                                            <button
+                                                                onClick={() => printPOSReceipt(order, outlet)}
+                                                                className="px-2 py-1 rounded-md bg-white border border-cream-300 hover:bg-cream-100 text-espresso-800 font-bold flex items-center gap-1 transition cursor-pointer"
+                                                                title="Print Customer Tax Invoice / Bill"
+                                                            >
+                                                                <Printer className="w-2.5 h-2.5 text-emerald-600" />
+                                                                <span>Bill</span>
+                                                            </button>
+
+                                                            {order.order_type === "delivery" && order.customer_phone && (
+                                                                <button
+                                                                    onClick={() => dispatchCustomerWhatsApp(order, outlet)}
+                                                                    className="px-2 py-1 rounded-md bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 text-emerald-900 font-bold flex items-center gap-1 transition cursor-pointer ml-auto"
+                                                                    title="Send WhatsApp Confirmation & Live Tracking"
+                                                                >
+                                                                    <MessageCircle className="w-2.5 h-2.5 text-emerald-600" />
+                                                                    <span>WhatsApp</span>
+                                                                </button>
+                                                            )}
+                                                        </div>
 
                                                         {/* Financial & Payment Row */}
                                                         <div className="pt-2 border-t border-cream-100 flex items-center justify-between text-xs">

@@ -1,5 +1,8 @@
 "use client";
 
+import { TableQRBatchModal } from "@/components/admin/TableQRBatchModal";
+
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -39,6 +42,7 @@ export default function AdminTablesPage() {
 
     // Modals
     const [selectedTableForQr, setSelectedTableForQr] = useState<any | null>(null);
+    const [isQRBatchModalOpen, setIsQRBatchModalOpen] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newTableLabel, setNewTableLabel] = useState("");
     const [editingTable, setEditingTable] = useState<any | null>(null);
@@ -372,7 +376,12 @@ export default function AdminTablesPage() {
                             })}
                         </div>
                     )}
-                </main>
+                    <TableQRBatchModal
+                isOpen={isQRBatchModalOpen}
+                onClose={() => setIsQRBatchModalOpen(false)}
+                tables={tables}
+            />
+        </main>
 
                 {/* ADD TABLE MODAL */}
                 {showAddModal && (

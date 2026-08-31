@@ -283,6 +283,7 @@ class OrderCreate(BaseModel):
     customer_phone: Optional[str] = Field(None, max_length=20)
     delivery_address: Optional[str] = Field(None, max_length=1000)
     delivery_status: Optional[str] = "pending"
+    coupon_code: Optional[str] = Field(None, max_length=50)
     items: List[OrderItemCreate] = Field(..., min_length=1)
     customer_notes: Optional[str] = Field(None, max_length=500)
     payment_method: str = "counter"  # 'upi', 'card', 'cash', 'counter', 'cod'
@@ -310,6 +311,8 @@ class OrderOut(BaseModel):
     status: str
     subtotal_paise: int
     tax_paise: int
+    discount_paise: int = 0
+    coupon_code: Optional[str] = None
     total_paise: int
     payment_status: str
     payment_method: str
@@ -494,4 +497,53 @@ class CustomerAuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     customer: CustomerOut
+
+
+# ==========================================
+# COUPON / PROMO CODE SCHEMAS
+# ==========================================
+
+class CouponCreate(BaseModel):
+    outlet_id: Optional[int] = None
+    code: str = Field(..., min_length=2, max_length=50, description="Coupon Code e.g. WELCOME50")
+    description: Optional[str] = None
+    discount_type: str = "flat"  # 'flat' (paise) or 'percent'
+    discount_value: int = Field(..., gt=0, description="Discount in paise (e.g. 5000 = ₹50) or percent (e.g. 10 = 10%)")
+    min_order_paise: int = Field(default=0, ge=0)
+    max_discount_paise: Optional[int] = None
+    usage_limit: Optional[int] = None
+    is_active: bool = True
+
+
+class CouponOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    outlet_id: Optional[int] = None
+    code: str
+    description: Optional[str] = None
+    discount_type: str
+    discount_value: int
+    min_order_paise: int
+    max_discount_paise: Optional[int] = None
+    usage_limit: Optional[int] = None
+    times_used: int
+    is_active: bool
+    created_at: datetime.datetime
+
+
+class CouponValidateReq(BaseModel):
+    code: str
+    subtotal_paise: int
+    outlet_id: Optional[int] = None
+
+
+class CouponValidateResponse(BaseModel):
+    valid: bool
+    code: str
+    discount_type: str
+    discount_value: int
+    discount_paise: int
+    message: str
+
 

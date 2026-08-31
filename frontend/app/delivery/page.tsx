@@ -1,5 +1,9 @@
 "use client";
 
+import { printPOSReceipt } from "@/lib/thermalPrint";
+import { dispatchCustomerWhatsApp } from "@/lib/whatsapp";
+
+
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -168,6 +172,9 @@ function DeliveryOrderContent() {
 
     // Checkout Form state
     const [customerName, setCustomerName] = useState("");
+    const [couponCodeInput, setCouponCodeInput] = useState("");
+    const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_paise: number; message: string } | null>(null);
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
     const [customerPhone, setCustomerPhone] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
     const [landmark, setLandmark] = useState("");
@@ -414,6 +421,7 @@ function DeliveryOrderContent() {
                 customer_phone: phoneClean,
                 delivery_address: fullAddress,
                 customer_notes: cookingNotes.trim() || undefined,
+                coupon_code: appliedCoupon?.code,
                 payment_method: paymentMethod,
                 items: cart.map((ci) => ({
                     item_id: ci.item.id,

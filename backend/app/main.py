@@ -18,6 +18,7 @@ from app.routers import (
     audit,
     outlets,
     customers,
+    coupons,
 )
 
 # Initialize database schema tables
@@ -105,12 +106,49 @@ def on_startup():
                 created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );""",
             "CREATE INDEX IF NOT EXISTS ix_customer_otps_phone ON customer_otps(phone);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_paise INTEGER DEFAULT 0;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(50);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_id INTEGER;",
+            """CREATE TABLE IF NOT EXISTS coupons (
+                id SERIAL PRIMARY KEY,
+                outlet_id INTEGER REFERENCES outlets(id) ON DELETE SET NULL,
+                code VARCHAR(50) UNIQUE NOT NULL,
+                description VARCHAR(255),
+                discount_type VARCHAR(20) DEFAULT 'flat',
+                discount_value INTEGER NOT NULL,
+                min_order_paise INTEGER DEFAULT 0,
+                max_discount_paise INTEGER,
+                usage_limit INTEGER,
+                times_used INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );""",
+            "CREATE INDEX IF NOT EXISTS ix_coupons_code ON coupons(code);",
         ]
         for sql in migrations:
             try:
                 conn.execute(text(sql))
             except Exception as mig_err:
                 print(f"[MIGRATION] Note: {mig_err}")
+
+    # Seed Default Coupons
+    try:
+        from app.database import SessionLocal
+        from app.models import Coupon
+        db = SessionLocal()
+        default_coupons = [
+            {"code": "WELCOME50", "description": "Flat ₹50 OFF on Kadiri Deliveries above ₹250", "discount_type": "flat", "discount_value": 5000, "min_order_paise": 25000},
+            {"code": "MANDI10", "description": "10% OFF on Arabian Mandi & Biryani Orders (Up to ₹100)", "discount_type": "percent", "discount_value": 10, "min_order_paise": 30000, "max_discount_paise": 10000},
+            {"code": "ARABIEQ100", "description": "Flat ₹100 OFF on Family Feasts above ₹600", "discount_type": "flat", "discount_value": 10000, "min_order_paise": 60000},
+            {"code": "FREECHAI", "description": "Flat ₹20 OFF on Irani Chai & Snacks", "discount_type": "flat", "discount_value": 2000, "min_order_paise": 10000},
+        ]
+        for c_data in default_coupons:
+            if not db.query(Coupon).filter(Coupon.code == c_data["code"]).first():
+                db.add(Coupon(**c_data))
+        db.commit()
+        db.close()
+    except Exception as c_err:
+        print(f"[COUPON-SEED] Note: {c_err}")
 
     try:
         from app.seed import auto_seed_if_empty
@@ -349,6 +387,9 @@ app.include_router(outlets.router, prefix="/outlets", tags=["Outlet Settings (Al
 
 app.include_router(customers.router, prefix="/api/customer", tags=["Customer Auth & Orders"])
 app.include_router(customers.router, prefix="/customer", tags=["Customer Auth & Orders (Alias)"])
+
+app.include_router(coupons.router, prefix="/api/coupons", tags=["Promo Codes & Coupons"])
+app.include_router(coupons.router, prefix="/coupons", tags=["Promo Codes & Coupons (Alias)"])
 
 
 @app.get("/")

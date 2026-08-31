@@ -165,6 +165,9 @@ class Order(Base):
     status = Column(String(30), default="placed", index=True)  # 'placed', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'served', 'cancelled'
     subtotal_paise = Column(Integer, default=0)
     tax_paise = Column(Integer, default=0)
+    discount_paise = Column(Integer, default=0)  # Coupon discount
+    coupon_code = Column(String(50), nullable=True)
+    coupon_id = Column(Integer, ForeignKey("coupons.id", ondelete="SET NULL"), nullable=True)
     total_paise = Column(Integer, default=0)
     payment_status = Column(String(20), default="pending")  # 'pending', 'paid', 'failed'
     payment_method = Column(String(20), default="counter")  # 'upi', 'card', 'cash', 'counter', 'cod'
@@ -176,6 +179,7 @@ class Order(Base):
     table = relationship("CafeTable", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
+    coupon = relationship("Coupon", back_populates="orders")
 
 
 class OrderItem(Base):
@@ -293,4 +297,24 @@ class CustomerOTP(Base):
     is_used = Column(Boolean, default=False)
     attempts = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class Coupon(Base):
+    __tablename__ = "coupons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=True)  # Null = valid for all outlets
+    code = Column(String(50), unique=True, index=True, nullable=False)  # e.g., "WELCOME50", "MANDI10"
+    description = Column(String(255), nullable=True)  # e.g., "Flat ₹50 OFF on Kadiri Deliveries"
+    discount_type = Column(String(20), default="flat")  # 'flat' (paise) or 'percent'
+    discount_value = Column(Integer, nullable=False)  # e.g. 5000 (₹50) or 10 (10%)
+    min_order_paise = Column(Integer, default=0)  # e.g. 30000 (₹300)
+    max_discount_paise = Column(Integer, nullable=True)  # cap for percent discounts
+    usage_limit = Column(Integer, nullable=True)
+    times_used = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    orders = relationship("Order", back_populates="coupon")
+
 

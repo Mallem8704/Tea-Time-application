@@ -1,5 +1,9 @@
 "use client";
 
+import { printKOT } from "@/lib/thermalPrint";
+import { Printer } from "lucide-react";
+
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
