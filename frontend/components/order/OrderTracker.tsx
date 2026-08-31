@@ -27,7 +27,6 @@ import { useToast } from "@/context/ToastContext";
 import { useOrderSocket } from "@/hooks/useSockets";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
-import { openRazorpayCheckout } from "@/lib/razorpay";
 
 export interface OrderDetail {
     id: number;
@@ -80,7 +79,6 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
     const toast = useToast();
     const [order, setOrder] = useState<OrderDetail>(initialOrder);
     const [callingService, setCallingService] = useState<string | null>(null);
-    const [isPayingOnline, setIsPayingOnline] = useState(false);
     const [dynamicUpi, setDynamicUpi] = useState<any>(null);
     const [showUpiQr, setShowUpiQr] = useState(false);
     const [isBillRequested, setIsBillRequested] = useState(false);
@@ -122,32 +120,6 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
             toast.error(err.message || "Failed to notify staff");
         } finally {
             setCallingService(null);
-        }
-    };
-
-    const handlePayOnlineNow = async () => {
-        setIsPayingOnline(true);
-        try {
-            const rzpOrder = await api.createRazorpayOrder(order.id);
-            const paymentResult = await openRazorpayCheckout({
-                razorpayOrderId: rzpOrder.razorpay_order_id,
-                amountPaise: order.total_paise,
-                orderNumber: order.order_number,
-                outletName: outlet?.name || "Arabic Restaurant",
-                description: `Payment for Order ${order.order_number}`,
-            });
-            await api.verifyRazorpayPayment({
-                order_id: order.id,
-                razorpay_order_id: paymentResult.razorpay_order_id,
-                razorpay_payment_id: paymentResult.razorpay_payment_id,
-                razorpay_signature: paymentResult.razorpay_signature,
-            });
-            setOrder((prev) => ({ ...prev, payment_status: "paid", payment_method: "upi" }));
-            toast.success("Payment verified! Paid online via UPI.");
-        } catch (err: any) {
-            toast.error(err.message || "Online payment failed or cancelled");
-        } finally {
-            setIsPayingOnline(false);
         }
     };
 
@@ -405,16 +377,6 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                                     <QrCode className="w-3.5 h-3.5 text-amber-700" />
                                     <span>{showUpiQr ? "Hide QR" : "Show UPI QR"}</span>
                                 </button>
-
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    isLoading={isPayingOnline}
-                                    onClick={handlePayOnlineNow}
-                                    leftIcon={<CreditCard className="w-3.5 h-3.5" />}
-                                >
-                                    Cards / Netbanking
-                                </Button>
                             </div>
                         )}
                     </div>

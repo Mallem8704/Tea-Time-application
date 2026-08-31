@@ -18,6 +18,7 @@ import {
     Clock,
     CheckCircle2,
     Percent,
+    Smartphone,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatRupees } from "@/lib/formatters";
@@ -400,7 +401,7 @@ export function CartDrawer({
                             </div>
                         </div>
 
-                        {/* Payment Method Selector */}
+                        {/* Payment Preference Selector */}
                         <div>
                             <label className="block text-xs font-bold text-espresso-700 uppercase tracking-wider mb-1.5">
                                 {t("select_payment_method")}
@@ -412,11 +413,11 @@ export function CartDrawer({
                                     className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition cursor-pointer ${
                                         selectedPayment === "counter"
                                             ? "border-terracotta-500 bg-terracotta-50 text-terracotta-800 shadow-xs ring-1 ring-terracotta-400"
-                                             : "border-cream-300 bg-white text-espresso-700 hover:bg-cream-100"
+                                            : "border-cream-300 bg-white text-espresso-700 hover:bg-cream-100"
                                     }`}
                                 >
                                     <Banknote className="w-4 h-4" />
-                                    <span>{t("pay_at_counter")}</span>
+                                    <span>Pay at Table / Counter</span>
                                 </button>
 
                                 <button
@@ -428,8 +429,8 @@ export function CartDrawer({
                                             : "border-cream-300 bg-white text-espresso-700 hover:bg-cream-100"
                                     }`}
                                 >
-                                    <CreditCard className="w-4 h-4" />
-                                    <span>{t("pay_now_upi")}</span>
+                                    <Smartphone className="w-4 h-4 text-emerald-600" />
+                                    <span>Direct UPI (GPay/PhonePe)</span>
                                 </button>
                             </div>
                         </div>
@@ -443,9 +444,7 @@ export function CartDrawer({
                             onClick={handleCheckoutSubmit}
                             rightIcon={<ArrowRight className="w-4 h-4" />}
                         >
-                            {selectedPayment === "upi"
-                                ? `${t("pay_now_upi")} (${formatRupees(totalPaise)})`
-                                : `${t("place_order")} (${formatRupees(totalPaise)})`}
+                            {`🔥 Send KOT & Place Order (${formatRupees(totalPaise)})`}
                         </Button>
                     </div>
                 )}

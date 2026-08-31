@@ -33,7 +33,6 @@ import { useOffline } from "@/context/OfflineContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { api } from "@/lib/api";
 import { useOutlet } from "@/context/OutletContext";
-import { openRazorpayCheckout } from "@/lib/razorpay";
 import type { MenuItemData } from "@/components/order/MenuItemCard";
 import {
     DishCustomizerModal,
@@ -401,31 +400,6 @@ function CustomerOrderContent() {
                 );
             } else {
                 createdOrder = await api.createOrder(payload);
-            }
-
-            // If Pay Online, trigger Razorpay payment via SDK
-            if (paymentMethod === "upi") {
-                const rzpOrder = await api.createRazorpayOrder(createdOrder.id);
-                try {
-                    const paymentResult = await openRazorpayCheckout({
-                        razorpayOrderId: rzpOrder.razorpay_order_id,
-                        amountPaise: createdOrder.total_paise,
-                        orderNumber: createdOrder.order_number,
-                        outletName: outlet?.name || "Arabic Restaurant",
-                    });
-                    await api.verifyRazorpayPayment({
-                        order_id: createdOrder.id,
-                        razorpay_order_id: paymentResult.razorpay_order_id,
-                        razorpay_payment_id: paymentResult.razorpay_payment_id,
-                        razorpay_signature: paymentResult.razorpay_signature,
-                    });
-                    createdOrder.payment_status = "paid";
-                    createdOrder.payment_method = "upi";
-                } catch (payErr: any) {
-                    // Payment cancelled or failed — order still exists with "pending" payment
-                    toast.error(payErr.message || "Payment was not completed. You can pay at the counter.");
-                    createdOrder.payment_method = "counter";
-                }
             }
 
             // Clear Cart and Switch to Tracker
