@@ -122,12 +122,14 @@ def create_coupon(
     db.refresh(coupon)
 
     # Audit log
+    import json
     audit = AuditLog(
         outlet_id=target_outlet_id or current_user.outlet_id,
         user_id=current_user.id,
         action="create_coupon",
         entity_type="coupon",
-        details=f"Created promo code {code_clean} ({req.discount_type}: {req.discount_value})"
+        entity_id=coupon.id,
+        details_json=json.dumps({"code": code_clean, "discount_type": req.discount_type, "discount_value": req.discount_value})
     )
     db.add(audit)
     db.commit()
@@ -149,12 +151,14 @@ def delete_coupon(
     coupon.is_active = False
     db.commit()
 
+    import json
     audit = AuditLog(
         outlet_id=coupon.outlet_id or current_user.outlet_id,
         user_id=current_user.id,
         action="deactivate_coupon",
         entity_type="coupon",
-        details=f"Deactivated coupon {coupon.code}"
+        entity_id=coupon.id,
+        details_json=json.dumps({"code": coupon.code, "is_active": False})
     )
     db.add(audit)
     db.commit()
