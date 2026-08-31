@@ -10,10 +10,11 @@ from app.schemas import OrderCreate, OrderStatusUpdate, OrderOut, OrderItemOut
 from app.routers.auth import require_staff_or_owner
 from app.routers.ws import manager
 from app.audit_utils import log_audit
+from app.routers.outlets import get_effective_outlet_id
 
 router = APIRouter(prefix="", tags=["Orders"])
 
-VALID_STATUSES = ["placed", "accepted", "preparing", "ready", "served", "cancelled"]
+VALID_STATUSES = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered", "served", "cancelled"]
 
 
 def generate_order_number():
@@ -25,13 +26,26 @@ def generate_order_number():
 
 
 def format_order_response(order: Order) -> OrderOut:
-    """Helper to format Order model to OrderOut schema with table_label."""
-    table_label = order.table.label if order.table else f"T{order.table_id}"
+    """Helper to format Order model to OrderOut schema with table_label and delivery details."""
+    table_label = None
+    if order.table:
+        table_label = order.table.label
+    elif order.table_id:
+        table_label = f"T{order.table_id}"
+    elif order.order_type == "delivery":
+        table_label = "🛵 Delivery"
+
     return OrderOut(
         id=order.id,
         outlet_id=order.outlet_id,
         table_id=order.table_id,
         table_label=table_label,
+        order_type=order.order_type or "dine_in",
+        customer_name=order.customer_name,
+        customer_phone=order.customer_phone,
+        delivery_address=order.delivery_address,
+        delivery_status=order.delivery_status or "pending",
+        delivery_fee_paise=order.delivery_fee_paise or 0,
         order_number=order.order_number,
         status=order.status,
         subtotal_paise=order.subtotal_paise,
@@ -67,10 +81,10 @@ async def create_order(
     data: OrderCreate,
     db: Session = Depends(get_db),
 ):
-    """Place a new customer order.
+    """Place a new customer order (Dine-in Table or Swiggy/Zomato-style Free Delivery).
 
     Calculates subtotal, tax in paise, auto-deducts inventory for tracked items,
-    updates table occupancy, and broadcasts 'new_order' event to connected admin dashboards.
+    updates table occupancy (for dine-in), and broadcasts 'new_order' event to connected admin dashboards.
     """
     if not data.items:
         raise HTTPException(
@@ -78,16 +92,41 @@ async def create_order(
             detail="Order must contain at least one item",
         )
 
-    # 1. Verify Table exists
-    table = db.query(CafeTable).filter(CafeTable.id == data.table_id).first()
-    if not table:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Table with ID {data.table_id} does not exist",
-        )
+    order_type = (data.order_type or "dine_in").lower()
+    table = None
+    outlet_id = None
+
+    if order_type == "delivery":
+        # 1. Delivery order validations
+        if not data.customer_phone or not data.customer_phone.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Customer phone number is required for home delivery",
+            )
+        if not data.delivery_address or not data.delivery_address.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Delivery address is required for home delivery",
+            )
+
+        outlet_id = get_effective_outlet_id(data.outlet_id, db)
+    else:
+        # 1. Dine-in Table order validations
+        if not data.table_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Table ID is required for dine-in table ordering",
+            )
+        table = db.query(CafeTable).filter(CafeTable.id == data.table_id).first()
+        if not table:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Table with ID {data.table_id} does not exist",
+            )
+        outlet_id = table.outlet_id
 
     # 2. Fetch Outlet for tax calculation
-    outlet = db.query(Outlet).filter(Outlet.id == table.outlet_id).first()
+    outlet = db.query(Outlet).filter(Outlet.id == outlet_id).first()
     tax_rate = outlet.tax_rate_percent if outlet else 5
 
     order_number = generate_order_number()
@@ -105,14 +144,14 @@ async def create_order(
 
         menu_item = (
             db.query(MenuItem)
-            .filter(MenuItem.id == item_req.item_id, MenuItem.outlet_id == table.outlet_id)
+            .filter(MenuItem.id == item_req.item_id, MenuItem.outlet_id == outlet_id)
             .with_for_update()
             .first()
         )
         if not menu_item:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Menu item with ID {item_req.item_id} not found in this outlet",
+                detail=f"Menu item with ID {item_req.item_id} not found in this branch",
             )
 
         if not menu_item.is_available:
@@ -133,12 +172,13 @@ async def create_order(
             menu_item.stock_qty -= item_req.qty
 
             # Prepare stock deduction log
+            location_tag = table.label if table else "Delivery"
             stock_log = StockLog(
-                outlet_id=table.outlet_id,
+                outlet_id=outlet_id,
                 item_id=menu_item.id,
                 change_qty=-item_req.qty,
                 reason="sale",
-                notes=f"Order {order_number} ({table.label})",
+                notes=f"Order {order_number} ({location_tag})",
             )
             stock_logs_to_create.append(stock_log)
 
@@ -155,21 +195,27 @@ async def create_order(
             "notes": item_req.notes.strip() if item_req.notes else None,
         })
 
-    # 4. Financial Calculations in Paise
+    # 4. Financial Calculations in Paise (Free Delivery = 0 delivery fee)
     tax_paise = int(round(subtotal_paise * (tax_rate / 100.0)))
     total_paise = subtotal_paise + tax_paise
 
     # 5. Create Order record
     new_order = Order(
-        outlet_id=table.outlet_id,
-        table_id=table.id,
+        outlet_id=outlet_id,
+        table_id=table.id if table else None,
+        order_type=order_type,
+        customer_name=data.customer_name.strip() if data.customer_name else None,
+        customer_phone=data.customer_phone.strip() if data.customer_phone else None,
+        delivery_address=data.delivery_address.strip() if data.delivery_address else None,
+        delivery_status="pending" if order_type == "delivery" else None,
+        delivery_fee_paise=0,
         order_number=order_number,
         status="placed",
         subtotal_paise=subtotal_paise,
         tax_paise=tax_paise,
         total_paise=total_paise,
         payment_status="pending",
-        payment_method=data.payment_method or "counter",
+        payment_method=data.payment_method or ("cod" if order_type == "delivery" else "counter"),
         customer_notes=data.customer_notes.strip() if data.customer_notes else None,
     )
     db.add(new_order)
@@ -192,20 +238,22 @@ async def create_order(
     for s_log in stock_logs_to_create:
         db.add(s_log)
 
-    # 8. Update table status
-    table.status = "occupied"
-    table.active_order_id = new_order.id
+    # 8. Update table status if dine-in
+    if table:
+        table.status = "occupied"
+        table.active_order_id = new_order.id
 
     log_audit(
         db=db,
-        outlet_id=table.outlet_id,
+        outlet_id=outlet_id,
         user_id=None,  # Customer initiated
         action="place_order",
         entity_type="order",
         entity_id=new_order.id,
         details={
             "order_number": new_order.order_number,
-            "table": table.label,
+            "order_type": order_type,
+            "table": table.label if table else "DELIVERY",
             "items_count": len(order_items_to_create),
             "total_formatted": f"₹{total_paise / 100:.2f}",
         },
@@ -218,7 +266,7 @@ async def create_order(
 
     # Broadcast real-time event to Admin Dashboards
     await manager.broadcast_to_admin(
-        outlet_id=table.outlet_id,
+        outlet_id=outlet_id,
         event_type="new_order",
         data=formatted_response.model_dump(mode="json"),
     )
@@ -319,6 +367,7 @@ async def update_order_status(
 def list_orders(
     status: Optional[str] = Query(None, description="Filter by status (e.g. 'placed,preparing')"),
     table_id: Optional[int] = Query(None, description="Filter by table ID"),
+    order_type: Optional[str] = Query(None, description="Filter by order type ('dine_in' or 'delivery')"),
     payment_status: Optional[str] = Query(None, description="Filter by payment status"),
     date: Optional[str] = Query(None, description="Filter by date YYYY-MM-DD"),
     limit: int = Query(100, ge=1, le=500),
@@ -331,6 +380,9 @@ def list_orders(
         .options(joinedload(Order.items), joinedload(Order.table))
         .filter(Order.outlet_id == current_user.outlet_id)
     )
+
+    if order_type:
+        query = query.filter(Order.order_type == order_type.strip().lower())
 
     if status:
         status_list = [s.strip().lower() for s in status.split(",") if s.strip()]

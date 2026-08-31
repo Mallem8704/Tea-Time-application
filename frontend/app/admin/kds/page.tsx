@@ -15,6 +15,8 @@ import {
     Flame,
     ArrowRight,
     AlertTriangle,
+    Bike,
+    Truck,
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -240,9 +242,16 @@ export default function KitchenDisplaySystemPage() {
                                         <div>
                                             <div className="p-4 bg-espresso-800/90 border-b border-espresso-700 flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-base font-black px-3 py-1 rounded-xl bg-terracotta-500 text-white shadow-xs">
-                                                        Table {order.table_label || `T${order.table_id}`}
-                                                    </span>
+                                                    {order.order_type === "delivery" ? (
+                                                        <span className="text-sm font-black px-3 py-1 rounded-xl bg-cyan-600 text-white shadow-xs flex items-center gap-1">
+                                                            <Bike className="w-3.5 h-3.5" />
+                                                            DELIVERY PACKING
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-base font-black px-3 py-1 rounded-xl bg-terracotta-500 text-white shadow-xs">
+                                                            Table {order.table_label || `T${order.table_id}`}
+                                                        </span>
+                                                    )}
                                                     <span className="text-xs font-mono font-bold text-espresso-300">
                                                         #{order.order_number.slice(-6)}
                                                     </span>

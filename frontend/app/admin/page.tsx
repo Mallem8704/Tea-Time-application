@@ -18,6 +18,13 @@ import {
     Sparkle,
     Filter,
     RefreshCw,
+    Truck,
+    Bike,
+    Phone,
+    MapPin,
+    User,
+    Store,
+    PhoneCall,
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -51,6 +58,7 @@ export default function AdminLiveOrdersKanbanPage() {
     const [pendingServiceCalls, setPendingServiceCalls] = useState<any[]>([]);
     const [isLoadingOrders, setIsLoadingOrders] = useState<boolean>(true);
     const [animatingOrderId, setAnimatingOrderId] = useState<number | null>(null);
+    const [orderTypeFilter, setOrderTypeFilter] = useState<"all" | "dine_in" | "delivery">("all");
 
     // Auth Route Guard
     useEffect(() => {
@@ -89,7 +97,11 @@ export default function AdminLiveOrdersKanbanPage() {
             soundManager.playNewOrderChime();
             setOrders((prev) => [event.data, ...prev.filter((o) => o.id !== event.data.id)]);
             setAnimatingOrderId(event.data.id);
-            toast.success(`New Order #${event.data.order_number} placed at Table ${event.data.table_label}!`);
+            if (event.data.order_type === "delivery") {
+                toast.success(`🛵 New Delivery Order #${event.data.order_number} (${event.data.customer_name || "Customer"})!`);
+            } else {
+                toast.success(`🍽️ New Table Order #${event.data.order_number} at Table ${event.data.table_label}!`);
+            }
             setTimeout(() => setAnimatingOrderId(null), 4000);
         } else if ((event.event === "order_status_updated" || event.event === "order_updated") && event.data) {
             setOrders((prev) =>
@@ -130,13 +142,13 @@ export default function AdminLiveOrdersKanbanPage() {
     // Reconcile Cash Paid Handler
     const handleMarkCashPaid = async (orderId: number) => {
         try {
-            await api.markCashPaid(orderId, "Collected at counter");
+            await api.markCashPaid(orderId, "Collected at counter / on delivery");
             setOrders((prev) =>
                 prev.map((o) => (o.id === orderId ? { ...o, payment_status: "paid", payment_method: "cash" } : o))
             );
-            toast.success("Cash payment reconciled & marked as paid!");
+            toast.success("Payment marked as paid!");
         } catch (err: any) {
-            toast.error(err.message || "Failed to reconcile cash");
+            toast.error(err.message || "Failed to reconcile payment");
         }
     };
 
@@ -150,6 +162,10 @@ export default function AdminLiveOrdersKanbanPage() {
             toast.error("Failed to update service call");
         }
     };
+
+    // Filter counts
+    const dineInCount = orders.filter((o) => o.order_type !== "delivery").length;
+    const deliveryCount = orders.filter((o) => o.order_type === "delivery").length;
 
     if (authLoading || !isAuthenticated) {
         return (
@@ -205,30 +221,79 @@ export default function AdminLiveOrdersKanbanPage() {
 
                 {/* KANBAN BOARD CONTAINER */}
                 <main className="flex-1 overflow-x-auto overflow-y-hidden p-6 bg-cream-100 flex flex-col">
-                    <div className="flex items-center justify-between mb-4 shrink-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0">
                         <div>
-                            <h2 className="text-xl font-extrabold text-espresso-950 tracking-tight">
-                                Live Kitchen & Counter Kanban
+                            <h2 className="text-xl font-extrabold text-espresso-950 tracking-tight flex items-center gap-2">
+                                Live Kitchen & Dispatch Kanban
                             </h2>
                             <p className="text-xs text-espresso-600">
-                                Real-time order pipeline with 1-tap status progression and audio chimes.
+                                Real-time pipeline for Dine-in Tables & Free Home Delivery.
                             </p>
                         </div>
 
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
-                            onClick={fetchOrders}
-                        >
-                            Refresh
-                        </Button>
+                        {/* Order Type Filter Tabs */}
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center bg-white p-1 rounded-xl border border-cream-300 shadow-2xs">
+                                <button
+                                    onClick={() => setOrderTypeFilter("all")}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                                        orderTypeFilter === "all"
+                                            ? "bg-espresso-900 text-white"
+                                            : "text-espresso-600 hover:text-espresso-900"
+                                    }`}
+                                >
+                                    All ({orders.length})
+                                </button>
+                                <button
+                                    onClick={() => setOrderTypeFilter("dine_in")}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1 ${
+                                        orderTypeFilter === "dine_in"
+                                            ? "bg-amber-600 text-white"
+                                            : "text-espresso-600 hover:text-espresso-900"
+                                    }`}
+                                >
+                                    <Store className="w-3 h-3" />
+                                    Dine-in ({dineInCount})
+                                </button>
+                                <button
+                                    onClick={() => setOrderTypeFilter("delivery")}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1 ${
+                                        orderTypeFilter === "delivery"
+                                            ? "bg-cyan-600 text-white"
+                                            : "text-espresso-600 hover:text-espresso-900"
+                                    }`}
+                                >
+                                    <Bike className="w-3 h-3" />
+                                    Delivery ({deliveryCount})
+                                </button>
+                            </div>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+                                onClick={fetchOrders}
+                            >
+                                Refresh
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Columns Grid */}
                     <div className="flex-1 grid grid-cols-5 gap-4 min-w-[1100px] pb-2 overflow-hidden">
                         {KANBAN_COLUMNS.map((col) => {
-                            const columnOrders = orders.filter((o) => o.status === col.key);
+                            const columnOrders = orders.filter((o) => {
+                                if (orderTypeFilter === "dine_in" && o.order_type === "delivery") return false;
+                                if (orderTypeFilter === "delivery" && o.order_type !== "delivery") return false;
+
+                                if (col.key === "ready") {
+                                    return o.status === "ready" || o.status === "out_for_delivery";
+                                }
+                                if (col.key === "served") {
+                                    return o.status === "served" || o.status === "delivered";
+                                }
+                                return o.status === col.key;
+                            });
 
                             return (
                                 <div
@@ -267,6 +332,7 @@ export default function AdminLiveOrdersKanbanPage() {
                                         ) : (
                                             columnOrders.map((order) => {
                                                 const isFlash = animatingOrderId === order.id;
+                                                const isDelivery = order.order_type === "delivery";
 
                                                 return (
                                                     <div
@@ -274,23 +340,61 @@ export default function AdminLiveOrdersKanbanPage() {
                                                         className={`bg-white rounded-xl p-3.5 border shadow-2xs flex flex-col gap-2.5 transition-all duration-300 ${
                                                             isFlash
                                                                 ? "ring-4 ring-saffron-400 border-saffron-500 scale-[1.02] shadow-lg animate-pulse"
+                                                                : isDelivery
+                                                                ? "border-cyan-300 hover:border-cyan-500 hover:shadow-sm"
                                                                 : "border-cream-300 hover:border-terracotta-300 hover:shadow-sm"
                                                         }`}
                                                     >
                                                         {/* Card Header */}
                                                         <div className="flex items-start justify-between gap-1">
                                                             <div>
-                                                                <span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-espresso-900 text-white">
-                                                                    Table {order.table_label || `T${order.table_id}`}
-                                                                </span>
-                                                                <span className="text-[11px] text-espresso-500 font-semibold block mt-1">
-                                                                    #{order.order_number}
-                                                                </span>
+                                                                {isDelivery ? (
+                                                                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-cyan-700 text-white flex items-center gap-1">
+                                                                        <Bike className="w-3 h-3" />
+                                                                        Delivery #{order.order_number}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-espresso-900 text-white">
+                                                                        Table {order.table_label || `T${order.table_id}`}
+                                                                    </span>
+                                                                )}
+                                                                {!isDelivery && (
+                                                                    <span className="text-[11px] text-espresso-500 font-semibold block mt-1">
+                                                                        #{order.order_number}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <span className="text-[10px] text-espresso-400 font-medium">
                                                                 {formatRelativeTime(order.created_at)}
                                                             </span>
                                                         </div>
+
+                                                        {/* Delivery Customer Details Box */}
+                                                        {isDelivery && (
+                                                            <div className="p-2.5 rounded-xl bg-cyan-50/70 border border-cyan-200 text-xs space-y-1">
+                                                                <div className="flex items-center justify-between font-bold text-cyan-950">
+                                                                    <span className="flex items-center gap-1">
+                                                                        <User className="w-3 h-3 text-cyan-700" />
+                                                                        {order.customer_name || "Customer"}
+                                                                    </span>
+                                                                    {order.customer_phone && (
+                                                                        <a
+                                                                            href={`tel:${order.customer_phone}`}
+                                                                            className="text-cyan-800 hover:text-cyan-950 underline flex items-center gap-1 text-[11px]"
+                                                                        >
+                                                                            <Phone className="w-3 h-3" />
+                                                                            {order.customer_phone}
+                                                                        </a>
+                                                                    )}
+                                                                </div>
+                                                                {order.delivery_address && (
+                                                                    <p className="text-[11px] text-cyan-900 flex items-start gap-1 leading-snug">
+                                                                        <MapPin className="w-3 h-3 text-cyan-700 shrink-0 mt-0.5" />
+                                                                        <span>{order.delivery_address}</span>
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        )}
 
                                                         {/* Items List */}
                                                         <div className="divide-y divide-cream-100 text-xs">
@@ -331,7 +435,9 @@ export default function AdminLiveOrdersKanbanPage() {
                                                                     ) : (
                                                                         <>
                                                                             <Clock className="w-3 h-3 text-saffron-600 shrink-0" />
-                                                                            <span className="text-saffron-700">Pay at Counter</span>
+                                                                            <span className="text-saffron-700">
+                                                                                {isDelivery ? "Cash on Delivery (COD)" : "Pay at Counter"}
+                                                                            </span>
                                                                         </>
                                                                     )}
                                                                 </span>
@@ -349,19 +455,77 @@ export default function AdminLiveOrdersKanbanPage() {
 
                                                         {/* Action Buttons */}
                                                         <div className="pt-1 flex items-center gap-1.5">
-                                                            {col.nextStatus && (
-                                                                <Button
-                                                                    variant="primary"
-                                                                    size="sm"
-                                                                    className="flex-1 py-1.5 text-[11px]"
-                                                                    onClick={() => handleAdvanceStatus(order.id, col.nextStatus!)}
-                                                                    rightIcon={<ArrowRight className="w-3 h-3" />}
-                                                                >
-                                                                    {col.nextLabel}
-                                                                </Button>
+                                                            {isDelivery ? (
+                                                                <>
+                                                                    {order.status === "placed" && (
+                                                                        <Button
+                                                                            variant="primary"
+                                                                            size="sm"
+                                                                            className="flex-1 py-1.5 text-[11px]"
+                                                                            onClick={() => handleAdvanceStatus(order.id, "accepted")}
+                                                                        >
+                                                                            Accept Order
+                                                                        </Button>
+                                                                    )}
+                                                                    {order.status === "accepted" && (
+                                                                        <Button
+                                                                            variant="primary"
+                                                                            size="sm"
+                                                                            className="flex-1 py-1.5 text-[11px]"
+                                                                            onClick={() => handleAdvanceStatus(order.id, "preparing")}
+                                                                        >
+                                                                            Start Cooking
+                                                                        </Button>
+                                                                    )}
+                                                                    {order.status === "preparing" && (
+                                                                        <Button
+                                                                            variant="primary"
+                                                                            size="sm"
+                                                                            className="flex-1 py-1.5 text-[11px] bg-cyan-700 hover:bg-cyan-800"
+                                                                            onClick={() => handleAdvanceStatus(order.id, "out_for_delivery")}
+                                                                            rightIcon={<Bike className="w-3 h-3" />}
+                                                                        >
+                                                                            Dispatch Rider 🛵
+                                                                        </Button>
+                                                                    )}
+                                                                    {order.status === "ready" && (
+                                                                        <Button
+                                                                            variant="primary"
+                                                                            size="sm"
+                                                                            className="flex-1 py-1.5 text-[11px] bg-cyan-700 hover:bg-cyan-800"
+                                                                            onClick={() => handleAdvanceStatus(order.id, "out_for_delivery")}
+                                                                            rightIcon={<Bike className="w-3 h-3" />}
+                                                                        >
+                                                                            Dispatch Rider 🛵
+                                                                        </Button>
+                                                                    )}
+                                                                    {order.status === "out_for_delivery" && (
+                                                                        <Button
+                                                                            variant="primary"
+                                                                            size="sm"
+                                                                            className="flex-1 py-1.5 text-[11px] bg-emerald-600 hover:bg-emerald-700"
+                                                                            onClick={() => handleAdvanceStatus(order.id, "delivered")}
+                                                                            rightIcon={<CheckCircle2 className="w-3 h-3" />}
+                                                                        >
+                                                                            Mark Delivered ✅
+                                                                        </Button>
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                col.nextStatus && (
+                                                                    <Button
+                                                                        variant="primary"
+                                                                        size="sm"
+                                                                        className="flex-1 py-1.5 text-[11px]"
+                                                                        onClick={() => handleAdvanceStatus(order.id, col.nextStatus!)}
+                                                                        rightIcon={<ArrowRight className="w-3 h-3" />}
+                                                                    >
+                                                                        {col.nextLabel}
+                                                                    </Button>
+                                                                )
                                                             )}
 
-                                                            {order.status !== "served" && order.status !== "cancelled" && (
+                                                            {order.status !== "served" && order.status !== "delivered" && order.status !== "cancelled" && (
                                                                 <button
                                                                     onClick={() => handleCancelOrder(order.id)}
                                                                     className="p-1.5 rounded-lg text-espresso-400 hover:text-red-600 hover:bg-red-50 text-[11px] font-bold transition cursor-pointer"

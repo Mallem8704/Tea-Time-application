@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
     Coffee,
     Search,
@@ -16,6 +17,7 @@ import {
     QrCode,
     X,
     RefreshCw,
+    Truck,
 } from "lucide-react";
 import { MenuItemCard3D } from "@/components/order/MenuItemCard3D";
 import { CategorySection3D, FOCUS_CATEGORY_IDS } from "@/components/order/CategorySection3D";
@@ -392,7 +394,31 @@ function CustomerOrderContent() {
             </header>
 
             {/* Menu Content */}
-            <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 w-full">
+            <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 w-full space-y-4">
+                {/* Free Delivery Callout Banner */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400/40 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                        <span className="w-8 h-8 rounded-xl bg-amber-500 text-black flex items-center justify-center shrink-0 shadow-xs">
+                            <Truck className="w-4 h-4" />
+                        </span>
+                        <div>
+                            <span className="font-extrabold text-espresso-950 block">
+                                Want food delivered to your home or office in Kadiri?
+                            </span>
+                            <span className="text-[11px] text-espresso-600">
+                                100% Free Doorstep Delivery • 30–40 mins
+                            </span>
+                        </div>
+                    </div>
+                    <Link
+                        href={`/delivery?branch=${outletId || 1}`}
+                        className="px-3.5 py-1.5 rounded-xl bg-espresso-900 hover:bg-espresso-800 text-white font-extrabold text-[11px] shrink-0 transition flex items-center gap-1 cursor-pointer"
+                    >
+                        <span>Order Delivery</span>
+                        <ArrowRight className="w-3 h-3" />
+                    </Link>
+                </div>
+
                 {/* Search Bar & Dietary Filter */}
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                     {/* Search Input */}

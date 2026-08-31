@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
     QrCode, ChefHat, MapPin, Clock, Phone, ArrowRight, Star, Flame,
     Leaf, Coffee, Utensils, ShieldCheck, Menu, X, Share2, Globe,
-    MessageCircle, Sparkles, ChevronDown,
+    MessageCircle, Sparkles, ChevronDown, Truck, Bike,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -49,15 +49,15 @@ function BranchCard({ branch }: { branch: any }) {
                         <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-white/90">{f}</span>
                     ))}
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <Link href={branch.orderLink} className="flex-1">
-                        <button className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-sm transition-all hover:scale-105 shadow-lg">
-                            <QrCode className="w-4 h-4" /> Order Online <ArrowRight className="w-4 h-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Link href={`/delivery?branch=${branch.id}`} className="flex-1">
+                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs transition-all hover:scale-105 shadow-lg cursor-pointer">
+                            <Truck className="w-4 h-4" /> Free Home Delivery
                         </button>
                     </Link>
-                    <Link href={branch.orderLink} className="flex-1">
-                        <button className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-sm transition-all">
-                            <Utensils className="w-4 h-4" /> View Menu
+                    <Link href={`/order?branch=${branch.id}&table=T1`} className="flex-1">
+                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs transition-all cursor-pointer">
+                            <QrCode className="w-4 h-4" /> Dine-in Table QR
                         </button>
                     </Link>
                 </div>
@@ -232,17 +232,17 @@ export default function HomePage() {
                         and authentic Arabian dishes across our two Kadiri branches.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                        <Link href="/order?branch=2&table=T1">
-                            <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-base transition-all shadow-2xl shadow-amber-500/40 hover:scale-105 anim-glow">
-                                <QrCode className="w-5 h-5" /> Order Online Now
+                        <Link href="/delivery?branch=2">
+                            <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold text-base transition-all shadow-2xl shadow-amber-500/40 hover:scale-105 anim-glow cursor-pointer">
+                                <Truck className="w-5 h-5" /> 🛵 Free Home Delivery (Kadiri)
                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </Link>
-                        <a href="#branches">
-                            <button className="flex items-center gap-3 px-8 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold text-base transition-all hover:scale-105">
-                                <MapPin className="w-5 h-5 text-amber-400" /> View Our Branches
+                        <Link href="/order?branch=2&table=T1">
+                            <button className="flex items-center gap-3 px-8 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold text-base transition-all hover:scale-105 border border-white/20 cursor-pointer">
+                                <QrCode className="w-5 h-5 text-amber-400" /> 🍽️ Dine-in Table Order
                             </button>
-                        </a>
+                        </Link>
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 pt-6">
                         {[{label:"Menu Items",value:"198+"},{label:"Dining Tables",value:"20+"},{label:"Branches",value:"2"},{label:"Happy Customers",value:"5000+"}].map((s,i)=>(

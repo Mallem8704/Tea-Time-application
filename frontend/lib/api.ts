@@ -147,11 +147,21 @@ export const api = {
         apiFetch(`/api/tables/${tableId}/call`, { method: "POST", body: JSON.stringify({ call_type }) }),
 
     // Orders
-    createOrder: (data: { table_id: number; items: Array<{ item_id: number; qty: number; notes?: string }>; customer_notes?: string; payment_method?: string }) =>
+    createOrder: (data: {
+        table_id?: number;
+        outlet_id?: number;
+        order_type?: "dine_in" | "delivery" | "takeaway";
+        customer_name?: string;
+        customer_phone?: string;
+        delivery_address?: string;
+        items: Array<{ item_id: number; qty: number; notes?: string }>;
+        customer_notes?: string;
+        payment_method?: string;
+    }) =>
         apiFetch("/api/orders", { method: "POST", body: JSON.stringify(data) }),
     getOrder: (orderId: number) =>
         apiFetch(`/api/orders/${orderId}`),
-    getOrders: (params?: { status?: string; table_id?: number; date?: string }) =>
+    getOrders: (params?: { status?: string; table_id?: number; order_type?: string; date?: string }) =>
         apiFetch("/api/orders", { params }),
     updateOrderStatus: (orderId: number, status: string) =>
         apiFetch(`/api/orders/${orderId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),

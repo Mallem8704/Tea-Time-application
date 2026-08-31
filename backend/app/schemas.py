@@ -223,14 +223,20 @@ class OrderItemOut(BaseModel):
 
 
 class OrderCreate(BaseModel):
-    table_id: int
+    table_id: Optional[int] = None
+    outlet_id: Optional[int] = None
+    order_type: str = "dine_in"  # 'dine_in', 'delivery', 'takeaway'
+    customer_name: Optional[str] = Field(None, max_length=100)
+    customer_phone: Optional[str] = Field(None, max_length=20)
+    delivery_address: Optional[str] = Field(None, max_length=1000)
+    delivery_status: Optional[str] = "pending"
     items: List[OrderItemCreate] = Field(..., min_length=1)
     customer_notes: Optional[str] = Field(None, max_length=500)
-    payment_method: str = "counter"  # 'upi', 'card', 'cash', 'counter'
+    payment_method: str = "counter"  # 'upi', 'card', 'cash', 'counter', 'cod'
 
 
 class OrderStatusUpdate(BaseModel):
-    status: str  # 'placed', 'accepted', 'preparing', 'ready', 'served', 'cancelled'
+    status: str  # 'placed', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'served', 'cancelled'
 
 
 class OrderOut(BaseModel):
@@ -238,8 +244,14 @@ class OrderOut(BaseModel):
 
     id: int
     outlet_id: int
-    table_id: int
+    table_id: Optional[int] = None
     table_label: Optional[str] = None
+    order_type: str = "dine_in"
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    delivery_address: Optional[str] = None
+    delivery_status: Optional[str] = None
+    delivery_fee_paise: int = 0
     order_number: str
     status: str
     subtotal_paise: int

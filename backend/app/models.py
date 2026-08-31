@@ -122,13 +122,19 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
     table_id = Column(Integer, ForeignKey("tables.id", ondelete="SET NULL"), index=True, nullable=True)
+    order_type = Column(String(20), default="dine_in", index=True)  # 'dine_in', 'delivery', 'takeaway'
+    customer_name = Column(String(100), nullable=True)
+    customer_phone = Column(String(20), nullable=True)
+    delivery_address = Column(Text, nullable=True)
+    delivery_status = Column(String(30), default="pending")  # 'pending', 'out_for_delivery', 'delivered'
+    delivery_fee_paise = Column(Integer, default=0)  # Free delivery = 0
     order_number = Column(String(30), unique=True, index=True, nullable=False)
-    status = Column(String(30), default="placed", index=True)  # 'placed', 'accepted', 'preparing', 'ready', 'served', 'cancelled'
+    status = Column(String(30), default="placed", index=True)  # 'placed', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'served', 'cancelled'
     subtotal_paise = Column(Integer, default=0)
     tax_paise = Column(Integer, default=0)
     total_paise = Column(Integer, default=0)
     payment_status = Column(String(20), default="pending")  # 'pending', 'paid', 'failed'
-    payment_method = Column(String(20), default="counter")  # 'upi', 'card', 'cash', 'counter'
+    payment_method = Column(String(20), default="counter")  # 'upi', 'card', 'cash', 'counter', 'cod'
     customer_notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
