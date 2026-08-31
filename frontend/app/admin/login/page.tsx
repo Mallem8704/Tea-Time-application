@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Lock, Mail, ShieldCheck, UserCheck, ArrowRight, MapPin, Building2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { Button } from "@/components/ui/Button";
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
+    const searchParams = useSearchParams();
     const { login } = useAuth();
     const toast = useToast();
 
@@ -14,6 +16,12 @@ export default function AdminLoginPage() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState<1 | 2 | null>(null);
+
+    useEffect(() => {
+        const bParam = searchParams.get("branch");
+        if (bParam === "1") setSelectedBranch(1);
+        if (bParam === "2") setSelectedBranch(2);
+    }, [searchParams]);
 
     const branches = [
         {
@@ -184,5 +192,13 @@ export default function AdminLoginPage() {
                 )}
             </div>
         </main>
+    );
+}
+
+export default function AdminLoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-stone-900 flex items-center justify-center text-white/50 text-sm">Loading Admin Portal...</div>}>
+            <AdminLoginContent />
+        </Suspense>
     );
 }

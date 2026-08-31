@@ -100,10 +100,10 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                         </div>
                         <div className="overflow-hidden">
                             <h4 className="text-xs font-bold text-white truncate">
-                                {isOwner ? (user?.name && !user.name.includes("Ramesh") ? user.name : "Sreenivasulu") : (user?.name || "Staff")}
+                                {user?.name || (isOwner ? "Branch Owner" : "Staff")}
                             </h4>
                             <span className="text-[10px] uppercase font-extrabold tracking-wider text-saffron-400">
-                                {user?.role || "Staff"}
+                                {user?.role || "Staff"} &bull; B{user?.outlet_id === 56 || user?.outlet_id === 2 ? "2" : "1"}
                             </span>
                         </div>
                     </div>
@@ -118,8 +118,8 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                     </button>
                 </div>
 
-                <div className="text-[10px] text-espresso-500 text-center font-medium">
-                    Arabic Restaurant SaaS v1.0 &bull; Single Outlet
+                <div className="text-[10px] text-espresso-500 text-center font-medium truncate px-1">
+                    {outlet?.name || "Arabieq Restaurant"} &bull; Kadiri
                 </div>
             </div>
         </aside>

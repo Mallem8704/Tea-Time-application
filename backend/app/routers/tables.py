@@ -17,7 +17,7 @@ from app.schemas import (
     ServiceCallCreate,
     ServiceCallOut,
 )
-from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
+from app.routers.auth import get_current_user, get_current_user_optional, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
 from app.routers.ws import manager
 from app.routers.outlets import get_effective_outlet_id
@@ -35,10 +35,17 @@ VALID_TABLE_STATUSES = {"free", "occupied", "reserved"}
 @router.get("", response_model=List[TableOut])
 def list_tables(
     outlet_id: Optional[int] = Query(None, description="Outlet ID"),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """List all cafe tables with status and QR link."""
-    target_id = get_effective_outlet_id(outlet_id, db)
+    if outlet_id is not None:
+        target_id = get_effective_outlet_id(outlet_id, db)
+    elif current_user is not None:
+        target_id = current_user.outlet_id
+    else:
+        target_id = get_effective_outlet_id(None, db)
+
     return (
         db.query(CafeTable)
         .filter(CafeTable.outlet_id == target_id)

@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -63,6 +64,27 @@ def get_current_user(
         )
 
     return user
+
+
+def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: Session = Depends(get_db),
+) -> Optional[User]:
+    """Optional authentication dependency that returns User if valid token is provided, else None."""
+    if not credentials or not credentials.credentials:
+        return None
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    if not payload:
+        return None
+    user_id = payload.get("user_id") or payload.get("sub")
+    if not user_id:
+        return None
+    try:
+        user_id_int = int(user_id)
+        return db.query(User).filter(User.id == user_id_int).first()
+    except Exception:
+        return None
 
 
 def require_owner(

@@ -15,7 +15,7 @@ from app.schemas import (
     MenuItemStockUpdate,
     MenuItemOut,
 )
-from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
+from app.routers.auth import get_current_user, get_current_user_optional, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
 from app.routers.ws import manager
 from app.routers.outlets import get_effective_outlet_id
@@ -37,10 +37,17 @@ def list_menu_items(
     is_veg: Optional[bool] = Query(None, description="Filter by vegetarian status"),
     search: Optional[str] = Query(None, description="Search by item name or description"),
     outlet_id: Optional[int] = Query(None, description="Outlet ID"),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Retrieve categorized menu items with stock, portion variants, and addons."""
-    target_id = get_effective_outlet_id(outlet_id, db)
+    if outlet_id is not None:
+        target_id = get_effective_outlet_id(outlet_id, db)
+    elif current_user is not None:
+        target_id = current_user.outlet_id
+    else:
+        target_id = get_effective_outlet_id(None, db)
+
     query = (
         db.query(MenuItem)
         .options(joinedload(MenuItem.variants), joinedload(MenuItem.addons))

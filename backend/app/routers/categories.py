@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Category, MenuItem, User, Outlet
 from app.schemas import CategoryCreate, CategoryUpdate, CategoryOut
-from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
+from app.routers.auth import get_current_user, get_current_user_optional, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
 from app.routers.outlets import get_effective_outlet_id
 
@@ -16,10 +16,17 @@ router = APIRouter(prefix="", tags=["Categories"])
 def list_categories(
     active_only: bool = Query(True, description="Filter active categories"),
     outlet_id: Optional[int] = Query(None, description="Outlet ID"),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """List all categories for customer and admin views."""
-    target_id = get_effective_outlet_id(outlet_id, db)
+    if outlet_id is not None:
+        target_id = get_effective_outlet_id(outlet_id, db)
+    elif current_user is not None:
+        target_id = current_user.outlet_id
+    else:
+        target_id = get_effective_outlet_id(None, db)
+
     query = db.query(Category).filter(Category.outlet_id == target_id)
     if active_only:
         query = query.filter(Category.is_active == True)

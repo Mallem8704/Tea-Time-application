@@ -49,7 +49,7 @@ function BranchCard({ branch }: { branch: any }) {
                         <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-white/90">{f}</span>
                     ))}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2.5">
                     <Link href={`/delivery?branch=${branch.id}`} className="flex-1">
                         <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs transition-all hover:scale-105 shadow-lg cursor-pointer">
                             <Truck className="w-4 h-4" /> Free Home Delivery
@@ -61,6 +61,11 @@ function BranchCard({ branch }: { branch: any }) {
                         </button>
                     </Link>
                 </div>
+                <Link href={`/admin/login?branch=${branch.id}`}>
+                    <button className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white/70 hover:text-amber-400 font-semibold text-[11px] transition-colors cursor-pointer">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Branch {branch.id} Staff & Owner Login <ArrowRight className="w-3 h-3 ml-1" />
+                    </button>
+                </Link>
             </div>
         </div>
     );
