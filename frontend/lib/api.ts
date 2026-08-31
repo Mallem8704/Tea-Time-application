@@ -174,6 +174,8 @@ export const api = {
         apiFetch("/api/stock/logs", { params }),
     adjustStockManual: (data: { item_id: number; change_qty: number; reason: string; notes?: string }) =>
         apiFetch("/api/stock/adjust", { method: "POST", body: JSON.stringify(data) }),
+    adjustStock: (data: { item_id: number; change_qty: number; reason: string; notes?: string }) =>
+        apiFetch("/api/stock/adjust", { method: "POST", body: JSON.stringify(data) }),
 
     // Payments
     createRazorpayOrder: (orderId: number) =>
