@@ -111,7 +111,7 @@ function DeliveryOrderContent() {
     const [vegFilter, setVegFilter] = useState<"all" | "veg" | "non_veg">("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoadingMenu, setIsLoadingMenu] = useState(true);
-    const { customer, isCustomerLoggedIn, logoutCustomer, pastOrders } = useCustomer();
+    const { customer, isCustomerLoggedIn, loginCustomer, logoutCustomer, pastOrders } = useCustomer();
     const { isOnline, enqueueOrder } = useOffline();
     const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -461,13 +461,29 @@ function DeliveryOrderContent() {
                 toast.success(`🛵 Delivery Order #${createdOrder.order_number} Placed Successfully!`);
             }
 
-            // Save details to localStorage for fast reordering
+            // Auto-login & persist customer profile and address (Zero OTP / Zero Cost)
             if (typeof window !== "undefined") {
                 localStorage.setItem("arabieq_cust_name", customerName.trim());
                 localStorage.setItem("arabieq_cust_phone", phoneClean);
                 localStorage.setItem("arabieq_cust_address", deliveryAddress.trim());
                 localStorage.setItem("arabieq_cust_landmark", landmark.trim());
                 sessionStorage.setItem("arabieq_delivery_order_id", String(createdOrder.id));
+
+                if (!isCustomerLoggedIn) {
+                    api.quickLoginCustomer({ phone: phoneClean, name: customerName.trim() || undefined })
+                        .then((res) => {
+                            loginCustomer(res.access_token, res.customer);
+                            if (deliveryAddress.trim()) {
+                                api.addCustomerAddress({
+                                    label: "Home",
+                                    address_line: deliveryAddress.trim(),
+                                    landmark: landmark.trim() || undefined,
+                                    is_default: true,
+                                }).catch(() => {});
+                            }
+                        })
+                        .catch(() => {});
+                }
             }
 
             setCart([]);

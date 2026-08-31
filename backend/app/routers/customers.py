@@ -11,6 +11,7 @@ from jose import JWTError, jwt
 from app.database import get_db
 from app.models import Customer, CustomerAddress, CustomerOTP, Order, OrderItem, MenuItemVariant, MenuItemAddon
 from app.schemas import (
+    CustomerQuickLoginReq,
     CustomerSendOTPReq,
     CustomerVerifyOTPReq,
     CustomerAddressCreate,
@@ -21,6 +22,38 @@ from app.schemas import (
 from app.auth_utils import SECRET_KEY, ALGORITHM
 
 router = APIRouter()
+
+
+@router.post("/quick-login", response_model=CustomerAuthResponse)
+@router.post("/login", response_model=CustomerAuthResponse)
+def quick_login(req: CustomerQuickLoginReq, db: Session = Depends(get_db)):
+    """Instant Zero-Cost 1-Tap Customer Mobile Login / Auto-Registration (Zero SMS / Zero OTP)."""
+    phone = normalize_phone(req.phone)
+    now = datetime.datetime.utcnow()
+
+    customer = db.query(Customer).filter(Customer.phone == phone).first()
+    if not customer:
+        customer = Customer(
+            phone=phone,
+            name=req.name.strip() if req.name else None,
+            created_at=now,
+        )
+        db.add(customer)
+        db.commit()
+        db.refresh(customer)
+    else:
+        if req.name and (not customer.name or customer.name == "Customer"):
+            customer.name = req.name.strip()
+            db.commit()
+            db.refresh(customer)
+
+    token = create_customer_token(customer.id, customer.phone)
+
+    return CustomerAuthResponse(
+        access_token=token,
+        token_type="bearer",
+        customer=CustomerOut.model_validate(customer),
+    )
 
 
 def normalize_phone(phone: str) -> str:

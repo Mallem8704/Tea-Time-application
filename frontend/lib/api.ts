@@ -228,7 +228,9 @@ export const api = {
     updateOutlet: (outletId: number, data: any) =>
         apiFetch(`/api/outlets?outlet_id=${outletId}`, { method: "PUT", body: JSON.stringify(data) }),
 
-    // Customer Auth & Reorder
+    // Customer Auth & Reorder (Zero-Cost Instant Phone Recognition)
+    quickLoginCustomer: (data: { phone: string; name?: string }) =>
+        apiFetch("/api/customer/quick-login", { method: "POST", body: JSON.stringify(data) }),
     sendCustomerOtp: (phone: string) =>
         apiFetch("/api/customer/send-otp", { method: "POST", body: JSON.stringify({ phone }) }),
     verifyCustomerOtp: (data: { phone: string; otp_code: string; name?: string }) =>

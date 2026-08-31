@@ -443,6 +443,11 @@ class AuditLogOut(BaseModel):
 # CUSTOMER & OTP SCHEMAS
 # ==========================================
 
+class CustomerQuickLoginReq(BaseModel):
+    phone: str = Field(..., description="10-digit mobile number")
+    name: Optional[str] = None
+
+
 class CustomerSendOTPReq(BaseModel):
     phone: str = Field(..., description="10-digit mobile number")
 
