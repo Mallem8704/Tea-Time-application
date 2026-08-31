@@ -549,100 +549,111 @@ async def append_order_items(
     outlet = db.query(Outlet).filter(Outlet.id == order.outlet_id).first()
     tax_rate = (outlet.tax_rate_percent / 100.0) if outlet else 0.05
 
-    appended_order_items = []
-    added_subtotal = 0
+    try:
+        appended_order_items = []
+        added_subtotal = 0
 
-    for it_req in data.items:
-        menu_item = db.query(MenuItem).filter(MenuItem.id == it_req.item_id).first()
-        if not menu_item:
-            raise HTTPException(status_code=404, detail=f"Menu item {it_req.item_id} not found")
+        for it_req in data.items:
+            menu_item = db.query(MenuItem).filter(MenuItem.id == it_req.item_id).first()
+            if not menu_item:
+                raise HTTPException(status_code=404, detail=f"Menu item {it_req.item_id} not found")
 
-        unit_price = menu_item.price_paise
-        variant_name = None
-        if it_req.variant_id:
-            variant = db.query(MenuItemVariant).filter(
-                MenuItemVariant.id == it_req.variant_id,
-                MenuItemVariant.item_id == it_req.item_id
-            ).first()
-            if variant:
-                unit_price = variant.price_paise
-                variant_name = variant.name
+            unit_price = menu_item.price_paise
+            variant_name = None
+            if it_req.variant_id:
+                variant = db.query(MenuItemVariant).filter(
+                    MenuItemVariant.id == it_req.variant_id,
+                    MenuItemVariant.item_id == it_req.item_id
+                ).first()
+                if variant:
+                    unit_price = variant.price_paise
+                    variant_name = variant.name
 
-        addons_json = None
-        if it_req.addon_ids and len(it_req.addon_ids) > 0:
-            chosen_addons = db.query(MenuItemAddon).filter(
-                MenuItemAddon.id.in_(it_req.addon_ids),
-                MenuItemAddon.item_id == it_req.item_id
-            ).all()
-            if chosen_addons:
-                addons_sum = sum(a.price_paise for a in chosen_addons)
-                unit_price += addons_sum
-                addons_json = json.dumps([{"id": a.id, "name": a.name, "price_paise": a.price_paise} for a in chosen_addons])
+            addons_json = None
+            if it_req.addon_ids and len(it_req.addon_ids) > 0:
+                chosen_addons = db.query(MenuItemAddon).filter(
+                    MenuItemAddon.id.in_(it_req.addon_ids),
+                    MenuItemAddon.item_id == it_req.item_id
+                ).all()
+                if chosen_addons:
+                    addons_sum = sum(a.price_paise for a in chosen_addons)
+                    unit_price += addons_sum
+                    addons_json = json.dumps([{"id": a.id, "name": a.name, "price_paise": a.price_paise} for a in chosen_addons])
 
-        line_total = unit_price * it_req.qty
-        added_subtotal += line_total
+            line_total = unit_price * it_req.qty
+            added_subtotal += line_total
 
-        order_item = OrderItem(
-            order_id=order.id,
-            item_id=menu_item.id,
-            variant_id=it_req.variant_id,
-            variant_name=variant_name,
-            selected_addons_json=addons_json,
-            item_name=menu_item.name,
-            qty=it_req.qty,
-            unit_price_paise=unit_price,
-            total_price_paise=line_total,
-            notes=it_req.notes,
-        )
-        db.add(order_item)
-        appended_order_items.append(order_item)
-
-        # Stock deduction
-        if menu_item.track_stock:
-            menu_item.stock_qty = max(0, menu_item.stock_qty - it_req.qty)
-            stock_log = StockLog(
-                outlet_id=order.outlet_id,
+            order_item = OrderItem(
+                order_id=order.id,
                 item_id=menu_item.id,
-                change_qty=-it_req.qty,
-                reason="sale",
-                notes=f"Captain Running KOT append Order #{order.order_number}",
-                staff_id=current_user.id,
+                variant_id=it_req.variant_id,
+                variant_name=variant_name,
+                selected_addons_json=addons_json,
+                item_name=menu_item.name,
+                qty=it_req.qty,
+                unit_price_paise=unit_price,
+                total_price_paise=line_total,
+                notes=it_req.notes,
             )
-            db.add(stock_log)
+            db.add(order_item)
+            appended_order_items.append(order_item)
 
-    order.subtotal_paise += added_subtotal
-    discount = order.discount_paise or 0
-    discounted_sub = max(0, order.subtotal_paise - discount)
-    order.tax_paise = int(round(discounted_sub * tax_rate))
-    order.total_paise = discounted_sub + order.tax_paise + (order.delivery_fee_paise or 0)
-    order.updated_at = datetime.datetime.utcnow()
+            # Stock deduction
+            if menu_item.track_stock:
+                menu_item.stock_qty = max(0, menu_item.stock_qty - it_req.qty)
+                stock_log = StockLog(
+                    outlet_id=order.outlet_id,
+                    item_id=menu_item.id,
+                    change_qty=-it_req.qty,
+                    reason="sale",
+                    notes=f"Captain Running KOT append Order #{order.order_number}",
+                    staff_id=current_user.id,
+                )
+                db.add(stock_log)
 
-    # If order was served, move back to preparing so kitchen knows new items are requested
-    if order.status == "served":
-        order.status = "preparing"
+        order.subtotal_paise += added_subtotal
+        discount = order.discount_paise or 0
+        discounted_sub = max(0, order.subtotal_paise - discount)
+        order.tax_paise = int(round(discounted_sub * tax_rate))
+        order.total_paise = discounted_sub + order.tax_paise + (order.delivery_fee_paise or 0)
+        order.updated_at = datetime.datetime.utcnow()
 
-    db.commit()
-    db.refresh(order)
+        # If order was served, move back to preparing so kitchen knows new items are requested
+        if order.status == "served":
+            order.status = "preparing"
 
-    # Broadcast WebSocket update
-    resp = format_order_response(order)
-    await manager.broadcast_to_admin(
-        outlet_id=order.outlet_id,
-        event_type="running_kot_added",
-        data=resp.model_dump(mode="json"),
-    )
+        db.commit()
+        db.refresh(order)
 
-    log_audit(
-        db=db,
-        outlet_id=order.outlet_id,
-        user_id=current_user.id,
-        action="append_running_kot",
-        entity_type="order",
-        entity_id=order.id,
-        details={"appended_items": len(appended_order_items), "added_paise": added_subtotal},
-    )
+        # Broadcast WebSocket update
+        resp = format_order_response(order)
+        try:
+            await manager.broadcast_to_admin(
+                outlet_id=order.outlet_id,
+                event_type="running_kot_added",
+                data=resp.model_dump(mode="json"),
+            )
+        except Exception as ws_err:
+            pass
 
-    return resp
+        log_audit(
+            db=db,
+            outlet_id=order.outlet_id,
+            user_id=current_user.id,
+            action="append_running_kot",
+            entity_type="order",
+            entity_id=order.id,
+            details={"appended_items": len(appended_order_items), "added_paise": added_subtotal},
+        )
+        db.commit()
+
+        return resp
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"Append Error: {str(e)} -> {tb}")
 
 
 @router.post("/{order_id}/transfer-table", response_model=OrderOut)
