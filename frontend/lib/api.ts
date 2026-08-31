@@ -89,8 +89,8 @@ export const api = {
     getMe: () => apiFetch("/api/auth/me"),
 
     // Categories
-    getCategories: (activeOnly = true) =>
-        apiFetch("/api/categories", { params: { active_only: activeOnly } }),
+    getCategories: (activeOnly = true, outletId?: number) =>
+        apiFetch("/api/categories", { params: { active_only: activeOnly, ...(outletId ? { outlet_id: outletId } : {}) } }),
     createCategory: (data: any) =>
         apiFetch("/api/categories", { method: "POST", body: JSON.stringify(data) }),
     updateCategory: (id: number, data: any) =>
@@ -99,8 +99,12 @@ export const api = {
         apiFetch(`/api/categories/${id}`, { method: "DELETE" }),
 
     // Menu Items
-    getMenu: (params?: { category_id?: number; is_available?: boolean; is_veg?: boolean; search?: string }) =>
-        apiFetch("/api/menu", { params }),
+    getMenu: (outletIdOrParams?: number | { category_id?: number; is_available?: boolean; is_veg?: boolean; search?: string }, extraParams?: { category_id?: number; is_available?: boolean; is_veg?: boolean; search?: string }) => {
+        if (typeof outletIdOrParams === "number") {
+            return apiFetch("/api/menu", { params: { outlet_id: outletIdOrParams, ...extraParams } });
+        }
+        return apiFetch("/api/menu", { params: outletIdOrParams });
+    },
     getMenuItem: (id: number) =>
         apiFetch(`/api/menu/${id}`),
     createMenuItem: (data: any) =>
@@ -124,7 +128,7 @@ export const api = {
     },
 
     // Tables
-    getTables: () => apiFetch("/api/tables"),
+    getTables: (outletId?: number) => apiFetch("/api/tables", { params: outletId ? { outlet_id: outletId } : undefined }),
     getTable: (id: number) => apiFetch(`/api/tables/${id}`),
     createTable: (data: { label: string; qr_code_url?: string }) =>
         apiFetch("/api/tables", { method: "POST", body: JSON.stringify(data) }),

@@ -38,6 +38,10 @@ function CustomerOrderContent() {
     const { taxRate, outlet } = useOutlet();
     const toast = useToast();
 
+    // ── Branch / Outlet from URL param ─────────────────────────────────────
+    const branchParam = searchParams.get("branch");
+    const outletId = branchParam ? Number(branchParam) : undefined;
+
     // Table State
     const [tableLabel, setTableLabel] = useState<string>("T1");
     const [tableId, setTableId] = useState<number>(1);
@@ -62,7 +66,7 @@ function CustomerOrderContent() {
 
     // 1. Initialize Table from URL or Storage
     useEffect(() => {
-        api.getTables()
+        api.getTables(outletId)
             .then((tables) => {
                 setAvailableTables(tables);
 
@@ -96,7 +100,7 @@ function CustomerOrderContent() {
                 })
                 .catch(() => {});
         }
-    }, [searchParams]);
+    }, [searchParams, outletId]);
 
     // 2. Fetch Categories & Menu Items
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -105,7 +109,10 @@ function CustomerOrderContent() {
         setIsLoadingMenu(true);
         setLoadError(null);
         try {
-            const [cats, items] = await Promise.all([api.getCategories(true), api.getMenu()]);
+            const [cats, items] = await Promise.all([
+                api.getCategories(true, outletId),
+                api.getMenu(outletId),
+            ]);
             if (Array.isArray(cats)) setCategories(cats);
             if (Array.isArray(items)) setMenuItems(items);
         } catch (err: any) {
@@ -114,11 +121,12 @@ function CustomerOrderContent() {
         } finally {
             setIsLoadingMenu(false);
         }
-    }, []);
+    }, [outletId]);
 
     useEffect(() => {
         fetchMenuData();
     }, [fetchMenuData]);
+
 
     // Filter Menu Items
     const filteredItems = useMemo(() => {
