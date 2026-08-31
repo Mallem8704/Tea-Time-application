@@ -1,0 +1,25 @@
+{
+  "name": "Arabieq Restaurant & Cafe DineOS",
+  "short_name": "Arabieq",
+  "description": "Smart QR Table Ordering & Free Home Delivery for Arabieq Restaurant Kadiri",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0a06",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "lifestyle", "shopping"]
+}

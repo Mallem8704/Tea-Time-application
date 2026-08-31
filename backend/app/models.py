@@ -253,3 +253,44 @@ class AuditLog(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="audit_logs")
+
+
+class Customer(Base):
+    __tablename__ = "customers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    phone = Column(String(20), unique=True, index=True, nullable=False)  # 10-digit Indian phone
+    name = Column(String(100), nullable=True)
+    email = Column(String(120), nullable=True)
+    default_address = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    last_order_at = Column(DateTime, nullable=True)
+
+    addresses = relationship("CustomerAddress", back_populates="customer", cascade="all, delete-orphan")
+
+
+class CustomerAddress(Base):
+    __tablename__ = "customer_addresses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id", ondelete="CASCADE"), index=True, nullable=False)
+    label = Column(String(50), default="Home")  # e.g., 'Home', 'Work', 'Hostel', 'Kadiri Town'
+    address_line = Column(Text, nullable=False)
+    landmark = Column(String(150), nullable=True)
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    customer = relationship("Customer", back_populates="addresses")
+
+
+class CustomerOTP(Base):
+    __tablename__ = "customer_otps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    phone = Column(String(20), index=True, nullable=False)
+    otp_code = Column(String(10), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    is_used = Column(Boolean, default=False)
+    attempts = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+

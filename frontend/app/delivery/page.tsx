@@ -30,6 +30,11 @@ import {
     UtensilsCrossed,
     SlidersHorizontal,
 } from "lucide-react";
+import { useCustomer } from "@/context/CustomerContext";
+import { useOffline } from "@/context/OfflineContext";
+import { CustomerAuthModal } from "@/components/customer/CustomerAuthModal";
+import { RepeatOrderCard } from "@/components/customer/RepeatOrderCard";
+import { LogIn, UserCheck, RotateCcw, Bookmark } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -106,6 +111,53 @@ function DeliveryOrderContent() {
     const [vegFilter, setVegFilter] = useState<"all" | "veg" | "non_veg">("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+    const { customer, isCustomerLoggedIn, logoutCustomer, pastOrders } = useCustomer();
+    const { isOnline, enqueueOrder } = useOffline();
+    const [showAuthModal, setShowAuthModal] = useState(false);
+
+    // Auto-fill from logged-in customer profile
+    useEffect(() => {
+        if (customer) {
+            if (customer.name) setCustomerName(customer.name);
+            if (customer.phone) setCustomerPhone(customer.phone);
+            if (customer.default_address) setDeliveryAddress(customer.default_address);
+        }
+    }, [customer]);
+
+    // Handle 1-Tap Reorder
+    const handleReorderPastMeal = (pastOrder: any) => {
+        if (!pastOrder || !pastOrder.items) return;
+        const newCartItems: CartItem[] = pastOrder.items.map((it: any) => {
+            const variantObj = it.variant_id ? { id: it.variant_id, name: it.variant_name || "Variant", price_paise: 0 } : null;
+            let addonsArr = [];
+            if (it.selected_addons_json) {
+                try { addonsArr = JSON.parse(it.selected_addons_json); } catch {}
+            }
+            const unitPaise = Math.round(it.total_price_paise / (it.qty || 1));
+            return {
+                cartKey: `reorder_${it.item_id}_${Date.now()}_${Math.random()}`,
+                item: {
+                    id: it.item_id,
+                    name: it.item_name,
+                    price_paise: unitPaise,
+                    category_id: 1,
+                    is_available: true,
+                    is_special: false,
+                    is_veg: false,
+                    has_variants: !!it.variant_id,
+                },
+                variant: variantObj,
+                addons: addonsArr,
+                qty: it.qty || 1,
+                unitPricePaise: unitPaise,
+            };
+        });
+
+        setCart(newCartItems);
+        setIsCartOpen(true);
+        soundManager.playAddToCartPop();
+        toast.success(`Loaded items from Order #${pastOrder.order_number} into cart!`);
+    };
 
     // Customizer Modal State
     const [customizingItem, setCustomizingItem] = useState<MenuItemData | null>(null);
@@ -372,10 +424,42 @@ function DeliveryOrderContent() {
                 })),
             };
 
-            const createdOrder = await api.createOrder(payload);
-
-            soundManager.playOrderPlacedSuccess();
-            toast.success(`🛵 Delivery Order #${createdOrder.order_number} Placed Successfully!`);
+            let createdOrder;
+            if (!isOnline) {
+                const queueId = await enqueueOrder(payload, "delivery");
+                soundManager.playOrderPlacedSuccess();
+                toast.success(`🛵 You are currently offline. Order #${queueId} has been safely queued and will auto-submit when connected!`);
+                createdOrder = {
+                    id: Date.now(),
+                    order_number: `OFFLINE-${queueId.slice(-6).toUpperCase()}`,
+                    outlet_id: selectedBranch,
+                    status: "placed",
+                    subtotal_paise: subtotalPaise,
+                    tax_paise: taxPaise,
+                    total_paise: totalPaise,
+                    payment_status: "pending",
+                    payment_method: paymentMethod,
+                    customer_name: customerName.trim() || "Customer",
+                    customer_phone: phoneClean,
+                    delivery_address: fullAddress,
+                    delivery_status: "pending",
+                    created_at: new Date().toISOString(),
+                    items: cart.map((ci) => ({
+                        id: Math.random(),
+                        item_name: ci.item.name,
+                        variant_name: ci.variant?.name,
+                        selected_addons_json: JSON.stringify(ci.addons),
+                        qty: ci.qty,
+                        unit_price_paise: ci.unitPricePaise,
+                        total_price_paise: ci.unitPricePaise * ci.qty,
+                        notes: ci.notes,
+                    })),
+                };
+            } else {
+                createdOrder = await api.createOrder(payload);
+                soundManager.playOrderPlacedSuccess();
+                toast.success(`🛵 Delivery Order #${createdOrder.order_number} Placed Successfully!`);
+            }
 
             // Save details to localStorage for fast reordering
             if (typeof window !== "undefined") {
@@ -624,7 +708,25 @@ function DeliveryOrderContent() {
                     </div>
 
                     {/* Floating Cart Button */}
-                    <button
+                    <div className="flex items-center gap-2">
+                        {isCustomerLoggedIn ? (
+                            <button
+                                onClick={() => setShowAuthModal(true)}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 font-bold text-xs hover:bg-amber-100 transition cursor-pointer"
+                            >
+                                <UserCheck className="w-3.5 h-3.5 text-amber-600" />
+                                <span className="hidden sm:inline">Hi, {customer?.name || customer?.phone}</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => setShowAuthModal(true)}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cream-100 hover:bg-cream-200 border border-cream-300 text-espresso-900 font-bold text-xs transition cursor-pointer"
+                            >
+                                <LogIn className="w-3.5 h-3.5 text-espresso-700" />
+                                <span className="hidden sm:inline">Customer Login</span>
+                            </button>
+                        )}
+                        <button
                         onClick={() => setIsCartOpen(true)}
                         className="relative flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-terracotta-600/30 transition-all transform active:scale-95"
                     >
@@ -641,8 +743,16 @@ function DeliveryOrderContent() {
                             </span>
                         )}
                     </button>
+                    </div>
                 </div>
             </header>
+
+            {/* 1-Tap Repeat Order Card for Logged In Customer */}
+            {isCustomerLoggedIn && pastOrders && pastOrders.length > 0 && (
+                <div className="max-w-5xl mx-auto px-4 pt-3">
+                    <RepeatOrderCard pastOrders={pastOrders} onReorder={handleReorderPastMeal} />
+                </div>
+            )}
 
             {/* Branch Selector Tabs */}
             <div className="max-w-5xl mx-auto px-4 pt-4 pb-2">
@@ -905,6 +1015,12 @@ function DeliveryOrderContent() {
                     </div>
                 )}
             </main>
+
+                        {/* Customer Login Modal */}
+            <CustomerAuthModal
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+            />
 
             {/* Customization Modal */}
             <DishCustomizerModal

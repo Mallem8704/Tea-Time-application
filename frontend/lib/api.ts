@@ -39,9 +39,16 @@ export async function apiFetch<T = any>(endpoint: string, options: FetchOptions 
 
     // Inject JWT token if available in client storage
     if (typeof window !== "undefined") {
-        const token = localStorage.getItem("teatime_token");
-        if (token) {
-            defaultHeaders["Authorization"] = `Bearer ${token}`;
+        if (endpoint.startsWith("/api/customer") || endpoint.startsWith("/customer")) {
+            const custToken = localStorage.getItem("arabieq_customer_token");
+            if (custToken) {
+                defaultHeaders["Authorization"] = `Bearer ${custToken}`;
+            }
+        } else {
+            const token = localStorage.getItem("teatime_token");
+            if (token) {
+                defaultHeaders["Authorization"] = `Bearer ${token}`;
+            }
         }
     }
 
@@ -220,4 +227,18 @@ export const api = {
         apiFetch("/api/outlets/list"),
     updateOutlet: (outletId: number, data: any) =>
         apiFetch(`/api/outlets?outlet_id=${outletId}`, { method: "PUT", body: JSON.stringify(data) }),
+
+    // Customer Auth & Reorder
+    sendCustomerOtp: (phone: string) =>
+        apiFetch("/api/customer/send-otp", { method: "POST", body: JSON.stringify({ phone }) }),
+    verifyCustomerOtp: (data: { phone: string; otp_code: string; name?: string }) =>
+        apiFetch("/api/customer/verify-otp", { method: "POST", body: JSON.stringify(data) }),
+    getCustomerProfile: () =>
+        apiFetch("/api/customer/profile"),
+    addCustomerAddress: (data: { label: string; address_line: string; landmark?: string; is_default?: boolean }) =>
+        apiFetch("/api/customer/address", { method: "POST", body: JSON.stringify(data) }),
+    getCustomerOrders: () =>
+        apiFetch("/api/customer/orders"),
+    getReorderPayload: (orderId: number) =>
+        apiFetch(`/api/customer/reorder/${orderId}`),
 };

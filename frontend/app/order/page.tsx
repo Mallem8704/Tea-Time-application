@@ -29,6 +29,8 @@ import { Button } from "@/components/ui/Button";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
 import { formatRupees } from "@/lib/formatters";
+import { useOffline } from "@/context/OfflineContext";
+import { useCustomer } from "@/context/CustomerContext";
 import { api } from "@/lib/api";
 import { useOutlet } from "@/context/OutletContext";
 import { openRazorpayCheckout } from "@/lib/razorpay";
@@ -41,6 +43,8 @@ import {
 function CustomerOrderContent() {
     const searchParams = useSearchParams();
     const { language, t } = useLanguage();
+    const { isOnline, enqueueOrder } = useOffline();
+    const { customer } = useCustomer();
     const { taxRate, outlet } = useOutlet();
     const toast = useToast();
 
@@ -342,7 +346,41 @@ function CustomerOrderContent() {
                 })),
             };
 
-            const createdOrder = await api.createOrder(payload);
+            let createdOrder;
+            if (!isOnline) {
+                const queueId = await enqueueOrder(payload, "dine_in");
+                createdOrder = {
+                    id: Date.now(),
+                    order_number: `OFFLINE-${queueId.slice(-6).toUpperCase()}`,
+                    outlet_id: outletId,
+                    table_id: tableId,
+                    table_label: tableLabel,
+                    status: "placed",
+                    subtotal_paise: cartSubtotalPaise,
+                    tax_paise: cartTaxPaise,
+                    total_paise: cartTotalPaise,
+                    payment_status: "pending",
+                    payment_method: paymentMethod,
+                    created_at: new Date().toISOString(),
+                    items: cart.map((i) => ({
+                        id: Math.random(),
+                        item_name: i.name,
+                        variant_name: i.variant_name,
+                        selected_addons_json: JSON.stringify(i.addons || []),
+                        qty: i.qty,
+                        unit_price_paise: i.price_paise,
+                        total_price_paise: i.price_paise * i.qty,
+                        notes: i.notes,
+                    })),
+                };
+                toast.success(
+                    language === "en"
+                        ? `You are offline. Order #${queueId} has been safely queued and will auto-submit when reconnected!`
+                        : `మీరు ఆఫ్‌లైన్‌లో ఉన్నారు. ఆర్డర్ #${queueId} సేవ్ చేయబడింది!`
+                );
+            } else {
+                createdOrder = await api.createOrder(payload);
+            }
 
             // If Pay Online, trigger Razorpay payment via SDK
             if (paymentMethod === "upi") {

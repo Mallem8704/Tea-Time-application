@@ -437,3 +437,56 @@ class AuditLogOut(BaseModel):
     entity_id: Optional[int] = None
     details_json: Optional[str] = None
     created_at: datetime.datetime
+
+
+# ==========================================
+# CUSTOMER & OTP SCHEMAS
+# ==========================================
+
+class CustomerSendOTPReq(BaseModel):
+    phone: str = Field(..., description="10-digit mobile number")
+
+
+class CustomerVerifyOTPReq(BaseModel):
+    phone: str
+    otp_code: str
+    name: Optional[str] = None
+
+
+class CustomerAddressCreate(BaseModel):
+    label: str = "Home"  # 'Home', 'Work', 'Hostel', 'Other'
+    address_line: str
+    landmark: Optional[str] = None
+    is_default: bool = False
+
+
+class CustomerAddressOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    customer_id: int
+    label: str
+    address_line: str
+    landmark: Optional[str] = None
+    is_default: bool
+    created_at: datetime.datetime
+
+
+class CustomerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    phone: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    default_address: Optional[str] = None
+    created_at: datetime.datetime
+    last_order_at: Optional[datetime.datetime] = None
+    addresses: List[CustomerAddressOut] = []
+
+
+class CustomerAuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    customer: CustomerOut
+

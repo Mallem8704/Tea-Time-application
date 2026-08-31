@@ -17,6 +17,7 @@ from app.routers import (
     ws,
     audit,
     outlets,
+    customers,
 )
 
 # Initialize database schema tables
@@ -74,6 +75,36 @@ def on_startup():
             );""",
             "CREATE INDEX IF NOT EXISTS ix_menu_item_variants_item_id ON menu_item_variants(item_id);",
             "CREATE INDEX IF NOT EXISTS ix_menu_item_addons_item_id ON menu_item_addons(item_id);",
+            """CREATE TABLE IF NOT EXISTS customers (
+                id SERIAL PRIMARY KEY,
+                phone VARCHAR(20) UNIQUE NOT NULL,
+                name VARCHAR(100),
+                email VARCHAR(120),
+                default_address TEXT,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                last_order_at TIMESTAMP WITHOUT TIME ZONE
+            );""",
+            "CREATE INDEX IF NOT EXISTS ix_customers_phone ON customers(phone);",
+            """CREATE TABLE IF NOT EXISTS customer_addresses (
+                id SERIAL PRIMARY KEY,
+                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                label VARCHAR(50) DEFAULT 'Home',
+                address_line TEXT NOT NULL,
+                landmark VARCHAR(150),
+                is_default BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );""",
+            "CREATE INDEX IF NOT EXISTS ix_customer_addresses_customer_id ON customer_addresses(customer_id);",
+            """CREATE TABLE IF NOT EXISTS customer_otps (
+                id SERIAL PRIMARY KEY,
+                phone VARCHAR(20) NOT NULL,
+                otp_code VARCHAR(10) NOT NULL,
+                expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                is_used BOOLEAN DEFAULT FALSE,
+                attempts INTEGER DEFAULT 0,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );""",
+            "CREATE INDEX IF NOT EXISTS ix_customer_otps_phone ON customer_otps(phone);",
         ]
         for sql in migrations:
             try:
@@ -315,6 +346,9 @@ app.include_router(audit.router, prefix="/audit", tags=["Audit Logs (Alias)"])
 
 app.include_router(outlets.router, prefix="/api/outlets", tags=["Outlet Settings"])
 app.include_router(outlets.router, prefix="/outlets", tags=["Outlet Settings (Alias)"])
+
+app.include_router(customers.router, prefix="/api/customer", tags=["Customer Auth & Orders"])
+app.include_router(customers.router, prefix="/customer", tags=["Customer Auth & Orders (Alias)"])
 
 
 @app.get("/")
