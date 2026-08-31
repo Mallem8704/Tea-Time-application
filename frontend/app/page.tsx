@@ -76,19 +76,19 @@ function BranchCard({ branch }: { branch: any }) {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2.5">
                     <Link href={`/delivery?branch=${branch.id}`} className="flex-1">
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs transition-all hover:scale-105 shadow-lg cursor-pointer">
-                            <Truck className="w-4 h-4" /> Free Home Delivery
+                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs transition-all hover:scale-102 shadow-lg cursor-pointer">
+                            <Bike className="w-4 h-4 text-black" /> Free Home Delivery
                         </button>
                     </Link>
                     <Link href={`/order?branch=${branch.id}&table=T1`} className="flex-1">
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs transition-all cursor-pointer">
-                            <QrCode className="w-4 h-4" /> Dine-in Table QR
+                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs transition-all hover:border-amber-400/50 cursor-pointer">
+                            <QrCode className="w-4 h-4 text-amber-400" /> Dine-in Table QR
                         </button>
                     </Link>
                 </div>
                 <Link href={`/admin/login?branch=${branch.id}`}>
-                    <button className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white/70 hover:text-amber-400 font-semibold text-[11px] transition-colors cursor-pointer">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Branch {branch.id} Staff & Owner Login <ArrowRight className="w-3 h-3 ml-1" />
+                    <button className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-black/50 hover:bg-black/80 border border-white/10 text-white/80 hover:text-amber-400 font-bold text-[11px] transition-colors cursor-pointer">
+                        <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> Branch {branch.id} Staff & Owner Login <ArrowRight className="w-3 h-3 ml-1" />
                     </button>
                 </Link>
             </div>
