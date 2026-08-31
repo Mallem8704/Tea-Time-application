@@ -122,16 +122,17 @@ def create_coupon(
     db.refresh(coupon)
 
     # Audit log
-    import json
-    audit = AuditLog(
-        outlet_id=target_outlet_id or current_user.outlet_id,
+    from app.audit_utils import log_audit
+    eff_outlet_id = get_effective_outlet_id(target_outlet_id or current_user.outlet_id, db)
+    log_audit(
+        db=db,
+        outlet_id=eff_outlet_id,
         user_id=current_user.id,
         action="create_coupon",
         entity_type="coupon",
         entity_id=coupon.id,
-        details_json=json.dumps({"code": code_clean, "discount_type": req.discount_type, "discount_value": req.discount_value})
+        details={"code": code_clean, "discount_type": req.discount_type, "discount_value": req.discount_value}
     )
-    db.add(audit)
     db.commit()
 
     return coupon
@@ -149,16 +150,16 @@ def delete_coupon(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coupon not found")
 
     coupon.is_active = False
-    db.commit()
-
-    import json
-    audit = AuditLog(
-        outlet_id=coupon.outlet_id or current_user.outlet_id,
+    
+    from app.audit_utils import log_audit
+    eff_outlet_id = get_effective_outlet_id(coupon.outlet_id or current_user.outlet_id, db)
+    log_audit(
+        db=db,
+        outlet_id=eff_outlet_id,
         user_id=current_user.id,
         action="deactivate_coupon",
         entity_type="coupon",
         entity_id=coupon.id,
-        details_json=json.dumps({"code": coupon.code, "is_active": False})
+        details={"code": coupon.code, "is_active": False}
     )
-    db.add(audit)
     db.commit()
