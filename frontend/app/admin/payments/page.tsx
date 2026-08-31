@@ -4,6 +4,7 @@ import { printPOSReceipt } from "@/lib/thermalPrint";
 import { dispatchCustomerWhatsApp, dispatchPostDiningReview } from "@/lib/whatsapp";
 import { Printer, MessageCircle, Star } from "lucide-react";
 import { EODReportModal } from "@/components/admin/EODReportModal";
+import { PaymentSettlementModal } from "@/components/admin/PaymentSettlementModal";
 
 
 import { useOutlet } from "@/context/OutletContext";
@@ -46,6 +47,8 @@ export default function AdminPaymentsPage() {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [showEODModal, setShowEODModal] = useState<boolean>(false);
+    const [selectedOrderForSettlement, setSelectedOrderForSettlement] = useState<any | null>(null);
+    const [showSettlementModal, setShowSettlementModal] = useState<boolean>(false);
 
     // Auth Guard
     useEffect(() => {
@@ -306,15 +309,29 @@ export default function AdminPaymentsPage() {
                                                 </span>
                                             </div>
 
+                                        <div className="flex items-center gap-2">
                                             <Button
                                                 variant="primary"
                                                 size="sm"
-                                                className="bg-emerald-600 hover:bg-emerald-700 text-xs py-1.5"
-                                                onClick={() => handleMarkCashPaid(order.id, order.order_number)}
-                                                leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                                                className="bg-amber-500 hover:bg-amber-400 text-black font-black text-xs py-1.5 shadow-sm"
+                                                onClick={() => {
+                                                    setSelectedOrderForSettlement(order);
+                                                    setShowSettlementModal(true);
+                                                }}
+                                                leftIcon={<CreditCard className="w-3.5 h-3.5" />}
                                             >
-                                                Mark Cash Paid
+                                                Settle Bill (UPI / Cash / Split)
                                             </Button>
+
+                                            <button
+                                                onClick={() => handleMarkCashPaid(order.id, order.order_number)}
+                                                className="px-2.5 py-1.5 rounded-xl border border-cream-300 hover:bg-cream-100 text-espresso-800 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                                                title="Instant 1-Tap Cash Settlement"
+                                            >
+                                                <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+                                                <span className="hidden sm:inline">Quick Cash</span>
+                                            </button>
+                                        </div>
                                         </div>
                                     </div>
                                 ))}
@@ -479,6 +496,19 @@ export default function AdminPaymentsPage() {
                     </div>
                 </div>
             </main>
+
+            {/* Payment Settlement Modal (Dynamic UPI / Cash Tender / Split) */}
+            {showSettlementModal && selectedOrderForSettlement && (
+                <PaymentSettlementModal
+                    isOpen={showSettlementModal}
+                    onClose={() => {
+                        setShowSettlementModal(false);
+                        setSelectedOrderForSettlement(null);
+                    }}
+                    order={selectedOrderForSettlement}
+                    onSuccess={() => fetchPaymentData()}
+                />
+            )}
         </div>
     </div>
 );

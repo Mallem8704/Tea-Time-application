@@ -41,6 +41,7 @@ export interface PrintOutletData {
     phone?: string | null;
     tax_rate_percent?: number;
     tagline?: string | null;
+    upi_vpa?: string | null;
 }
 
 function parseAddons(jsonStr?: string | null): string[] {
@@ -385,10 +386,21 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
                 <div><strong>Payment:</strong> ${(order.payment_method || "COD").toUpperCase()} (${(order.payment_status || "PENDING").toUpperCase()})</div>
             </div>
 
+            ${order.payment_status !== "paid" ? `
+            <div class="dashed-divider"></div>
+            <div class="text-center" style="margin-top: 6px;">
+                <div style="font-size: 10px; font-weight: bold; margin-bottom: 3px;">*** SCAN TO PAY VIA ANY UPI APP ***</div>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(
+                    `upi://pay?pa=${(outlet?.upi_vpa || "arabieq@ybl")}&pn=${encodeURIComponent(outlet?.name || "Arabieq")}&am=${totalRs}&tn=Order_${order.order_number}&cu=INR`
+                )}" style="width: 100px; height: 100px; margin: 0 auto; display: block;" />
+                <div style="font-size: 9px; margin-top: 3px; font-weight: bold;">GPay • PhonePe • Paytm • BHIM • CRED</div>
+            </div>
+            ` : ""}
+
             <div class="divider"></div>
             <div class="text-center" style="font-size: 10px; margin-top: 6px;">
-                Thank you for dining with Arabieq!<br/>
-                Visit Again & Enjoy Authentic Mandi & Chai.<br/>
+                Thank you for dining with ${(outlet?.name || "Arabieq")}!<br/>
+                Visit Again & Enjoy Authentic Food.<br/>
                 <em>Order Online: arabic-restaurant-dineos.vercel.app</em>
             </div>
         </body>

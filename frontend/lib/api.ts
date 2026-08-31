@@ -195,6 +195,12 @@ export const api = {
         apiFetch("/api/payments/verify-razorpay-payment", { method: "POST", body: JSON.stringify(data) }),
     markCashPaid: (orderId: number, notes?: string) =>
         apiFetch(`/api/payments/${orderId}/mark-cash-paid`, { method: "POST", body: JSON.stringify({ notes }) }),
+    recordPayment: (orderId: number, data: { method: string; amount_paise: number; tendered_paise?: number; change_returned_paise?: number; txn_id?: string; notes?: string }) =>
+        apiFetch(`/api/payments/${orderId}/record-payment`, { method: "POST", body: JSON.stringify(data) }),
+    splitPayment: (orderId: number, data: { payments: Array<{ method: string; amount_paise: number; tendered_paise?: number; change_returned_paise?: number; txn_id?: string; notes?: string }>; notes?: string }) =>
+        apiFetch(`/api/payments/${orderId}/split-payment`, { method: "POST", body: JSON.stringify(data) }),
+    getDynamicUpi: (orderId: number) =>
+        apiFetch(`/api/payments/${orderId}/dynamic-upi`),
     getPayments: (params?: { outlet_id?: number; method?: string; status?: string }) =>
         apiFetch("/api/payments", { params }),
 

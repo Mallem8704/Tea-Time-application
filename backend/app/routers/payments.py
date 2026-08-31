@@ -8,13 +8,17 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from dotenv import load_dotenv
 
+import urllib.parse
 from app.database import get_db
-from app.models import Order, Payment, User
+from app.models import Order, Payment, User, Outlet
 from app.schemas import (
     RazorpayOrderRequest,
     RazorpayOrderResponse,
     RazorpayVerifyRequest,
     MarkCashPaidRequest,
+    RecordPaymentRequest,
+    SplitPaymentRequest,
+    DynamicUpiQrResponse,
     PaymentOut,
     OrderOut,
 )
@@ -237,6 +241,271 @@ async def mark_cash_payment_paid(
         "amount_paise": order.total_paise,
         "amount_formatted": f"₹{order.total_paise / 100:.2f}",
         "payment_status": "paid",
+        "collected_by": current_user.name,
+    }
+
+
+# ==========================================
+# DYNAMIC ZERO-FEE NPCI UPI QR GENERATION
+# ==========================================
+
+@router.get("/{order_id}/dynamic-upi", response_model=DynamicUpiQrResponse)
+def get_dynamic_upi_qr(
+    order_id: int,
+    db: Session = Depends(get_db),
+):
+    """Generate official NPCI Dynamic UPI Intent URI for zero-fee direct payment with exact balance."""
+    order = db.query(Order).options(joinedload(Order.table)).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail=f"Order #{order_id} not found")
+
+    outlet = db.query(Outlet).filter(Outlet.id == order.outlet_id).first()
+    outlet_name = outlet.name if outlet else "Arabieq Restaurant"
+    upi_vpa = (outlet.upi_vpa if outlet and outlet.upi_vpa else "arabieq@ybl").strip()
+
+    # Calculate remaining balance to pay
+    paid_paise = sum(
+        p.amount_paise for p in db.query(Payment).filter(
+            Payment.order_id == order.id,
+            Payment.status == "completed"
+        ).all()
+    )
+    balance_paise = max(0, order.total_paise - paid_paise)
+    amount_rs = round(balance_paise / 100.0, 2)
+
+    # Standard NPCI UPI URI: upi://pay?pa={vpa}&pn={name}&am={amount}&tn={note}&cu=INR
+    encoded_name = urllib.parse.quote(outlet_name)
+    encoded_note = urllib.parse.quote(f"Order_{order.order_number}")
+    upi_uri = f"upi://pay?pa={upi_vpa}&pn={encoded_name}&am={amount_rs:.2f}&tn={encoded_note}&cu=INR"
+
+    return DynamicUpiQrResponse(
+        upi_uri=upi_uri,
+        amount_paise=balance_paise,
+        amount_rs=amount_rs,
+        order_number=order.order_number,
+        outlet_name=outlet_name,
+        upi_vpa=upi_vpa,
+    )
+
+
+# ==========================================
+# CASHIER FAST TENDER & HYBRID / RECORD PAYMENT
+# ==========================================
+
+@router.post("/{order_id}/record-payment")
+async def record_order_payment(
+    order_id: int,
+    data: RecordPaymentRequest,
+    current_user: User = Depends(require_staff_or_owner),
+    db: Session = Depends(get_db),
+):
+    """Record a single payment (cash with change calculation, UPI, or card) towards an order."""
+    order = (
+        db.query(Order)
+        .options(joinedload(Order.items), joinedload(Order.table))
+        .filter(Order.id == order_id, Order.outlet_id == current_user.outlet_id)
+        .first()
+    )
+    if not order:
+        raise HTTPException(status_code=404, detail=f"Order with ID {order_id} not found")
+
+    if order.payment_status == "paid":
+        return {
+            "success": True,
+            "message": "Order is already fully paid",
+            "order_number": order.order_number,
+            "payment_status": "paid",
+            "balance_paise": 0,
+        }
+
+    txn_prefix = data.method.upper()
+    txn_id = data.txn_id or f"{txn_prefix}-{order.order_number}-{uuid.uuid4().hex[:6]}"
+    
+    notes = data.notes or f"Paid via {data.method.upper()}"
+    if data.tendered_paise and data.change_returned_paise is not None:
+        notes += f" (Tendered: ₹{data.tendered_paise/100:.2f}, Change: ₹{data.change_returned_paise/100:.2f})"
+
+    payment = Payment(
+        order_id=order.id,
+        method=data.method.lower(),
+        txn_id=txn_id,
+        amount_paise=data.amount_paise,
+        status="completed",
+        paid_at=datetime.datetime.utcnow(),
+        notes=f"{notes} (Collected by {current_user.name})",
+    )
+    db.add(payment)
+    db.flush()
+
+    # Recalculate total paid
+    all_payments = db.query(Payment).filter(Payment.order_id == order.id, Payment.status == "completed").all()
+    total_paid_paise = sum(p.amount_paise for p in all_payments)
+    balance_paise = max(0, order.total_paise - total_paid_paise)
+
+    if total_paid_paise >= order.total_paise:
+        order.payment_status = "paid"
+        methods = set(p.method for p in all_payments)
+        order.payment_method = list(methods)[0] if len(methods) == 1 else "split"
+    else:
+        order.payment_status = "partially_paid"
+
+    log_audit(
+        db=db,
+        outlet_id=current_user.outlet_id,
+        user_id=current_user.id,
+        action="payment_collected",
+        entity_type="payment",
+        entity_id=order.id,
+        details={
+            "order_number": order.order_number,
+            "method": data.method,
+            "amount_paise": data.amount_paise,
+            "amount_formatted": f"₹{data.amount_paise / 100:.2f}",
+            "tendered_paise": data.tendered_paise,
+            "change_returned_paise": data.change_returned_paise,
+            "total_paid_paise": total_paid_paise,
+            "balance_paise": balance_paise,
+            "collected_by": current_user.name,
+        },
+    )
+
+    db.commit()
+    db.refresh(order)
+
+    # Broadcast updated payment state
+    from app.routers.orders import format_order_response
+    formatted = format_order_response(order)
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=order.outlet_id,
+            event_type="order_status_updated",
+            data=formatted.model_dump(mode="json"),
+        )
+        await manager.broadcast_to_order(
+            order_id=order.id,
+            event_type="order_status_updated",
+            data=formatted.model_dump(mode="json"),
+            outlet_id=order.outlet_id,
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "message": f"Payment of ₹{data.amount_paise/100:.2f} recorded",
+        "order_number": order.order_number,
+        "amount_paise": data.amount_paise,
+        "total_paid_paise": total_paid_paise,
+        "balance_paise": balance_paise,
+        "payment_status": order.payment_status,
+        "payment_method": order.payment_method,
+        "collected_by": current_user.name,
+    }
+
+
+# ==========================================
+# MULTI-TENDER & SPLIT BILLING SETTLEMENT
+# ==========================================
+
+@router.post("/{order_id}/split-payment")
+async def split_order_payment(
+    order_id: int,
+    data: SplitPaymentRequest,
+    current_user: User = Depends(require_staff_or_owner),
+    db: Session = Depends(get_db),
+):
+    """Process multiple split payment splits (e.g. 50% Cash + 50% UPI, or N persons) atomically."""
+    order = (
+        db.query(Order)
+        .options(joinedload(Order.items), joinedload(Order.table))
+        .filter(Order.id == order_id, Order.outlet_id == current_user.outlet_id)
+        .first()
+    )
+    if not order:
+        raise HTTPException(status_code=404, detail=f"Order with ID {order_id} not found")
+
+    created_payments = []
+    total_split_paise = 0
+
+    for idx, p_req in enumerate(data.payments):
+        txn_id = p_req.txn_id or f"SPLIT-{p_req.method.upper()}-{order.order_number}-{idx+1}-{uuid.uuid4().hex[:4]}"
+        notes = p_req.notes or f"Split payment #{idx+1} ({p_req.method.upper()})"
+        if p_req.tendered_paise and p_req.change_returned_paise is not None:
+            notes += f" (Tendered: ₹{p_req.tendered_paise/100:.2f}, Change: ₹{p_req.change_returned_paise/100:.2f})"
+
+        payment = Payment(
+            order_id=order.id,
+            method=p_req.method.lower(),
+            txn_id=txn_id,
+            amount_paise=p_req.amount_paise,
+            status="completed",
+            paid_at=datetime.datetime.utcnow(),
+            notes=f"{notes} (Collected by {current_user.name})",
+        )
+        db.add(payment)
+        created_payments.append(payment)
+        total_split_paise += p_req.amount_paise
+
+    db.flush()
+
+    # Recalculate total paid
+    all_payments = db.query(Payment).filter(Payment.order_id == order.id, Payment.status == "completed").all()
+    total_paid_paise = sum(p.amount_paise for p in all_payments)
+    balance_paise = max(0, order.total_paise - total_paid_paise)
+
+    if total_paid_paise >= order.total_paise:
+        order.payment_status = "paid"
+        order.payment_method = "split"
+    else:
+        order.payment_status = "partially_paid"
+
+    log_audit(
+        db=db,
+        outlet_id=current_user.outlet_id,
+        user_id=current_user.id,
+        action="split_payment_collected",
+        entity_type="payment",
+        entity_id=order.id,
+        details={
+            "order_number": order.order_number,
+            "splits_count": len(data.payments),
+            "total_split_paise": total_split_paise,
+            "total_paid_paise": total_paid_paise,
+            "balance_paise": balance_paise,
+            "collected_by": current_user.name,
+        },
+    )
+
+    db.commit()
+    db.refresh(order)
+
+    # Broadcast update
+    from app.routers.orders import format_order_response
+    formatted = format_order_response(order)
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=order.outlet_id,
+            event_type="order_status_updated",
+            data=formatted.model_dump(mode="json"),
+        )
+        await manager.broadcast_to_order(
+            order_id=order.id,
+            event_type="order_status_updated",
+            data=formatted.model_dump(mode="json"),
+            outlet_id=order.outlet_id,
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "message": f"Split payments totaling ₹{total_split_paise/100:.2f} recorded",
+        "order_number": order.order_number,
+        "splits_count": len(created_payments),
+        "total_paid_paise": total_paid_paise,
+        "balance_paise": balance_paise,
+        "payment_status": order.payment_status,
+        "payment_method": order.payment_method,
         "collected_by": current_user.name,
     }
 

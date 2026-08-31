@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     CheckCircle2,
     Clock,
@@ -16,6 +16,9 @@ import {
     CreditCard,
     PlusCircle,
     ArrowLeft,
+    QrCode,
+    ExternalLink,
+    Smartphone,
 } from "lucide-react";
 import { formatRupees, formatDateTime } from "@/lib/formatters";
 import { useLanguage } from "@/context/LanguageContext";
@@ -78,6 +81,17 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
     const [order, setOrder] = useState<OrderDetail>(initialOrder);
     const [callingService, setCallingService] = useState<string | null>(null);
     const [isPayingOnline, setIsPayingOnline] = useState(false);
+    const [dynamicUpi, setDynamicUpi] = useState<any>(null);
+    const [showUpiQr, setShowUpiQr] = useState(false);
+
+    // Fetch dynamic UPI details if unpaid
+    useEffect(() => {
+        if (order && order.payment_status !== "paid") {
+            api.getDynamicUpi(order.id)
+                .then((data: any) => setDynamicUpi(data))
+                .catch(() => {});
+        }
+    }, [order.id, order.payment_status]);
 
     // Subscribe to real-time WebSocket events for this order
     const { isConnected: wsConnected } = useOrderSocket(order.id, (updatedData) => {
@@ -344,36 +358,81 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                 </div>
 
                 {/* Payment Status Card */}
-                <div className="p-3.5 rounded-2xl bg-cream-100/80 border border-cream-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-espresso-500 block">
-                            Payment Method
-                        </span>
-                        <span className="text-xs font-extrabold text-espresso-900 capitalize inline-flex items-center gap-1.5 mt-0.5">
-                            {order.payment_status === "paid" ? (
-                                <>
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                    <span>{t("payment_status_paid")} ({order.payment_method.toUpperCase()})</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Clock className="w-3.5 h-3.5 text-saffron-600 shrink-0" />
-                                    <span>{t("payment_status_pending")}</span>
-                                </>
-                            )}
-                        </span>
+                <div className="p-4 rounded-2xl bg-cream-100/80 border border-cream-200 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-espresso-500 block">
+                                Payment Method
+                            </span>
+                            <span className="text-xs font-extrabold text-espresso-900 capitalize inline-flex items-center gap-1.5 mt-0.5">
+                                {order.payment_status === "paid" ? (
+                                    <>
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>{t("payment_status_paid")} ({order.payment_method.toUpperCase()})</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Clock className="w-3.5 h-3.5 text-saffron-600 shrink-0" />
+                                        <span>{t("payment_status_pending")} ({order.payment_method.toUpperCase()})</span>
+                                    </>
+                                )}
+                            </span>
+                        </div>
+
+                        {order.payment_status !== "paid" && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                {dynamicUpi && (
+                                    <a
+                                        href={dynamicUpi.upi_uri}
+                                        className="px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md transition cursor-pointer"
+                                    >
+                                        <Smartphone className="w-3.5 h-3.5" />
+                                        <span>Pay via UPI (GPay/PhonePe)</span>
+                                    </a>
+                                )}
+
+                                <button
+                                    onClick={() => setShowUpiQr(!showUpiQr)}
+                                    className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 border border-amber-400/40 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                                >
+                                    <QrCode className="w-3.5 h-3.5 text-amber-700" />
+                                    <span>{showUpiQr ? "Hide QR" : "Show UPI QR"}</span>
+                                </button>
+
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    isLoading={isPayingOnline}
+                                    onClick={handlePayOnlineNow}
+                                    leftIcon={<CreditCard className="w-3.5 h-3.5" />}
+                                >
+                                    Cards / Netbanking
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
-                    {order.payment_status !== "paid" && (
-                        <Button
-                            size="sm"
-                            variant="saffron"
-                            isLoading={isPayingOnline}
-                            onClick={handlePayOnlineNow}
-                            leftIcon={<CreditCard className="w-3.5 h-3.5" />}
-                        >
-                            Pay Online Now ({formatRupees(order.total_paise)})
-                        </Button>
+                    {/* Collapsible Dynamic UPI QR */}
+                    {order.payment_status !== "paid" && showUpiQr && dynamicUpi && (
+                        <div className="pt-3 border-t border-cream-200 flex flex-col items-center gap-2 text-center animate-in fade-in">
+                            <div className="bg-white p-2 rounded-2xl border border-cream-300 shadow-md">
+                                <img
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                                        dynamicUpi.upi_uri
+                                    )}`}
+                                    alt="Dynamic UPI QR"
+                                    className="w-36 h-36 object-contain rounded-lg"
+                                />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-espresso-950">
+                                    Scan & Pay <span className="text-emerald-700 font-mono">₹{dynamicUpi.amount_rs.toFixed(2)}</span>
+                                </p>
+                                <p className="text-[10px] text-espresso-500 font-mono">
+                                    UPI VPA: {dynamicUpi.upi_vpa}
+                                </p>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>

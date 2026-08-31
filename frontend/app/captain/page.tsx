@@ -41,6 +41,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAdminSocket, SocketEvent } from "@/hooks/useSockets";
 import { printKOT, printRunningKOT, printPOSReceipt } from "@/lib/thermalPrint";
 import { soundManager } from "@/lib/sound";
+import { PaymentSettlementModal } from "@/components/admin/PaymentSettlementModal";
 
 interface CafeTableData {
     id: number;
@@ -121,6 +122,7 @@ export default function CaptainWaiterPage() {
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [transferTargetTableId, setTransferTargetTableId] = useState<number | null>(null);
     const [isTransferring, setIsTransferring] = useState(false);
+    const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
 
     // Load initial data
     const loadFloorData = useCallback(async () => {
@@ -681,6 +683,14 @@ export default function CaptainWaiterPage() {
                                     {/* Action Buttons for Active Table */}
                                     <div className="grid grid-cols-2 gap-2 pt-2">
                                         <button
+                                            onClick={() => setIsSettlementModalOpen(true)}
+                                            className="col-span-2 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 cursor-pointer"
+                                        >
+                                            <CreditCard className="w-4 h-4" />
+                                            <span>Settle Table Bill (Dynamic UPI / Cash / Split)</span>
+                                        </button>
+
+                                        <button
                                             onClick={() => setIsMenuSheetOpen(true)}
                                             className="py-3 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs flex items-center justify-center gap-1.5 shadow-lg cursor-pointer"
                                         >
@@ -984,6 +994,19 @@ export default function CaptainWaiterPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Table Payment Settlement Modal */}
+            {isSettlementModalOpen && tableOrder && (
+                <PaymentSettlementModal
+                    isOpen={isSettlementModalOpen}
+                    onClose={() => setIsSettlementModalOpen(false)}
+                    order={tableOrder}
+                    onSuccess={() => {
+                        loadFloorData();
+                        setSelectedTable(null);
+                    }}
+                />
             )}
         </div>
     );

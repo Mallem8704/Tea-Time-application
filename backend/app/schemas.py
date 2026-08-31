@@ -397,6 +397,29 @@ class MarkCashPaidRequest(BaseModel):
     notes: Optional[str] = "Paid in cash at counter"
 
 
+class RecordPaymentRequest(BaseModel):
+    method: str = "cash"  # 'cash', 'upi', 'card'
+    amount_paise: int
+    tendered_paise: Optional[int] = None  # for cash change calculation
+    change_returned_paise: Optional[int] = None
+    txn_id: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class SplitPaymentRequest(BaseModel):
+    payments: List[RecordPaymentRequest]
+    notes: Optional[str] = None
+
+
+class DynamicUpiQrResponse(BaseModel):
+    upi_uri: str
+    amount_paise: int
+    amount_rs: float
+    order_number: str
+    outlet_name: str
+    upi_vpa: str
+
+
 class PaymentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

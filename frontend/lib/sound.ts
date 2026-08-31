@@ -175,6 +175,43 @@ class SoundManager {
             console.warn("Could not play ready chime", e);
         }
     }
+
+    /**
+     * Built-in Voice "Soundbox" Audio Engine.
+     * Plays a pleasant dual-tone cash register chime, followed by crystal-clear speech synthesis!
+     */
+    playPaymentSoundbox(amountRs: number, method: string = "UPI", tableLabel?: string, language: "en" | "te" = "en") {
+        // 1. Play Cash Register Chime
+        this.playOrderPlacedSuccess();
+
+        // 2. Synthesize Voice Announcement
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+            try {
+                window.speechSynthesis.cancel(); // Cancel any ongoing speech
+                const cleanAmount = Math.round(amountRs);
+                const tableText = tableLabel ? ` for Table ${tableLabel}` : "";
+                
+                let textToSpeak = `Payment of rupees ${cleanAmount} received on ${method}${tableText}.`;
+                if (language === "te") {
+                    textToSpeak = tableLabel 
+                        ? `టేబుల్ ${tableLabel} కోసం ${cleanAmount} రూపాయల పేమెంట్ అందింది.`
+                        : `${cleanAmount} రూపాయల పేమెంట్ విజయవంతంగా అందింది.`;
+                }
+
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.rate = 1.05;
+                utterance.pitch = 1.1;
+                utterance.lang = language === "te" ? "te-IN" : "en-IN";
+                
+                // Small delay so the initial chime plays cleanly first
+                setTimeout(() => {
+                    window.speechSynthesis.speak(utterance);
+                }, 350);
+            } catch (e) {
+                console.warn("Speech synthesis error", e);
+            }
+        }
+    }
 }
 
 export const soundManager = new SoundManager();
