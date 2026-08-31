@@ -516,16 +516,19 @@ export default function CaptainWaiterPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                         {filteredTables.map((table) => {
                             const order = getOrderForTable(table.id);
-                            const hasCall = serviceCalls.some((c) => c.table_id === table.id);
+                            const billCall = serviceCalls.find((c) => c.table_id === table.id && c.call_type === "bill");
+                            const otherCall = serviceCalls.find((c) => c.table_id === table.id && c.call_type !== "bill");
                             const isOccupied = !!order || table.status === "occupied";
 
                             return (
                                 <div
                                     key={table.id}
                                     onClick={() => handleTableClick(table)}
-                                    className={`relative p-3.5 rounded-2xl border-2 transition-all duration-200 cursor-pointer flex flex-col justify-between h-36 ${
-                                        hasCall
-                                            ? "border-blue-400 bg-blue-950/40 shadow-lg shadow-blue-500/20 animate-pulse"
+                                    className={`relative p-3.5 rounded-2xl border-2 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[150px] ${
+                                        billCall
+                                            ? "border-amber-400 bg-amber-950/60 shadow-xl shadow-amber-500/20 animate-pulse"
+                                            : otherCall
+                                            ? "border-blue-400 bg-blue-950/40 shadow-lg shadow-blue-500/20"
                                             : isOccupied
                                             ? "border-amber-500/80 bg-amber-950/20 shadow-md shadow-amber-500/10 hover:border-amber-400"
                                             : "border-emerald-500/40 bg-emerald-950/10 hover:border-emerald-400"
@@ -536,7 +539,11 @@ export default function CaptainWaiterPage() {
                                         <span className="text-lg font-black font-mono text-white">
                                             {table.label}
                                         </span>
-                                        {hasCall ? (
+                                        {billCall ? (
+                                            <span className="px-2 py-0.5 rounded-full bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1">
+                                                <span>🧾 Bill</span>
+                                            </span>
+                                        ) : otherCall ? (
                                             <span className="p-1 rounded-md bg-blue-500 text-black">
                                                 <Bell className="w-3.5 h-3.5 fill-black" />
                                             </span>
@@ -550,7 +557,7 @@ export default function CaptainWaiterPage() {
                                     {/* Order Snapshot */}
                                     {order ? (
                                         <div className="space-y-1 my-auto">
-                                            <p className="text-xs font-black text-amber-300 font-mono">
+                                            <p className="text-sm font-black text-amber-300 font-mono">
                                                 {formatRupees(order.total_paise)}
                                             </p>
                                             <p className="text-[10px] text-white/70">
@@ -573,10 +580,26 @@ export default function CaptainWaiterPage() {
 
                                     {/* Bottom Quick Button */}
                                     <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-bold">
-                                        <span className={isOccupied ? "text-amber-400" : "text-emerald-400"}>
-                                            {isOccupied ? "Active Dining" : "Available"}
-                                        </span>
-                                        <ArrowRight className="w-3 h-3 text-white/50" />
+                                        {isOccupied && order ? (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedTable(table);
+                                                    setTableOrder(order);
+                                                    setIsSettlementModalOpen(true);
+                                                }}
+                                                className="w-full py-1 px-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-black flex items-center justify-center gap-1 shadow-sm transition"
+                                            >
+                                                <CreditCard className="w-3 h-3" />
+                                                <span>Settle Bill</span>
+                                            </button>
+                                        ) : (
+                                            <div className="flex items-center justify-between w-full">
+                                                <span className="text-emerald-400">Available</span>
+                                                <ArrowRight className="w-3 h-3 text-white/50" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );

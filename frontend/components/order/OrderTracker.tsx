@@ -83,6 +83,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
     const [isPayingOnline, setIsPayingOnline] = useState(false);
     const [dynamicUpi, setDynamicUpi] = useState<any>(null);
     const [showUpiQr, setShowUpiQr] = useState(false);
+    const [isBillRequested, setIsBillRequested] = useState(false);
 
     // Fetch dynamic UPI details if unpaid
     useEffect(() => {
@@ -97,6 +98,9 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
     const { isConnected: wsConnected } = useOrderSocket(order.id, (updatedData) => {
         console.log("[OrderTracker] Received live order update:", updatedData);
         setOrder(updatedData);
+        if (updatedData.payment_status === "paid") {
+            setIsBillRequested(false);
+        }
         toast.info(`Order #${updatedData.order_number} status updated to: ${updatedData.status.toUpperCase()}`);
     });
 
@@ -110,6 +114,9 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
         setCallingService(callType);
         try {
             await api.createServiceCall(order.table_id, callType, `Table ${order.table_label || order.table_id} requested ${label}`);
+            if (callType === "bill") {
+                setIsBillRequested(true);
+            }
             toast.success(`Request sent: ${label}! Cafe staff is on the way to Table ${order.table_label || order.table_id}.`);
         } catch (err: any) {
             toast.error(err.message || "Failed to notify staff");
@@ -432,6 +439,27 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                                     UPI VPA: {dynamicUpi.upi_vpa}
                                 </p>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Paid Celebration Banner */}
+                    {order.payment_status === "paid" && (
+                        <div className="p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-white text-center space-y-0.5 animate-in fade-in">
+                            <p className="text-xs font-black text-emerald-300 flex items-center justify-center gap-1.5">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                <span>Bill Paid ({formatRupees(order.total_paise)})</span>
+                            </p>
+                            <p className="text-[11px] text-white/70">
+                                Thank you for dining with {outlet?.name || "Arabieq"}! We hope you enjoyed your meal.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Bill Requested Active Pill */}
+                    {order.payment_status !== "paid" && isBillRequested && (
+                        <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-950 text-xs font-bold flex items-center justify-between animate-pulse">
+                            <span>🧾 Bill of {formatRupees(order.total_paise)} requested. Floor captain is coming to your table!</span>
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
                         </div>
                     )}
                 </div>

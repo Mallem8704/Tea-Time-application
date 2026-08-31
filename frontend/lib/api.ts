@@ -152,6 +152,10 @@ export const api = {
     },
     callService: (tableId: number, call_type: string) =>
         apiFetch(`/api/tables/${tableId}/call`, { method: "POST", body: JSON.stringify({ call_type }) }),
+    getTableActiveOrder: (tableId: number) =>
+        apiFetch(`/api/tables/${tableId}/active-order`),
+    settleAndFreeTable: (tableId: number, paymentData?: { method?: string; amount_paise?: number; tendered_paise?: number; change_returned_paise?: number; txn_id?: string; notes?: string }) =>
+        apiFetch(`/api/tables/${tableId}/settle-and-free`, { method: "POST", body: JSON.stringify(paymentData || {}) }),
 
     // Orders
     createOrder: (data: {

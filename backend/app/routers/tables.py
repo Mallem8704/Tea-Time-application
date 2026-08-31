@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 import qrcode
 
+import datetime
+import uuid
 from app.database import get_db
-from app.models import CafeTable, ServiceCall, Order, User, Outlet
+from app.models import CafeTable, ServiceCall, Order, User, Outlet, Payment
 from app.schemas import (
     TableCreate,
     TableUpdate,
@@ -16,6 +18,8 @@ from app.schemas import (
     TableOut,
     ServiceCallCreate,
     ServiceCallOut,
+    RecordPaymentRequest,
+    SplitPaymentRequest,
 )
 from app.routers.auth import get_current_user, get_current_user_optional, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
@@ -530,3 +534,182 @@ async def attend_service_call(
         status=call.status,
         created_at=call.created_at,
     )
+
+
+# ==========================================
+# TABLE-SIDE ACTIVE ORDER & SETTLE / FREE
+# ==========================================
+
+@router.get("/{table_id}/active-order")
+def get_table_active_order(
+    table_id: int,
+    db: Session = Depends(get_db),
+):
+    """Fetch active dining order on a table (items, financial totals, dynamic UPI URI)."""
+    table = db.query(CafeTable).filter(CafeTable.id == table_id).first()
+    if not table:
+        raise HTTPException(status_code=404, detail=f"Table #{table_id} not found")
+
+    order = (
+        db.query(Order)
+        .options(joinedload(Order.items), joinedload(Order.table))
+        .filter(
+            Order.table_id == table_id,
+            Order.status != "cancelled",
+            Order.payment_status != "paid",
+        )
+        .order_by(Order.created_at.desc())
+        .first()
+    )
+
+    if not order:
+        return {"has_active_order": False, "table": {"id": table.id, "label": table.label, "status": table.status}}
+
+    outlet = db.query(Outlet).filter(Outlet.id == order.outlet_id).first()
+    outlet_name = outlet.name if outlet else "Arabieq Restaurant"
+    upi_vpa = (outlet.upi_vpa if outlet and outlet.upi_vpa else "arabieq@ybl").strip()
+
+    # Calculate balance
+    paid_paise = sum(
+        p.amount_paise for p in db.query(Payment).filter(
+            Payment.order_id == order.id,
+            Payment.status == "completed"
+        ).all()
+    )
+    balance_paise = max(0, order.total_paise - paid_paise)
+    amount_rs = round(balance_paise / 100.0, 2)
+
+    encoded_name = urllib.parse.quote(outlet_name)
+    encoded_note = urllib.parse.quote(f"Table_{table.label}_Order_{order.order_number}")
+    upi_uri = f"upi://pay?pa={upi_vpa}&pn={encoded_name}&am={amount_rs:.2f}&tn={encoded_note}&cu=INR"
+
+    from app.routers.orders import format_order_response
+    formatted_order = format_order_response(order)
+
+    return {
+        "has_active_order": True,
+        "table": {"id": table.id, "label": table.label, "status": table.status},
+        "order": formatted_order,
+        "dynamic_upi": {
+            "upi_uri": upi_uri,
+            "amount_paise": balance_paise,
+            "amount_rs": amount_rs,
+            "upi_vpa": upi_vpa,
+            "outlet_name": outlet_name,
+        }
+    }
+
+
+@router.post("/{table_id}/settle-and-free")
+async def settle_and_free_table(
+    table_id: int,
+    payment_data: Optional[RecordPaymentRequest] = None,
+    current_user: User = Depends(require_staff_or_owner),
+    db: Session = Depends(get_db),
+):
+    """Settle table bill and immediately free up table for next guests (turnaround)."""
+    table = db.query(CafeTable).filter(CafeTable.id == table_id, CafeTable.outlet_id == current_user.outlet_id).first()
+    if not table:
+        raise HTTPException(status_code=404, detail=f"Table #{table_id} not found")
+
+    order = (
+        db.query(Order)
+        .options(joinedload(Order.items), joinedload(Order.table))
+        .filter(
+            Order.table_id == table_id,
+            Order.outlet_id == current_user.outlet_id,
+            Order.status != "cancelled",
+        )
+        .order_by(Order.created_at.desc())
+        .first()
+    )
+
+    settled_amount_paise = 0
+    if order and order.payment_status != "paid":
+        method = payment_data.method.lower() if payment_data else "cash"
+        amount_paise = payment_data.amount_paise if payment_data else order.total_paise
+        settled_amount_paise = amount_paise
+
+        txn_id = (payment_data.txn_id if payment_data and payment_data.txn_id else f"SETTLE-{method.upper()}-{order.order_number}-{uuid.uuid4().hex[:6]}")
+        notes = (payment_data.notes if payment_data and payment_data.notes else f"Table {table.label} settled at table by {current_user.name}")
+        if payment_data and payment_data.tendered_paise and payment_data.change_returned_paise is not None:
+            notes += f" (Tendered: ₹{payment_data.tendered_paise/100:.2f}, Change: ₹{payment_data.change_returned_paise/100:.2f})"
+
+        payment = Payment(
+            order_id=order.id,
+            method=method,
+            txn_id=txn_id,
+            amount_paise=amount_paise,
+            status="completed",
+            paid_at=datetime.datetime.utcnow(),
+            notes=notes,
+        )
+        db.add(payment)
+
+        order.payment_status = "paid"
+        order.payment_method = method
+        if order.status in ("placed", "accepted", "preparing", "ready"):
+            order.status = "served"
+
+    # Free up table & clear active service calls
+    table.status = "free"
+    table.active_order_id = None
+
+    pending_calls = db.query(ServiceCall).filter(ServiceCall.table_id == table_id, ServiceCall.status == "pending").all()
+    for pc in pending_calls:
+        pc.status = "attended"
+
+    log_audit(
+        db=db,
+        outlet_id=current_user.outlet_id,
+        user_id=current_user.id,
+        action="table_settled_and_freed",
+        entity_type="table",
+        entity_id=table.id,
+        details={
+            "table_label": table.label,
+            "order_number": order.order_number if order else None,
+            "amount_paise": settled_amount_paise,
+            "amount_formatted": f"₹{settled_amount_paise/100:.2f}",
+            "settled_by": current_user.name,
+        },
+    )
+
+    db.commit()
+    db.refresh(table)
+    if order:
+        db.refresh(order)
+
+    # Real-time WebSocket Broadcasts
+    try:
+        await manager.broadcast_to_admin(
+            outlet_id=current_user.outlet_id,
+            event_type="table_updated",
+            data={"id": table.id, "label": table.label, "status": "free", "active_order_id": None},
+        )
+        if order:
+            from app.routers.orders import format_order_response
+            formatted = format_order_response(order)
+            await manager.broadcast_to_order(
+                order_id=order.id,
+                event_type="order_status_updated",
+                data=formatted.model_dump(mode="json"),
+                outlet_id=order.outlet_id,
+            )
+            await manager.broadcast_to_admin(
+                outlet_id=order.outlet_id,
+                event_type="order_status_updated",
+                data=formatted.model_dump(mode="json"),
+            )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "message": f"Table {table.label} settled and freed successfully",
+        "table_id": table.id,
+        "table_label": table.label,
+        "table_status": "free",
+        "order_number": order.order_number if order else None,
+        "payment_status": "paid" if order else None,
+    }
