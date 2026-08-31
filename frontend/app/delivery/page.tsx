@@ -24,6 +24,7 @@ import {
     ShieldCheck,
     Navigation,
     Bike,
+    Star,
     AlertCircle,
     Store,
     IndianRupee,
@@ -42,6 +43,7 @@ import { LogIn, UserCheck, RotateCcw, Bookmark } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useOutlet } from "@/context/OutletContext";
 import { formatRupees, formatRelativeTime } from "@/lib/formatters";
 import { Button } from "@/components/ui/Button";
 import { VegBadge, SpecialBadge } from "@/components/ui/Badge";
@@ -104,6 +106,7 @@ function DeliveryOrderContent() {
     const router = useRouter();
     const toast = useToast();
     const { language, t } = useLanguage();
+    const { outlet } = useOutlet();
 
     // Branch selection (default 2 for full menu, or 1 for grills/mandi)
     const branchParam = searchParams.get("branch");
@@ -692,6 +695,46 @@ function DeliveryOrderContent() {
                                     );
                                 })}
                             </div>
+                        </div>
+                    </div>
+
+                    {/* 5-Star Google Review Booster & WhatsApp Feedback */}
+                    <div className="bg-gradient-to-r from-amber-50 via-saffron-50 to-amber-100/60 rounded-3xl p-6 border-2 border-amber-300 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
+                                <Star className="w-7 h-7 fill-white" />
+                            </div>
+                            <div>
+                                <h4 className="text-base font-serif font-black text-espresso-950 flex items-center gap-2">
+                                    <span>Loved your Arabian Feast?</span>
+                                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 font-bold border border-amber-300">
+                                        Get Free Chai
+                                    </span>
+                                </h4>
+                                <p className="text-xs text-espresso-700 mt-0.5">
+                                    Leave a 5-Star rating on Google Maps & show it on your next visit for 10% OFF or a complimentary Irani Chai!
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
+                            <a
+                                href="https://maps.app.goo.gl/KadiriArabieq"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs shadow-md text-center transition flex items-center justify-center gap-1.5"
+                            >
+                                <Star className="w-3.5 h-3.5 fill-current" />
+                                <span>Rate on Google</span>
+                            </a>
+
+                            <button
+                                onClick={() => dispatchCustomerWhatsApp(activeOrder, outlet)}
+                                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                <span>Share Invoice</span>
+                            </button>
                         </div>
                     </div>
                 </main>

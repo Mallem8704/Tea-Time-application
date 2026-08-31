@@ -215,6 +215,8 @@ export const api = {
         apiFetch("/api/analytics/category-breakdown", { params: outletId ? { outlet_id: outletId } : undefined }),
     getTableTurnover: (outletId?: number) =>
         apiFetch("/api/analytics/table-turnover", { params: outletId ? { outlet_id: outletId } : undefined }),
+    getEODReport: (date?: string, outletId?: number) =>
+        apiFetch("/api/analytics/eod-report", { params: { date, outlet_id: outletId } }),
 
     // Audit Logs
     getAuditLogs: (params?: { outlet_id?: number; entity_type?: string; limit?: number }) =>

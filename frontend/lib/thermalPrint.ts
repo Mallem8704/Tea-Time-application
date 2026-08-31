@@ -297,6 +297,125 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
     triggerBrowserPrint(receiptHtml);
 }
 
+/**
+ * Print End-of-Day (EOD) Z-Report for Cashier & Store Manager Reconciliation (80mm & 58mm).
+ */
+export function printEODZReport(report: any, outlet?: PrintOutletData | null) {
+    if (typeof window === "undefined" || !report) return;
+
+    const outletName = (report.outlet?.name || outlet?.name || "ARABIEQ RESTAURANT & CAFE").toUpperCase();
+    const outletAddress = report.outlet?.address || outlet?.address || "Kadiri, Andhra Pradesh";
+    const outletPhone = report.outlet?.phone || outlet?.phone || "+91 98765 43210";
+
+    const s = report.sales_summary || {};
+    const pm = report.payment_methods || {};
+    const oc = report.order_channels || {};
+    const topItems = report.top_selling_items || [];
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>EOD Z-Report - ${report.report_date}</title>
+    <style>
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            width: 76mm;
+            margin: 0 auto;
+            padding: 8px 2px;
+            font-size: 12px;
+            color: #000;
+            line-height: 1.25;
+        }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .double-line { border-bottom: 2px dashed #000; margin: 6px 0; }
+        .single-line { border-bottom: 1px dashed #000; margin: 4px 0; }
+        .row { display: flex; justify-content: space-between; margin: 2px 0; }
+        .big-title { font-size: 15px; font-weight: bold; }
+        .sub-title { font-size: 10px; color: #444; }
+        .section-header { font-weight: bold; margin: 4px 0 2px 0; text-transform: uppercase; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <div class="big-title">${outletName}</div>
+        <div class="sub-title">${outletAddress}</div>
+        <div class="sub-title">Phone: ${outletPhone}</div>
+        <div class="double-line"></div>
+        <div style="font-size: 14px; font-weight: bold; background: #000; color: #fff; padding: 2px 0;">
+            *** DAILY EOD Z-REPORT ***
+        </div>
+        <div class="row" style="margin-top: 4px;">
+            <span>DATE: <strong>${report.report_date}</strong></span>
+            <span>GEN: ${new Date(report.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+    </div>
+
+    <div class="double-line"></div>
+    <div class="section-header">1. SALES SUMMARY</div>
+    <div class="row"><span>Total Orders Placed:</span><span class="bold">${s.total_orders || 0}</span></div>
+    <div class="row" style="padding-left: 8px; font-size: 11px;"><span>• Dine-in Orders:</span><span>${oc.dine_in?.count || 0} (₹${(oc.dine_in?.total_rupees || 0).toFixed(2)})</span></div>
+    <div class="row" style="padding-left: 8px; font-size: 11px;"><span>• Delivery Orders:</span><span>${oc.delivery?.count || 0} (₹${(oc.delivery?.total_rupees || 0).toFixed(2)})</span></div>
+    
+    <div class="single-line"></div>
+    <div class="row"><span>Gross Sales:</span><span>₹${(s.gross_sales_rupees || 0).toFixed(2)}</span></div>
+    <div class="row"><span>Total Discounts:</span><span>-₹${(s.total_discount_rupees || 0).toFixed(2)}</span></div>
+    <div class="row bold"><span>Net Sales:</span><span>₹${(s.net_sales_rupees || 0).toFixed(2)}</span></div>
+    <div class="row"><span>Total GST Tax:</span><span>+₹${(s.total_tax_rupees || 0).toFixed(2)}</span></div>
+    <div class="double-line"></div>
+    <div class="row" style="font-size: 14px; font-weight: bold;">
+        <span>TOTAL REVENUE:</span>
+        <span>₹${(s.total_revenue_rupees || 0).toFixed(2)}</span>
+    </div>
+    <div class="row" style="font-size: 11px;">
+        <span>Avg Order Value (AOV):</span>
+        <span>₹${(s.avg_order_value_rupees || 0).toFixed(2)}</span>
+    </div>
+
+    <div class="double-line"></div>
+    <div class="section-header">2. CASH DRAWER & PAYMENT SPLIT</div>
+    <div class="row bold"><span>Cash in Drawer:</span><span>₹${(pm.cash?.total_rupees || 0).toFixed(2)} (${pm.cash?.count || 0})</span></div>
+    <div class="row bold"><span>UPI Collections:</span><span>₹${(pm.upi?.total_rupees || 0).toFixed(2)} (${pm.upi?.count || 0})</span></div>
+    ${pm.card?.count ? `<div class="row"><span>Card / POS:</span><span>₹${(pm.card?.total_rupees || 0).toFixed(2)} (${pm.card?.count || 0})</span></div>` : ''}
+    ${pm.counter?.count ? `<div class="row"><span>Counter Direct:</span><span>₹${(pm.counter?.total_rupees || 0).toFixed(2)} (${pm.counter?.count || 0})</span></div>` : ''}
+    ${pm.cod?.count ? `<div class="row"><span>COD Delivery:</span><span>₹${(pm.cod?.total_rupees || 0).toFixed(2)} (${pm.cod?.count || 0})</span></div>` : ''}
+
+    ${topItems.length > 0 ? `
+    <div class="double-line"></div>
+    <div class="section-header">3. TOP SELLING DISHES</div>
+    ${topItems.map((it: any, i: number) => `
+        <div class="row" style="font-size: 11px;">
+            <span>${i + 1}. ${it.item_name} (x${it.qty_sold})</span>
+            <span>₹${(it.revenue_rupees || 0).toFixed(2)}</span>
+        </div>
+    `).join('')}
+    ` : ''}
+
+    <div class="double-line"></div>
+    <div style="margin-top: 16px;">
+        <div class="row" style="font-size: 10px;">
+            <span>Cashier Sign: ________________</span>
+        </div>
+        <div class="row" style="margin-top: 12px; font-size: 10px;">
+            <span>Manager Sign: ________________</span>
+        </div>
+    </div>
+    <div class="center" style="font-size: 9px; margin-top: 10px; color: #666;">
+        End of Z-Report • Generated via Arabieq DineOS
+    </div>
+</body>
+</html>
+    `;
+
+    triggerBrowserPrint(htmlContent);
+}
+
 function triggerBrowserPrint(htmlContent: string) {
     const printFrame = document.createElement("iframe");
     printFrame.style.position = "fixed";
@@ -321,3 +440,4 @@ function triggerBrowserPrint(htmlContent: string) {
         }, 300);
     }
 }
+

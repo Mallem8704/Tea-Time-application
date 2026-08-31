@@ -27,6 +27,7 @@ import {
     PhoneCall,
     Printer,
     MessageCircle,
+    Star,
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -36,7 +37,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
 import { printKOT, printPOSReceipt } from "@/lib/thermalPrint";
-import { dispatchCustomerWhatsApp } from "@/lib/whatsapp";
+import { dispatchCustomerWhatsApp, dispatchPostDiningReview } from "@/lib/whatsapp";
 import { useAdminSocket } from "@/hooks/useSockets";
 import { formatRupees, formatRelativeTime, formatTimeOnly } from "@/lib/formatters";
 import { soundManager } from "@/lib/sound";
@@ -478,11 +479,22 @@ export default function AdminLiveOrdersKanbanPage() {
                                                             {order.order_type === "delivery" && order.customer_phone && (
                                                                 <button
                                                                     onClick={() => dispatchCustomerWhatsApp(order, outlet)}
-                                                                    className="px-2 py-1 rounded-md bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 text-emerald-900 font-bold flex items-center gap-1 transition cursor-pointer ml-auto"
+                                                                    className="px-2 py-1 rounded-md bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 text-emerald-900 font-bold flex items-center gap-1 transition cursor-pointer"
                                                                     title="Send WhatsApp Confirmation & Live Tracking"
                                                                 >
                                                                     <MessageCircle className="w-2.5 h-2.5 text-emerald-600" />
-                                                                    <span>WhatsApp</span>
+                                                                    <span>Invoice</span>
+                                                                </button>
+                                                            )}
+
+                                                            {order.customer_phone && (
+                                                                <button
+                                                                    onClick={() => dispatchPostDiningReview(order, outlet)}
+                                                                    className="px-2 py-1 rounded-md bg-amber-50 border border-amber-300 hover:bg-amber-100 text-amber-900 font-bold flex items-center gap-1 transition cursor-pointer ml-auto"
+                                                                    title="Send 5-Star Google Review Invite on WhatsApp"
+                                                                >
+                                                                    <Star className="w-2.5 h-2.5 text-amber-600 fill-amber-500" />
+                                                                    <span>Review</span>
                                                                 </button>
                                                             )}
                                                         </div>

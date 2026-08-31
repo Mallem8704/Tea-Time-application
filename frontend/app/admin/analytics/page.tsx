@@ -25,6 +25,8 @@ import { useToast } from "@/context/ToastContext";
 import { formatRupees } from "@/lib/formatters";
 import { api } from "@/lib/api";
 import { useAdminLiveState } from "@/hooks/useAdminLiveState";
+import { EODReportModal } from "@/components/admin/EODReportModal";
+import { Printer } from "lucide-react";
 
 export default function AdminAnalyticsDashboardPage() {
     const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -41,6 +43,7 @@ export default function AdminAnalyticsDashboardPage() {
     const [tableTurnover, setTableTurnover] = useState<any[]>([]);
     const [timeRangeDays, setTimeRangeDays] = useState<number>(7);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [showEODModal, setShowEODModal] = useState<boolean>(false);
 
     // Auth Guard
     useEffect(() => {
@@ -130,6 +133,16 @@ export default function AdminAnalyticsDashboardPage() {
                         </div>
 
                         <Button
+                            variant="primary"
+                            size="sm"
+                            className="bg-amber-600 hover:bg-amber-500 text-white font-extrabold shadow-md cursor-pointer"
+                            leftIcon={<Printer className="w-3.5 h-3.5" />}
+                            onClick={() => setShowEODModal(true)}
+                        >
+                            Daily EOD Z-Report
+                        </Button>
+
+                        <Button
                             variant="outline"
                             size="sm"
                             leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
@@ -139,6 +152,11 @@ export default function AdminAnalyticsDashboardPage() {
                         </Button>
                     </div>
                 </div>
+
+                <EODReportModal
+                    isOpen={showEODModal}
+                    onClose={() => setShowEODModal(false)}
+                />
 
                 {/* Scrollable Dashboard Grid */}
                 <main className="flex-1 overflow-y-auto p-6 bg-cream-100 space-y-6">

@@ -1,8 +1,9 @@
 "use client";
 
 import { printPOSReceipt } from "@/lib/thermalPrint";
-import { dispatchCustomerWhatsApp } from "@/lib/whatsapp";
-import { Printer, MessageCircle } from "lucide-react";
+import { dispatchCustomerWhatsApp, dispatchPostDiningReview } from "@/lib/whatsapp";
+import { Printer, MessageCircle, Star } from "lucide-react";
+import { EODReportModal } from "@/components/admin/EODReportModal";
 
 
 import { useOutlet } from "@/context/OutletContext";
@@ -44,6 +45,7 @@ export default function AdminPaymentsPage() {
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [showEODModal, setShowEODModal] = useState<boolean>(false);
 
     // Auth Guard
     useEffect(() => {
@@ -150,15 +152,32 @@ export default function AdminPaymentsPage() {
                         </p>
                     </div>
 
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
-                        onClick={fetchPaymentData}
-                    >
-                        Refresh Ledger
-                    </Button>
+                    <div className="flex items-center gap-2.5">
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            className="bg-amber-600 hover:bg-amber-500 text-white font-extrabold shadow-md cursor-pointer"
+                            leftIcon={<Printer className="w-3.5 h-3.5" />}
+                            onClick={() => setShowEODModal(true)}
+                        >
+                            Daily EOD Z-Report
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+                            onClick={fetchPaymentData}
+                        >
+                            Refresh Ledger
+                        </Button>
+                    </div>
                 </div>
+
+                <EODReportModal
+                    isOpen={showEODModal}
+                    onClose={() => setShowEODModal(false)}
+                />
 
                 {/* Summary KPI Cards */}
                 <div className="p-6 pb-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
@@ -419,20 +438,37 @@ export default function AdminPaymentsPage() {
                                                     {formatDateTime(p.created_at)}
                                                 </td>
                                                 <td className="py-3.5 px-4 text-center">
-                                                    <button
-                                                        onClick={() => {
-                                                            const matchOrder = orders.find(o => o.id === p.order_id);
-                                                            if (matchOrder) {
-                                                                printPOSReceipt(matchOrder, outlet);
-                                                            } else {
-                                                                toast.info("Loading order details...");
-                                                            }
-                                                        }}
-                                                        className="p-1.5 rounded-lg bg-cream-100 hover:bg-cream-200 text-espresso-800 transition cursor-pointer"
-                                                        title="Print POS Thermal Bill"
-                                                    >
-                                                        <Printer className="w-3.5 h-3.5" />
-                                                    </button>
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <button
+                                                            onClick={() => {
+                                                                const matchOrder = orders.find(o => o.id === p.order_id);
+                                                                if (matchOrder) {
+                                                                    printPOSReceipt(matchOrder, outlet);
+                                                                } else {
+                                                                    toast.info("Loading order details...");
+                                                                }
+                                                            }}
+                                                            className="p-1.5 rounded-lg bg-cream-100 hover:bg-cream-200 text-espresso-800 transition cursor-pointer"
+                                                            title="Print POS Thermal Bill"
+                                                        >
+                                                            <Printer className="w-3.5 h-3.5" />
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => {
+                                                                const matchOrder = orders.find(o => o.id === p.order_id);
+                                                                if (matchOrder) {
+                                                                    dispatchPostDiningReview(matchOrder, outlet);
+                                                                } else {
+                                                                    toast.info("Loading order details...");
+                                                                }
+                                                            }}
+                                                            className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 transition cursor-pointer border border-amber-200"
+                                                            title="Send 5-Star Google Review Invite on WhatsApp"
+                                                        >
+                                                            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
