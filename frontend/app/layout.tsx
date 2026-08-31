@@ -37,6 +37,27 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        {/* Pre-hydration: nuke stale service workers & caches on iOS Safari */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  if (typeof caches !== 'undefined') {
+                    caches.keys().then(function(names) {
+                      names.forEach(function(name) {
+                        if (name !== 'arabieq-dineos-v3') {
+                          caches.delete(name);
+                          console.log('[CacheBust] Deleted stale cache:', name);
+                        }
+                      });
+                    });
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className="min-h-screen bg-cream-50 text-espresso-900 selection:bg-terracotta-500 selection:text-white flex flex-col font-sans"
@@ -61,9 +82,16 @@ export default function RootLayout({
             __html: `
               if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    function(reg) { console.log('[PWA] ServiceWorker registered with scope: ', reg.scope); },
-                    function(err) { console.log('[PWA] ServiceWorker registration failed: ', err); }
+                  // Force-update: always check network for new sw.js
+                  navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    regs.forEach(function(reg) { reg.update(); });
+                  });
+                  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(
+                    function(reg) {
+                      console.log('[PWA] ServiceWorker registered, scope:', reg.scope);
+                      reg.update();
+                    },
+                    function(err) { console.log('[PWA] ServiceWorker registration failed:', err); }
                   );
                 });
               }
