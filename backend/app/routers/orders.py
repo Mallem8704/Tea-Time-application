@@ -604,8 +604,9 @@ async def append_order_items(
                 outlet_id=order.outlet_id,
                 item_id=menu_item.id,
                 change_qty=-it_req.qty,
-                reason=f"Captain Running KOT append Order #{order.order_number}",
-                user_id=current_user.id,
+                reason="sale",
+                notes=f"Captain Running KOT append Order #{order.order_number}",
+                staff_id=current_user.id,
             )
             db.add(stock_log)
 
