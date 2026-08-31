@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     QrCode, ChefHat, MapPin, Clock, Phone, ArrowRight, Star, Flame,
-    Leaf, Coffee, Utensils, ShieldCheck, Menu, X, Instagram, Facebook,
-    Twitter, Sparkles, ChevronDown,
+    Leaf, Coffee, Utensils, ShieldCheck, Menu, X, Share2, Globe,
+    MessageCircle, Sparkles, ChevronDown,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -443,7 +443,7 @@ export default function HomePage() {
                             </div>
                         </Link>
                         <div className="flex items-center gap-4">
-                            {([Instagram, Facebook, Twitter] as React.ElementType[]).map((Icon, i) => (
+                            {([Share2, Globe, MessageCircle] as React.ElementType[]).map((Icon, i) => (
                                 <button key={i} className="w-10 h-10 rounded-xl glass hover:bg-amber-500/20 flex items-center justify-center text-white/40 hover:text-amber-400 transition-all">
                                     <Icon className="w-4 h-4" />
                                 </button>

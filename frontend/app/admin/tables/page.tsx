@@ -58,14 +58,14 @@ export default function AdminTablesPage() {
     const fetchTables = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await api.getTables();
+            const data = await api.getTables(outlet?.id || 1);
             setTables(data);
         } catch {
             toast.error("Failed to load tables");
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, outlet?.id]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -322,7 +322,7 @@ export default function AdminTablesPage() {
                                                     className="w-28 h-28 object-contain bg-white p-2 rounded-xl shadow-2xs border border-cream-200"
                                                 />
                                                 <span className="text-[10px] text-espresso-500 font-semibold mt-2">
-                                                    /order?table={table.label}
+                                                    /order?branch={outlet?.id || 1}&table={table.label}
                                                 </span>
                                             </div>
                                         </div>
@@ -358,7 +358,7 @@ export default function AdminTablesPage() {
                                             )}
 
                                             <a
-                                                href={`/order?table=${table.label}`}
+                                                href={`/order?branch=${outlet?.id || 1}&table=${table.label}`}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 className="p-2 rounded-xl bg-cream-100 hover:bg-cream-200 text-espresso-700 transition"
@@ -577,7 +577,7 @@ export default function AdminTablesPage() {
                                     </option>
                                 </select>
                                 <span className="text-[10px] text-espresso-500 font-mono">
-                                    Encodes: {qrTargetDomain}/order?table={selectedTableForQr.label}
+                                    Encodes: {qrTargetDomain}/order?branch={outlet?.id || 1}&table={selectedTableForQr.label}
                                 </span>
                             </div>
 

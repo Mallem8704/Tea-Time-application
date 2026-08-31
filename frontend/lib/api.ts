@@ -202,7 +202,9 @@ export const api = {
 
     // Outlet Settings
     getOutlet: (outletId = 1) =>
-        apiFetch("/api/outlets", { params: { outlet_id: outletId } }),
+        apiFetch("/api/outlets/single", { params: { outlet_id: outletId } }),
+    getOutlets: () =>
+        apiFetch("/api/outlets/list"),
     updateOutlet: (outletId: number, data: any) =>
         apiFetch(`/api/outlets?outlet_id=${outletId}`, { method: "PUT", body: JSON.stringify(data) }),
 };

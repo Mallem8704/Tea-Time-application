@@ -96,7 +96,7 @@ async def create_table(
         )
 
     encoded_label = urllib.parse.quote(label_clean)
-    qr_url = f"{FRONTEND_URL}/order?table={encoded_label}"
+    qr_url = f"{FRONTEND_URL}/order?branch={current_user.outlet_id}&table={encoded_label}"
     new_table = CafeTable(
         outlet_id=current_user.outlet_id,
         label=label_clean,
@@ -357,13 +357,13 @@ def generate_table_qr(
     # Resolve target URL dynamically based on frontend caller origin or production domain
     if frontend_url and frontend_url.startswith("http"):
         base_origin = frontend_url.rstrip("/")
-        target_url = f"{base_origin}/order?table={table.label}"
+        target_url = f"{base_origin}/order?branch={table.outlet_id}&table={table.label}"
     else:
         configured_origin = FRONTEND_URL.split(",")[0].strip().rstrip("/")
         if table.qr_code_url and not table.qr_code_url.startswith("http://localhost"):
             target_url = table.qr_code_url
         else:
-            target_url = f"{configured_origin}/order?table={table.label}"
+            target_url = f"{configured_origin}/order?branch={table.outlet_id}&table={table.label}"
 
     # Generate QR Code image with cafe brand colors (crisp 15 box size)
     qr = qrcode.QRCode(

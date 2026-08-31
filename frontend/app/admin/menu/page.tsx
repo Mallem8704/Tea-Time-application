@@ -29,12 +29,14 @@ import { useToast } from "@/context/ToastContext";
 import { formatRupees } from "@/lib/formatters";
 import { api } from "@/lib/api";
 import { useAdminLiveState } from "@/hooks/useAdminLiveState";
+import { useOutlet } from "@/context/OutletContext";
 
 export default function AdminMenuManagementPage() {
     const { isAuthenticated, isOwner, isLoading: authLoading } = useAuth();
     const { t } = useLanguage();
     const toast = useToast();
     const router = useRouter();
+    const { outlet } = useOutlet();
     const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
 
     const [categories, setCategories] = useState<any[]>([]);
@@ -58,10 +60,10 @@ export default function AdminMenuManagementPage() {
         name_te: "",
         description: "",
         description_te: "",
-        price_rupees: "20",
-        is_veg: true,
+        price_rupees: "",
+        is_veg: false,
         is_available: true,
-        track_stock: true,
+        track_stock: false,
         stock_qty: 100,
         low_stock_threshold: 10,
         is_special: false,
@@ -81,8 +83,8 @@ export default function AdminMenuManagementPage() {
         setIsLoading(true);
         try {
             const [cats, menu] = await Promise.all([
-                api.getCategories(false),
-                api.getMenu(),
+                api.getCategories(false, outlet?.id),
+                api.getMenu(outlet?.id),
             ]);
             setCategories(cats);
             setItems(menu);
@@ -94,7 +96,7 @@ export default function AdminMenuManagementPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, outlet?.id]);
 
     useEffect(() => {
         if (isAuthenticated) {

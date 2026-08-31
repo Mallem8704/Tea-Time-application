@@ -41,6 +41,14 @@ function CustomerOrderContent() {
     // ── Branch / Outlet from URL param ─────────────────────────────────────
     const branchParam = searchParams.get("branch");
     const outletId = branchParam ? Number(branchParam) : undefined;
+    const [branchOutlet, setBranchOutlet] = useState<any>(null);
+
+    // Fetch branch-specific outlet details
+    useEffect(() => {
+        if (outletId) {
+            api.getOutlet(outletId).then((o) => setBranchOutlet(o)).catch(() => {});
+        }
+    }, [outletId]);
 
     // Table State
     const [tableLabel, setTableLabel] = useState<string>("T1");
@@ -347,15 +355,28 @@ function CustomerOrderContent() {
             {/* Header */}
             <header className="border-b border-cream-200 bg-white/90 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                         <img
                             src="/logo.png"
                             alt="Arabic Restaurant Logo"
-                            className="h-11 sm:h-12 w-auto object-contain"
+                            className="h-10 sm:h-11 w-auto object-contain"
                         />
+                        <div className="hidden sm:block">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-terracotta-600 block">
+                                {branchOutlet?.name || (outletId === 2 ? "New Arabieq & Cafe" : "Old Arabieq Restaurant")}
+                            </span>
+                            <span className="text-[10px] text-espresso-500 font-medium">
+                                Kadiri Branch {outletId || 1}
+                            </span>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {/* Branch indicator on mobile */}
+                        <span className="sm:hidden text-[10px] font-black px-2 py-0.5 rounded-full bg-terracotta-100 text-terracotta-800">
+                            B{outletId || 1}
+                        </span>
+
                         {/* Table Selector Pill */}
                         <button
                             onClick={() => setShowTablePicker(true)}

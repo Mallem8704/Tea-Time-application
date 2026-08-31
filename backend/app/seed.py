@@ -1,6 +1,7 @@
-"""Seed script for Arabic Restaurant (New Arabieq) SaaS.
-Populates outlet, admin/staff users, tables, 11 authentic restaurant categories,
-and the complete Arabieq Restaurant Menu transcribed from the official menu PDF.
+"""Dual-branch seed script for Arabieq Restaurant.
+Creates 2 separate outlets with their own users, tables, categories and menu items.
+Branch 1 (Old Arabieq): no Tiffin/Breakfast/Dosa, opens 12PM
+Branch 2 (New Arabieq & Cafe): full 11 categories, opens 7AM
 """
 
 import sys
@@ -14,19 +15,21 @@ from app.models import Outlet, User, CafeTable, Category, MenuItem, StockLog, Au
 from app.auth_utils import get_password_hash
 from app.arabieq_data import CATEGORIES, ITEMS
 
+# Category IDs to EXCLUDE for Branch 1 (no Tiffin & Breakfast, no Dosa Specials)
+BRANCH1_EXCLUDE_CATS = {1, 2}
+
 
 def seed_database(clear_existing: bool = True):
     print("=" * 70)
-    print("[SEED] SEEDING ARABIC RESTAURANT (ARABIEQ) DATABASE")
+    print("[SEED] SEEDING ARABIEQ RESTAURANT - DUAL BRANCH")
     print("=" * 70)
 
-    # Recreate tables cleanly
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
     try:
         if clear_existing:
-            print("[INFO] Clearing existing data to seed fresh authentic Arabieq menu...")
+            print("[INFO] Clearing all existing data...")
             db.query(AuditLog).delete()
             db.query(ServiceCall).delete()
             db.query(Payment).delete()
@@ -37,174 +40,184 @@ def seed_database(clear_existing: bool = True):
             db.query(Category).delete()
             db.query(CafeTable).delete()
             db.query(User).delete()
+            db.query(Outlet).delete()
             db.commit()
 
-        # 1. Seed or Update Master Outlet
-        outlet = db.query(Outlet).first()
-        if not outlet:
-            outlet = Outlet(
-                id=1,
-                name="Arabic Restaurant",
-                address="Main Bazaar Road, Kadiri, Andhra Pradesh - 515591",
-                phone="+91 98765 43210",
-                currency="INR",
-                tax_rate_percent=5,
-                opening_hours="11:00 AM – 11:30 PM (Daily)",
-                tagline="Authentic Arabian Cuisine, Mandi & Grills",
-                logo_url="/logo.png",
-                gstin="37AAAAA0000A1Z5",
-                fssai_license_number="10123999000123",
-                upi_vpa="arabicrestaurant@upi",
-            )
-            db.add(outlet)
-            db.flush()
-        else:
-            outlet.name = "Arabic Restaurant"
-            outlet.address = "Main Bazaar Road, Kadiri, Andhra Pradesh - 515591"
-            outlet.tagline = "Authentic Arabian Cuisine, Mandi & Grills"
-            outlet.opening_hours = "11:00 AM – 11:30 PM (Daily)"
-            outlet.phone = "+91 98765 43210"
-            outlet.tax_rate_percent = 5
-            db.flush()
-
-        print(f"[OK] Master Outlet Ready: {outlet.name} (ID: {outlet.id})")
-
-        # 2. Seed Users (Owner & Staff)
-        owner_password = "admin123"
-        staff_password = "staff123"
-
-        owner_user = User(
-            outlet_id=outlet.id,
-            name="Sreenivasulu",
-            email="owner@teatime.com",
-            password_hash=get_password_hash(owner_password),
-            role="owner",
+        # OUTLET 1: Old Arabieq Restaurant
+        outlet1 = Outlet(
+            name="Old Arabieq Restaurant",
+            address="2nd Floor, Near More Super Market, Rahmath Tower, Madanapalli Road, Kadiri",
+            phone="+91 98765 43210",
+            currency="INR",
+            tax_rate_percent=5,
+            opening_hours="12:00 PM - 11:30 PM (Daily)",
+            tagline="Authentic Mandi, Biryani and Arabian Grills",
+            logo_url="/logo.png",
+            gstin="37AAAAA0000A1Z5",
+            fssai_license_number="10123999000123",
+            upi_vpa="arabicrestaurant@upi",
         )
-        staff_user = User(
-            outlet_id=outlet.id,
-            name="Suresh Kumar",
-            email="staff@teatime.com",
-            password_hash=get_password_hash(staff_password),
-            role="staff",
+        db.add(outlet1)
+        db.flush()
+        print(f"[OK] Outlet 1 created: {outlet1.name} (ID: {outlet1.id})")
+
+        # OUTLET 2: New Arabieq Restaurant and Cafe
+        outlet2 = Outlet(
+            name="New Arabieq Restaurant and Cafe",
+            address="Opposite to Girls High School, Kadiri, Andhra Pradesh",
+            phone="+91 98765 43211",
+            currency="INR",
+            tax_rate_percent=5,
+            opening_hours="7:00 AM - 11:30 PM (Daily)",
+            tagline="Full Menu, Breakfast, Cafe and Fine Dining",
+            logo_url="/logo.png",
+            gstin="37BBBBB0000B1Z5",
+            fssai_license_number="10123999000124",
+            upi_vpa="arabicrestaurant2@upi",
         )
-        db.add_all([owner_user, staff_user])
+        db.add(outlet2)
+        db.flush()
+        print(f"[OK] Outlet 2 created: {outlet2.name} (ID: {outlet2.id})")
+
+        # USERS for Branch 1
+        db.add_all([
+            User(outlet_id=outlet1.id, name="Sreenivasulu", email="owner@arabieq.com",
+                 password_hash=get_password_hash("admin123"), role="owner"),
+            User(outlet_id=outlet1.id, name="Suresh Kumar", email="staff1@arabieq.com",
+                 password_hash=get_password_hash("staff123"), role="staff"),
+            # Legacy emails for backward compatibility
+            User(outlet_id=outlet1.id, name="Sreenivasulu", email="owner@teatime.com",
+                 password_hash=get_password_hash("admin123"), role="owner"),
+            User(outlet_id=outlet1.id, name="Suresh Kumar", email="staff@teatime.com",
+                 password_hash=get_password_hash("staff123"), role="staff"),
+        ])
+
+        # USERS for Branch 2
+        db.add_all([
+            User(outlet_id=outlet2.id, name="Sreenivasulu", email="owner2@arabieq.com",
+                 password_hash=get_password_hash("admin123"), role="owner"),
+            User(outlet_id=outlet2.id, name="Mohammed Rafiq", email="staff2@arabieq.com",
+                 password_hash=get_password_hash("staff123"), role="staff"),
+        ])
         db.flush()
 
-        print("\n" + "-" * 50)
-        print("[CREDENTIALS] DEMO LOGIN CREDENTIALS:")
-        print(f"  • OWNER:  Email: owner@teatime.com | Password: {owner_password}")
-        print(f"  • STAFF:  Email: staff@teatime.com | Password: {staff_password}")
-        print("-" * 50 + "\n")
+        print("\n" + "-" * 60)
+        print("[CREDENTIALS] BRANCH LOGIN CREDENTIALS:")
+        print("  BRANCH 1 (Old Arabieq):")
+        print("    Owner:  owner@arabieq.com / admin123")
+        print("    Staff:  staff1@arabieq.com / staff123")
+        print("    Legacy: owner@teatime.com / admin123")
+        print("  BRANCH 2 (New Arabieq and Cafe):")
+        print("    Owner:  owner2@arabieq.com / admin123")
+        print("    Staff:  staff2@arabieq.com / staff123")
+        print("-" * 60 + "\n")
 
-        # 3. Seed Tables (T1 to T10)
-        tables = []
+        # TABLES for Branch 1 (T1-T10)
         for i in range(1, 11):
-            table_label = f"T{i}"
-            qr_url = f"https://arabic-restaurant-dineos.vercel.app/order?table={table_label}"
-            table = CafeTable(
-                outlet_id=outlet.id,
-                label=table_label,
-                qr_code_url=qr_url,
+            lbl = f"T{i}"
+            db.add(CafeTable(
+                outlet_id=outlet1.id, label=lbl,
+                qr_code_url=f"https://arabic-restaurant-dineos.vercel.app/order?branch=BRANCH1_ID&table={lbl}",
                 status="free",
-            )
-            tables.append(table)
-        db.add_all(tables)
+            ))
         db.flush()
-        print(f"[OK] Created {len(tables)} Dining Tables (T1 to T10)")
+        # Fix QR URLs with actual outlet1 id
+        from app.models import CafeTable as CT
+        for t in db.query(CT).filter(CT.outlet_id == outlet1.id).all():
+            t.qr_code_url = f"https://arabic-restaurant-dineos.vercel.app/order?branch={outlet1.id}&table={t.label}"
+        db.flush()
+        print(f"[OK] Branch 1 Tables: T1-T10 with QR branch={outlet1.id}")
 
-        # 4. Seed Categories
-        category_map = {}
-        for c in CATEGORIES:
-            cat = Category(
-                outlet_id=outlet.id,
-                name=c["name"],
-                name_te=c.get("name_te"),
-                sort_order=c["sort_order"],
-                is_active=c.get("is_active", True),
-            )
+        # TABLES for Branch 2 (T1-T10)
+        for i in range(1, 11):
+            lbl = f"T{i}"
+            db.add(CafeTable(
+                outlet_id=outlet2.id, label=lbl,
+                qr_code_url=f"https://arabic-restaurant-dineos.vercel.app/order?branch={outlet2.id}&table={lbl}",
+                status="free",
+            ))
+        db.flush()
+        print(f"[OK] Branch 2 Tables: T1-T10 with QR branch={outlet2.id}")
+
+        # CATEGORIES and ITEMS for Branch 1 (no breakfast/tiffin/dosa)
+        cat_map1 = {}
+        branch1_cats = [c for c in CATEGORIES if c["id"] not in BRANCH1_EXCLUDE_CATS]
+        for c in branch1_cats:
+            cat = Category(outlet_id=outlet1.id, name=c["name"], name_te=c.get("name_te"),
+                           sort_order=c["sort_order"], is_active=c.get("is_active", True))
             db.add(cat)
             db.flush()
-            category_map[c["id"]] = cat.id
+            cat_map1[c["id"]] = cat.id
+        print(f"[OK] Branch 1 Categories: {len(cat_map1)} (no breakfast/tiffin)")
 
-        print(f"[OK] Seeded {len(category_map)} Categories")
-
-        # 5. Seed Menu Items
-        created_items = []
+        b1_items = 0
         for it in ITEMS:
-            cat_id = category_map[it["cat"]]
-            price_paise = int(it["price"] * 100)
-            menu_item = MenuItem(
-                outlet_id=outlet.id,
-                category_id=cat_id,
-                name=it["name"],
-                name_te=it.get("name_te"),
-                description=it.get("desc"),
-                price_paise=price_paise,
-                image_url=it.get("img"),
-                is_available=True,
-                is_veg=it.get("veg", False),
-                is_special=it.get("price", 0) >= 300 or "Special" in it["name"] or "Mandi" in it["name"],
-                stock_qty=100,
-                track_stock=False,
-            )
-            db.add(menu_item)
-            created_items.append(menu_item)
-
+            if it["cat"] not in cat_map1:
+                continue
+            db.add(MenuItem(
+                outlet_id=outlet1.id, category_id=cat_map1[it["cat"]],
+                name=it["name"], name_te=it.get("name_te"), description=it.get("desc"),
+                price_paise=int(it["price"] * 100), image_url=it.get("img"),
+                is_available=True, is_veg=it.get("veg", False),
+                is_special=it.get("price", 0) >= 300 or "Special" in it["name"],
+                stock_qty=100, track_stock=False,
+            ))
+            b1_items += 1
         db.flush()
+        print(f"[OK] Branch 1 Items: {b1_items}")
 
-        # Seed initial stock log records
-        for item in created_items:
-            stock_log = StockLog(
-                outlet_id=outlet.id,
-                item_id=item.id,
-                change_qty=100,
-                reason="restock",
-                notes="Initial store opening inventory",
-            )
-            db.add(stock_log)
+        # CATEGORIES and ITEMS for Branch 2 (all 11 categories)
+        cat_map2 = {}
+        for c in CATEGORIES:
+            cat = Category(outlet_id=outlet2.id, name=c["name"], name_te=c.get("name_te"),
+                           sort_order=c["sort_order"], is_active=c.get("is_active", True))
+            db.add(cat)
+            db.flush()
+            cat_map2[c["id"]] = cat.id
+        print(f"[OK] Branch 2 Categories: {len(cat_map2)} (full menu)")
 
-        print(f"[OK] Seeded {len(created_items)} Menu Items from Arabieq Menu PDF")
+        b2_items = 0
+        for it in ITEMS:
+            db.add(MenuItem(
+                outlet_id=outlet2.id, category_id=cat_map2[it["cat"]],
+                name=it["name"], name_te=it.get("name_te"), description=it.get("desc"),
+                price_paise=int(it["price"] * 100), image_url=it.get("img"),
+                is_available=True, is_veg=it.get("veg", False),
+                is_special=it.get("price", 0) >= 300 or "Special" in it["name"],
+                stock_qty=100, track_stock=False,
+            ))
+            b2_items += 1
+        db.flush()
+        print(f"[OK] Branch 2 Items: {b2_items}")
 
         db.commit()
         print("\n" + "=" * 70)
-        print("[SUCCESS] ARABIC RESTAURANT DATABASE SEEDING COMPLETED SUCCESSFULLY!")
+        print("[SUCCESS] DUAL-BRANCH SEEDING COMPLETE!")
+        print(f"  Branch 1 ID: {outlet1.id} | Branch 2 ID: {outlet2.id}")
         print("=" * 70)
+        return outlet1.id, outlet2.id
 
     except Exception as e:
         db.rollback()
         print(f"\n[ERROR] Seeding failed: {e}")
+        import traceback; traceback.print_exc()
         raise e
     finally:
         db.close()
 
 
 def auto_seed_if_empty():
-    """Checks if database has an outlet or needs migration to Arabieq menu."""
     db = SessionLocal()
     try:
-        existing_outlet = db.query(Outlet).first()
+        outlet_count = db.query(Outlet).count()
         categories_count = db.query(Category).count()
-        # If empty or old cafe menu with fewer than 8 categories, reseed cleanly
-        if existing_outlet is None or categories_count < 8:
-            print("[AUTO-SEED] Seeding / Upgrading to full Arabieq Restaurant Menu...")
+        if outlet_count < 2 or categories_count < 10:
+            print("[AUTO-SEED] Setting up dual-branch Arabieq Restaurant...")
             seed_database(clear_existing=True)
         else:
-            print(f"[AUTO-SEED] Database active with {categories_count} categories.")
-            # Ensure outlet name is synchronized to Arabic Restaurant
-            if existing_outlet.name != "Arabic Restaurant":
-                print(f"[STORE-SYNC] Updating outlet name to 'Arabic Restaurant'")
-                existing_outlet.name = "Arabic Restaurant"
-                existing_outlet.tagline = "Authentic Arabian Cuisine, Mandi & Grills"
-                existing_outlet.opening_hours = "11:00 AM – 11:30 PM (Daily)"
-                db.commit()
-            # Ensure owner name is synchronized to Sreenivasulu
-            owner = db.query(User).filter(User.role == "owner").first()
-            if owner and owner.name != "Sreenivasulu":
-                print(f"[AUTH-SYNC] Updating owner name to 'Sreenivasulu'")
-                owner.name = "Sreenivasulu"
-                db.commit()
+            print(f"[AUTO-SEED] DB active: {outlet_count} outlets, {categories_count} categories.")
     except Exception as e:
-        print(f"[AUTO-SEED] Warning: Auto-seed encountered: {e}")
+        print(f"[AUTO-SEED] Warning: {e}")
     finally:
         db.close()
 
