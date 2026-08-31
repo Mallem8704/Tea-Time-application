@@ -39,6 +39,7 @@ import {
     DishCustomizerModal,
     CustomizedSelection,
 } from "@/components/order/DishCustomizerModal";
+import { MenuGridSkeleton } from "@/components/order/MenuGridSkeleton";
 
 function CustomerOrderContent() {
     const searchParams = useSearchParams();
@@ -607,10 +608,8 @@ function CustomerOrderContent() {
 
                 {/* Menu Items */}
                 {isLoadingMenu ? (
-                    <div className="text-center py-20 text-espresso-500">
-                        <Coffee className="w-10 h-10 mx-auto mb-3 text-terracotta-400 animate-pulse" />
-                        <p className="text-sm font-medium">Brewing the menu...</p>
-                        <p className="text-xs text-espresso-400 mt-1">Connecting to cafe server</p>
+                    <div className="py-2">
+                        <MenuGridSkeleton count={8} />
                     </div>
                 ) : loadError ? (
                     <div className="bg-white rounded-3xl p-10 text-center border border-cream-300 shadow-sm max-w-md mx-auto my-8">

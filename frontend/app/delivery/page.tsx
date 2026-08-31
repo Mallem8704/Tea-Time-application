@@ -54,6 +54,7 @@ import {
     MenuItemVariantData,
     MenuItemAddonData,
 } from "@/components/order/DishCustomizerModal";
+import { MenuGridSkeleton } from "@/components/order/MenuGridSkeleton";
 
 interface MenuItemData extends CustomizerItemData {
     category_id: number;
@@ -940,11 +941,7 @@ function DeliveryOrderContent() {
             {/* Dishes Grid */}
             <main className="max-w-5xl mx-auto px-4 py-6">
                 {isLoadingMenu ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="h-44 bg-white rounded-2xl border border-terracotta-100 animate-pulse" />
-                        ))}
-                    </div>
+                    <MenuGridSkeleton count={6} />
                 ) : filteredItems.length === 0 ? (
                     <div className="bg-white rounded-3xl p-12 text-center border border-terracotta-100 max-w-md mx-auto my-8">
                         <UtensilsCrossed className="w-12 h-12 text-espresso-300 mx-auto mb-3" />
