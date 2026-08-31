@@ -22,6 +22,10 @@ class RateLimiter:
         else:
             client_ip = request.client.host if request.client else "unknown"
 
+        # Exclude localhost/loopback from rate limiting
+        if client_ip in ("127.0.0.1", "::1", "localhost"):
+            return True
+
         now = time.time()
         self._clean_old_records(client_ip, now)
 
@@ -35,7 +39,7 @@ class RateLimiter:
         return True
 
 
-# Standard limiters for public endpoints
-order_creation_limiter = RateLimiter(requests_per_minute=20, name="order_creation")
-service_call_limiter = RateLimiter(requests_per_minute=10, name="service_calls")
-general_api_limiter = RateLimiter(requests_per_minute=120, name="api")
+# Standard limiters for endpoints
+order_creation_limiter = RateLimiter(requests_per_minute=60, name="order_creation")
+service_call_limiter = RateLimiter(requests_per_minute=30, name="service_calls")
+general_api_limiter = RateLimiter(requests_per_minute=300, name="api")
