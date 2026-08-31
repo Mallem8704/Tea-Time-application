@@ -550,19 +550,33 @@ def get_table_active_order(
     if not table:
         raise HTTPException(status_code=404, detail=f"Table #{table_id} not found")
 
-    order = (
-        db.query(Order)
-        .options(joinedload(Order.items), joinedload(Order.table))
-        .filter(
-            Order.table_id == table_id,
-            Order.status != "cancelled",
-            Order.payment_status != "paid",
+    # If table is marked free and has no active order ID, return false immediately
+    if table.status == "free" and not table.active_order_id:
+        return {"has_active_order": False, "table": {"id": table.id, "label": table.label, "status": table.status}}
+
+    order = None
+    if table.active_order_id:
+        order = (
+            db.query(Order)
+            .options(joinedload(Order.items), joinedload(Order.table))
+            .filter(Order.id == table.active_order_id)
+            .first()
         )
-        .order_by(Order.created_at.desc())
-        .first()
-    )
 
     if not order:
+        order = (
+            db.query(Order)
+            .options(joinedload(Order.items), joinedload(Order.table))
+            .filter(
+                Order.table_id == table_id,
+                Order.status.in_(["placed", "accepted", "preparing", "ready"]),
+                Order.payment_status != "paid",
+            )
+            .order_by(Order.created_at.desc())
+            .first()
+        )
+
+    if not order or order.payment_status == "paid":
         return {"has_active_order": False, "table": {"id": table.id, "label": table.label, "status": table.status}}
 
     outlet = db.query(Outlet).filter(Outlet.id == order.outlet_id).first()
