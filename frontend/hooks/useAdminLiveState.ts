@@ -5,6 +5,8 @@ import { useAdminSocket, SocketEvent } from "@/hooks/useSockets";
 import { useOutlet } from "@/context/OutletContext";
 import { api } from "@/lib/api";
 
+import { soundManager } from "@/lib/sound";
+
 /**
  * Shared hook for admin pages that need live WebSocket state.
  * Scoped dynamically to the selected branch / outlet.
@@ -28,6 +30,11 @@ export function useAdminLiveState() {
             });
         } else if (event.event === "service_call_attended" && event.data) {
             setPendingServiceCalls((prev) => prev.filter((c) => c.id !== event.data.id));
+        } else if (event.event === "order_status_updated" && event.data) {
+            if (event.data.payment_status === "paid" && event.data.total_paise) {
+                const totalRs = Math.round(event.data.total_paise / 100);
+                soundManager.playPaymentSoundbox(totalRs, event.data.payment_method?.toUpperCase() || "UPI", event.data.table_label);
+            }
         }
     }, []);
 
