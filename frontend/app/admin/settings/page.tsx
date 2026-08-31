@@ -346,16 +346,24 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-bold text-espresso-800">Merchant UPI VPA</label>
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-sm font-bold text-espresso-800">Merchant UPI ID (VPA)</label>
+                                                <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                    0% Fee Direct Bank
+                                                </span>
+                                            </div>
                                             <input
                                                 type="text"
                                                 name="upi_vpa"
                                                 value={formData.upi_vpa}
                                                 onChange={handleChange}
                                                 disabled={!isOwner}
-                                                placeholder="e.g. teatime@upi"
-                                                className="w-full px-4 py-2.5 rounded-xl border border-espresso-200 focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:bg-gray-50 disabled:text-gray-500 transition-shadow font-mono text-xs"
+                                                placeholder="e.g. arabieq@ybl or 9876543210@paytm"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-espresso-200 focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:bg-gray-50 disabled:text-gray-500 transition-shadow font-mono text-xs font-bold text-espresso-950"
                                             />
+                                            <p className="text-[11px] text-espresso-500">
+                                                Table Dynamic QRs and Thermal Bill QRs credit directly to this bank account instantly.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
