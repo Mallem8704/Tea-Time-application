@@ -1,4 +1,4 @@
-const CACHE_NAME = "arabieq-dineos-v1";
+const CACHE_NAME = "arabieq-dineos-v3";
 const STATIC_ASSETS = [
   "/",
   "/logo.png",
@@ -11,6 +11,7 @@ self.addEventListener("install", (event) => {
       return cache.addAll(STATIC_ASSETS).catch((err) => console.log("Cache addAll error:", err));
     })
   );
+  // Immediately take control — don't wait for old SW to finish
   self.skipWaiting();
 });
 
@@ -22,15 +23,39 @@ self.addEventListener("activate", (event) => {
       );
     })
   );
+  // Claim all clients immediately so the new SW serves right away
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  // Pass through non-GET and API requests to network
-  if (event.request.method !== "GET" || event.request.url.includes("/api/") || event.request.url.includes("/ws")) {
+  const url = new URL(event.request.url);
+
+  // Pass through non-GET, API, and WebSocket requests to network
+  if (event.request.method !== "GET" || url.pathname.startsWith("/api/") || url.pathname.startsWith("/ws")) {
     return;
   }
 
+  // ── NETWORK-FIRST for HTML page navigations ───────────────────────
+  // This ensures customers ALWAYS get the latest deployed version.
+  // Only falls back to cache if the device is truly offline.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          // Cache the fresh response for offline fallback
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return networkResponse;
+        })
+        .catch(() => {
+          // Offline: try cache, otherwise return cached homepage
+          return caches.match(event.request).then((cached) => cached || caches.match("/"));
+        })
+    );
+    return;
+  }
+
+  // ── CACHE-FIRST for static assets (JS, CSS, images, fonts) ────────
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -46,10 +71,8 @@ self.addEventListener("fetch", (event) => {
         });
         return networkResponse;
       }).catch(() => {
-        // Fallback for navigation requests when offline
-        if (event.request.mode === "navigate") {
-          return caches.match("/");
-        }
+        // Asset not available offline — nothing to do
+        return new Response("", { status: 408 });
       });
     })
   );
