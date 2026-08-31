@@ -201,6 +201,24 @@ def trigger_db_migration():
             );""",
             "CREATE INDEX IF NOT EXISTS ix_menu_item_variants_item_id ON menu_item_variants(item_id);",
             "CREATE INDEX IF NOT EXISTS ix_menu_item_addons_item_id ON menu_item_addons(item_id);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_paise INTEGER DEFAULT 0;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(50);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_id INTEGER;",
+            """CREATE TABLE IF NOT EXISTS coupons (
+                id SERIAL PRIMARY KEY,
+                outlet_id INTEGER REFERENCES outlets(id) ON DELETE SET NULL,
+                code VARCHAR(50) UNIQUE NOT NULL,
+                description VARCHAR(255),
+                discount_type VARCHAR(20) DEFAULT 'flat',
+                discount_value INTEGER NOT NULL,
+                min_order_paise INTEGER DEFAULT 0,
+                max_discount_paise INTEGER,
+                usage_limit INTEGER,
+                times_used INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );""",
+            "CREATE INDEX IF NOT EXISTS ix_coupons_code ON coupons(code);",
         ]
         for sql in migrations:
             try:
