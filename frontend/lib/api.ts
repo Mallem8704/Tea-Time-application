@@ -173,6 +173,10 @@ export const api = {
         apiFetch("/api/orders", { params }),
     updateOrderStatus: (orderId: number, status: string) =>
         apiFetch(`/api/orders/${orderId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+    appendOrderItems: (orderId: number, items: Array<{ item_id: number; variant_id?: number; addon_ids?: number[]; qty: number; notes?: string }>, notes?: string) =>
+        apiFetch(`/api/orders/${orderId}/append-items`, { method: "POST", body: JSON.stringify({ items, notes }) }),
+    transferOrderTable: (orderId: number, target_table_id: number) =>
+        apiFetch(`/api/orders/${orderId}/transfer-table`, { method: "POST", body: JSON.stringify({ target_table_id }) }),
 
     // Stock & Inventory
     getStockOverview: (outletId?: number) => apiFetch("/api/stock", { params: outletId ? { outlet_id: outletId } : undefined }),

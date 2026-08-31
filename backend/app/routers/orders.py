@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import Order, OrderItem, MenuItem, MenuItemVariant, MenuItemAddon, CafeTable, Outlet, StockLog, User, Coupon
-from app.schemas import OrderCreate, OrderStatusUpdate, OrderOut, OrderItemOut
+from app.schemas import OrderCreate, OrderStatusUpdate, OrderAppendItems, OrderTransferTable, OrderOut, OrderItemOut
 from app.routers.auth import require_staff_or_owner
 from app.routers.ws import manager
 from app.audit_utils import log_audit
@@ -518,3 +518,205 @@ def get_order(
         )
 
     return format_order_response(order)
+
+
+@router.post("/{order_id}/append-items", response_model=OrderOut)
+async def append_order_items(
+    order_id: int,
+    data: OrderAppendItems,
+    current_user: User = Depends(require_staff_or_owner),
+    db: Session = Depends(get_db),
+):
+    """Captain Waiter & Cashier endpoint: Append running items to an active table order."""
+    order = (
+        db.query(Order)
+        .options(joinedload(Order.items), joinedload(Order.table))
+        .filter(Order.id == order_id)
+        .first()
+    )
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with ID {order_id} not found",
+        )
+
+    if order.status == "cancelled":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot append items to a cancelled order",
+        )
+
+    outlet = db.query(Outlet).filter(Outlet.id == order.outlet_id).first()
+    tax_rate = (outlet.tax_rate_percent / 100.0) if outlet else 0.05
+
+    appended_order_items = []
+    added_subtotal = 0
+
+    for it_req in data.items:
+        menu_item = db.query(MenuItem).filter(MenuItem.id == it_req.item_id).first()
+        if not menu_item:
+            raise HTTPException(status_code=404, detail=f"Menu item {it_req.item_id} not found")
+
+        unit_price = menu_item.price_paise
+        variant_name = None
+        if it_req.variant_id:
+            variant = db.query(MenuItemVariant).filter(
+                MenuItemVariant.id == it_req.variant_id,
+                MenuItemVariant.item_id == it_req.item_id
+            ).first()
+            if variant:
+                unit_price = variant.price_paise
+                variant_name = variant.name
+
+        addons_json = None
+        if it_req.addon_ids and len(it_req.addon_ids) > 0:
+            chosen_addons = db.query(MenuItemAddon).filter(
+                MenuItemAddon.id.in_(it_req.addon_ids),
+                MenuItemAddon.item_id == it_req.item_id
+            ).all()
+            if chosen_addons:
+                addons_sum = sum(a.price_paise for a in chosen_addons)
+                unit_price += addons_sum
+                addons_json = json.dumps([{"id": a.id, "name": a.name, "price_paise": a.price_paise} for a in chosen_addons])
+
+        line_total = unit_price * it_req.qty
+        added_subtotal += line_total
+
+        order_item = OrderItem(
+            order_id=order.id,
+            item_id=menu_item.id,
+            variant_id=it_req.variant_id,
+            variant_name=variant_name,
+            selected_addons_json=addons_json,
+            item_name=menu_item.name,
+            qty=it_req.qty,
+            unit_price_paise=unit_price,
+            total_price_paise=line_total,
+            notes=it_req.notes,
+        )
+        db.add(order_item)
+        appended_order_items.append(order_item)
+
+        # Stock deduction
+        if menu_item.track_stock:
+            menu_item.stock_qty = max(0, menu_item.stock_qty - it_req.qty)
+            stock_log = StockLog(
+                outlet_id=order.outlet_id,
+                item_id=menu_item.id,
+                change_qty=-it_req.qty,
+                reason=f"Captain Running KOT append Order #{order.order_number}",
+                user_id=current_user.id,
+            )
+            db.add(stock_log)
+
+    order.subtotal_paise += added_subtotal
+    discount = order.discount_paise or 0
+    discounted_sub = max(0, order.subtotal_paise - discount)
+    order.tax_paise = int(round(discounted_sub * tax_rate))
+    order.total_paise = discounted_sub + order.tax_paise + (order.delivery_fee_paise or 0)
+    order.updated_at = datetime.datetime.utcnow()
+
+    # If order was served, move back to preparing so kitchen knows new items are requested
+    if order.status == "served":
+        order.status = "preparing"
+
+    db.commit()
+    db.refresh(order)
+
+    # Broadcast WebSocket update
+    resp = format_order_response(order)
+    await manager.broadcast_to_outlet(
+        outlet_id=order.outlet_id,
+        message={
+            "event": "running_kot_added",
+            "data": resp.model_dump(mode="json"),
+            "appended_items_count": len(appended_order_items),
+            "table_label": resp.table_label,
+            "order_id": order.id,
+        }
+    )
+
+    log_audit(
+        db,
+        outlet_id=order.outlet_id,
+        user_id=current_user.id,
+        action="append_running_kot",
+        entity_type="order",
+        entity_id=order.id,
+        details_json=json.dumps({"appended_items": len(appended_order_items), "added_paise": added_subtotal}),
+    )
+
+    return resp
+
+
+@router.post("/{order_id}/transfer-table", response_model=OrderOut)
+async def transfer_order_table(
+    order_id: int,
+    data: OrderTransferTable,
+    current_user: User = Depends(require_staff_or_owner),
+    db: Session = Depends(get_db),
+):
+    """Captain Waiter endpoint: Transfer active dining order to another table."""
+    order = (
+        db.query(Order)
+        .options(joinedload(Order.items), joinedload(Order.table))
+        .filter(Order.id == order_id)
+        .first()
+    )
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with ID {order_id} not found",
+        )
+
+    target_table = db.query(CafeTable).filter(CafeTable.id == data.target_table_id).first()
+    if not target_table:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Target table ID {data.target_table_id} not found",
+        )
+
+    prev_table_id = order.table_id
+    order.table_id = target_table.id
+    target_table.status = "occupied"
+
+    # Check if previous table has remaining active orders
+    if prev_table_id:
+        remaining = db.query(Order).filter(
+            Order.table_id == prev_table_id,
+            Order.id != order.id,
+            Order.status.in_(["placed", "accepted", "preparing", "ready", "served"])
+        ).count()
+        if remaining == 0:
+            prev_table = db.query(CafeTable).filter(CafeTable.id == prev_table_id).first()
+            if prev_table:
+                prev_table.status = "available"
+
+    order.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    db.refresh(order)
+
+    resp = format_order_response(order)
+    await manager.broadcast_to_outlet(
+        outlet_id=order.outlet_id,
+        message={
+            "event": "table_transferred",
+            "data": resp.model_dump(mode="json"),
+            "prev_table_id": prev_table_id,
+            "new_table_id": target_table.id,
+            "table_label": resp.table_label,
+            "order_id": order.id,
+        }
+    )
+
+    log_audit(
+        db,
+        outlet_id=order.outlet_id,
+        user_id=current_user.id,
+        action="transfer_table",
+        entity_type="order",
+        entity_id=order.id,
+        details_json=json.dumps({"from_table": prev_table_id, "to_table": target_table.id}),
+    )
+
+    return resp

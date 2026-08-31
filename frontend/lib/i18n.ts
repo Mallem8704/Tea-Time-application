@@ -96,6 +96,7 @@ export const dictionary = {
         login: "Sign In",
         logout: "Sign Out",
         store_settings: "Store Settings",
+        captain_pos: "Captain Waiter POS",
     },
     te: {
         // App & Header
@@ -188,6 +189,7 @@ export const dictionary = {
         login: "లాగిన్",
         logout: "లాగ్ అవుట్",
         store_settings: "స్టోర్ సెట్టింగ్స్",
+        captain_pos: "కెప్టెన్ వెయిటర్ POS",
     },
 };
 

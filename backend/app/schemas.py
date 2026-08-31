@@ -293,6 +293,15 @@ class OrderStatusUpdate(BaseModel):
     status: str  # 'placed', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'served', 'cancelled'
 
 
+class OrderAppendItems(BaseModel):
+    items: List[OrderItemCreate] = Field(..., min_length=1)
+    notes: Optional[str] = Field(None, max_length=255)
+
+
+class OrderTransferTable(BaseModel):
+    target_table_id: int
+
+
 class OrderOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

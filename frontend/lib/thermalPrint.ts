@@ -18,6 +18,7 @@ export interface PrintOrderData {
     id: number;
     order_number: string;
     order_type?: string;
+    table_id?: number | null;
     table_label?: string | null;
     customer_name?: string | null;
     customer_phone?: string | null;
@@ -153,6 +154,106 @@ export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null)
     `;
 
     triggerBrowserPrint(kotHtml);
+}
+
+/**
+ * Print Supplementary Running KOT Ticket (Kitchen Order Ticket for items added on the fly).
+ */
+export function printRunningKOT(order: PrintOrderData, appendedItems: any[], outlet?: PrintOutletData | null, captainName?: string) {
+    if (typeof window === "undefined") return;
+
+    const formattedDate = new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+    const outletName = (outlet?.name || "ARABIEQ RESTAURANT & CAFE").toUpperCase();
+    const tableDisplay = order.table_label ? order.table_label.toUpperCase() : `TABLE #${order.table_id || "N/A"}`;
+
+    let itemsHtml = "";
+    appendedItems.forEach((it, idx) => {
+        const addons = parseAddons(it.selected_addons_json);
+        itemsHtml += `
+            <div style="margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;">
+                <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 900;">
+                    <span>${idx + 1}. ${it.item_name}</span>
+                    <span style="font-size: 17px; background: #000; color: #fff; padding: 0 4px; border-radius: 2px;">x${it.qty}</span>
+                </div>
+                ${it.variant_name ? `<div style="font-size: 12px; font-weight: bold; color: #333; margin-left: 12px;">Portion: ${it.variant_name}</div>` : ""}
+                ${addons.length > 0 ? `<div style="font-size: 11px; font-style: italic; color: #444; margin-left: 12px;">+ ${addons.join(", ")}</div>` : ""}
+                ${it.notes ? `<div style="font-size: 12px; font-weight: bold; color: #c00; margin-left: 12px; border-left: 2px solid #c00; padding-left: 4px; margin-top: 2px;">NOTE: ${it.notes}</div>` : ""}
+            </div>
+        `;
+    });
+
+    const runningKotHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>RUNNING KOT #${order.order_number}</title>
+            <style>
+                @page { size: 80mm auto; margin: 0; }
+                body {
+                    font-family: 'Courier New', Courier, monospace;
+                    width: 76mm;
+                    margin: 0 auto;
+                    padding: 8px;
+                    font-size: 13px;
+                    line-height: 1.2;
+                    color: #000;
+                    background: #fff;
+                }
+                .text-center { text-align: center; }
+                .bold { font-weight: bold; }
+                .divider { border-bottom: 2px solid #000; margin: 6px 0; }
+                .dashed-divider { border-bottom: 1px dashed #000; margin: 6px 0; }
+                .badge {
+                    display: inline-block;
+                    background: #000;
+                    color: #fff;
+                    font-weight: 900;
+                    padding: 4px 8px;
+                    font-size: 16px;
+                    border-radius: 4px;
+                    margin: 4px 0;
+                }
+                .running-badge {
+                    border: 2px solid #000;
+                    padding: 2px 6px;
+                    font-size: 13px;
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    margin: 2px 0;
+                    display: block;
+                    text-align: center;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="text-center">
+                <div style="font-size: 14px; font-weight: bold;">${outletName}</div>
+                <div class="running-badge">*** RUNNING KOT (ADDITIONAL ITEMS) ***</div>
+                <div class="badge">${tableDisplay}</div>
+            </div>
+
+            <div class="divider"></div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span><strong>Order:</strong> #${order.order_number}</span>
+                <span><strong>Captain:</strong> ${captainName || "Floor Staff"}</span>
+            </div>
+            <div style="font-size: 11px;"><strong>Appended At:</strong> ${formattedDate}</div>
+
+            <div class="divider"></div>
+            <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">NEW ITEMS TO PREPARE:</div>
+            <div class="dashed-divider"></div>
+
+            ${itemsHtml}
+
+            <div class="divider"></div>
+            <div class="text-center" style="font-size: 11px; margin-top: 8px;">
+                *** DISPATCH TO CHEF IMMEDIATELY ***
+            </div>
+        </body>
+        </html>
+    `;
+
+    triggerBrowserPrint(runningKotHtml);
 }
 
 /**

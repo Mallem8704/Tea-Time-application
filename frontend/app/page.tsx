@@ -33,6 +33,7 @@ import {
     Truck,
     Quote,
     CheckCircle2,
+    Smartphone,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -776,6 +777,11 @@ export default function HomePage() {
                             <Link href="/admin/login">
                                 <span className="text-white/30 hover:text-amber-400 text-xs font-medium transition-colors flex items-center gap-1">
                                     <ShieldCheck className="w-3 h-3" /> Staff Portal
+                                </span>
+                            </Link>
+                            <Link href="/captain">
+                                <span className="text-white/30 hover:text-amber-400 text-xs font-medium transition-colors flex items-center gap-1">
+                                    <Smartphone className="w-3 h-3" /> Captain POS
                                 </span>
                             </Link>
                             <Link href="/admin/kds">

@@ -17,6 +17,7 @@ import {
     Shield,
     User,
     Settings,
+    Smartphone,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -30,6 +31,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
 
     const navLinks = [
         { href: "/admin", labelKey: "live_orders", icon: LayoutDashboard, exact: true },
+        { href: "/captain", labelKey: "captain_pos", icon: Smartphone },
         { href: "/admin/kds", labelKey: "kds_view", icon: ChefHat },
         { href: "/admin/menu", labelKey: "menu_management", icon: Utensils },
         { href: "/admin/tables", labelKey: "tables_qr", icon: QrCode },
