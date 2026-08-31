@@ -11,6 +11,22 @@ from app.routers.auth import get_current_user, require_owner
 router = APIRouter()
 
 
+def get_effective_outlet_id(outlet_id: Optional[int], db: Session) -> int:
+    """Resolve logical or physical outlet_id (1 -> branch 1, 2 -> branch 2, or direct database ID)."""
+    all_outlets = db.query(Outlet).order_by(Outlet.id.asc()).all()
+    if not all_outlets:
+        return 1
+    if outlet_id is not None:
+        for o in all_outlets:
+            if o.id == outlet_id:
+                return o.id
+        if outlet_id == 1:
+            return all_outlets[0].id
+        if outlet_id == 2 and len(all_outlets) > 1:
+            return all_outlets[1].id
+    return all_outlets[0].id
+
+
 @router.get("", response_model=List[OutletOut])
 @router.get("/list", response_model=List[OutletOut])
 def list_outlets(db: Session = Depends(get_db)):
@@ -21,21 +37,21 @@ def list_outlets(db: Session = Depends(get_db)):
 
 @router.get("/single", response_model=OutletOut)
 def get_single_outlet(outlet_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
-    """Get single outlet by ID (with fallback to first outlet)."""
-    if outlet_id is not None:
-        outlet = db.query(Outlet).filter(Outlet.id == outlet_id).first()
-        if outlet:
-            return outlet
-    first_outlet = db.query(Outlet).first()
-    if not first_outlet:
+    """Get single outlet by ID or branch index (with fallback)."""
+    target_id = get_effective_outlet_id(outlet_id, db)
+    outlet = db.query(Outlet).filter(Outlet.id == target_id).first()
+    if not outlet:
+        outlet = db.query(Outlet).first()
+    if not outlet:
         raise HTTPException(status_code=404, detail="No outlets found")
-    return first_outlet
+    return outlet
 
 
 @router.get("/{outlet_id}", response_model=OutletOut)
 def get_outlet_by_id(outlet_id: int, db: Session = Depends(get_db)):
-    """Get outlet by ID."""
-    outlet = db.query(Outlet).filter(Outlet.id == outlet_id).first()
+    """Get outlet by ID or branch index."""
+    target_id = get_effective_outlet_id(outlet_id, db)
+    outlet = db.query(Outlet).filter(Outlet.id == target_id).first()
     if not outlet:
         outlet = db.query(Outlet).first()
     if not outlet:

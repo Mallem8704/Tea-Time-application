@@ -18,6 +18,7 @@ from app.schemas import (
 from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
 from app.routers.ws import manager
+from app.routers.outlets import get_effective_outlet_id
 
 router = APIRouter(prefix="", tags=["Menu Items"])
 
@@ -39,15 +40,7 @@ def list_menu_items(
     db: Session = Depends(get_db),
 ):
     """Retrieve categorized menu items with stock and availability filters."""
-    target_id = outlet_id
-    if target_id is None or db.query(MenuItem).filter(MenuItem.outlet_id == target_id).count() == 0:
-        first_item = db.query(MenuItem).first()
-        if first_item:
-            target_id = first_item.outlet_id
-        else:
-            first_outlet = db.query(Outlet).first()
-            target_id = first_outlet.id if first_outlet else 1
-
+    target_id = get_effective_outlet_id(outlet_id, db)
     query = db.query(MenuItem).filter(MenuItem.outlet_id == target_id)
 
     if category_id is not None:

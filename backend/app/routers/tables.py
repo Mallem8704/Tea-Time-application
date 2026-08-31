@@ -20,6 +20,7 @@ from app.schemas import (
 from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
 from app.routers.ws import manager
+from app.routers.outlets import get_effective_outlet_id
 
 router = APIRouter(prefix="", tags=["Tables & QR"])
 
@@ -37,15 +38,7 @@ def list_tables(
     db: Session = Depends(get_db),
 ):
     """List all cafe tables with status and QR link."""
-    target_id = outlet_id
-    if target_id is None or db.query(CafeTable).filter(CafeTable.outlet_id == target_id).count() == 0:
-        first_table = db.query(CafeTable).first()
-        if first_table:
-            target_id = first_table.outlet_id
-        else:
-            first_outlet = db.query(Outlet).first()
-            target_id = first_outlet.id if first_outlet else 1
-
+    target_id = get_effective_outlet_id(outlet_id, db)
     return (
         db.query(CafeTable)
         .filter(CafeTable.outlet_id == target_id)

@@ -7,6 +7,7 @@ from app.models import Category, MenuItem, User, Outlet
 from app.schemas import CategoryCreate, CategoryUpdate, CategoryOut
 from app.routers.auth import get_current_user, require_owner, require_staff_or_owner
 from app.audit_utils import log_audit
+from app.routers.outlets import get_effective_outlet_id
 
 router = APIRouter(prefix="", tags=["Categories"])
 
@@ -18,15 +19,7 @@ def list_categories(
     db: Session = Depends(get_db),
 ):
     """List all categories for customer and admin views."""
-    target_id = outlet_id
-    if target_id is None or db.query(Category).filter(Category.outlet_id == target_id).count() == 0:
-        first_cat = db.query(Category).first()
-        if first_cat:
-            target_id = first_cat.outlet_id
-        else:
-            first_outlet = db.query(Outlet).first()
-            target_id = first_outlet.id if first_outlet else 1
-
+    target_id = get_effective_outlet_id(outlet_id, db)
     query = db.query(Category).filter(Category.outlet_id == target_id)
     if active_only:
         query = query.filter(Category.is_active == True)
