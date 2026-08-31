@@ -151,7 +151,7 @@ export default function AdminPaymentsPage() {
                             </span>
                         </h2>
                         <p className="text-xs text-espresso-600">
-                            Cash drawer balance, Razorpay UPI online ledger & 1-tap counter cash reconciliation.
+                            Cash drawer balance, Direct Bank UPI ledger & 1-tap counter cash reconciliation.
                         </p>
                     </div>
 
