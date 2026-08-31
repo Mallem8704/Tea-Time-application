@@ -74,7 +74,7 @@ export function CustomerAuthModal({ isOpen, onClose, onSuccess }: CustomerAuthMo
               Mobile Number *
             </label>
             <div className="flex items-center gap-2 p-3.5 rounded-2xl bg-white/5 border border-white/20 focus-within:border-amber-400">
-              <span className="text-sm font-bold text-white/70">🇮🇳 +91</span>
+              <span className="inline-flex items-center gap-1.5"><span className="text-[10px] font-black text-amber-400 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-400/30">IN</span><span className="text-sm font-bold text-white/70">+91</span></span>
               <input
                 type="tel"
                 placeholder="98765 43210"

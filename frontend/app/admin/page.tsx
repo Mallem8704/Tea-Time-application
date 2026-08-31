@@ -108,9 +108,9 @@ export default function AdminLiveOrdersKanbanPage() {
             setOrders((prev) => [event.data, ...prev.filter((o) => o.id !== event.data.id)]);
             setAnimatingOrderId(event.data.id);
             if (event.data.order_type === "delivery") {
-                toast.success(`🛵 New Delivery Order #${event.data.order_number} (${event.data.customer_name || "Customer"})!`);
+                toast.success(`New Delivery Order #${event.data.order_number} (${event.data.customer_name || "Customer"})!`);
             } else {
-                toast.success(`🍽️ New Table Order #${event.data.order_number} at Table ${event.data.table_label}!`);
+                toast.success(`New Table Order #${event.data.order_number} at Table ${event.data.table_label}!`);
             }
             setTimeout(() => setAnimatingOrderId(null), 4000);
         } else if ((event.event === "order_status_updated" || event.event === "order_updated") && event.data) {
@@ -552,7 +552,7 @@ export default function AdminLiveOrdersKanbanPage() {
                                                                             onClick={() => handleAdvanceStatus(order.id, "out_for_delivery")}
                                                                             rightIcon={<Bike className="w-3 h-3" />}
                                                                         >
-                                                                            Dispatch Rider 🛵
+                                                                            Dispatch Rider
                                                                         </Button>
                                                                     )}
                                                                     {order.status === "ready" && (
@@ -563,7 +563,7 @@ export default function AdminLiveOrdersKanbanPage() {
                                                                             onClick={() => handleAdvanceStatus(order.id, "out_for_delivery")}
                                                                             rightIcon={<Bike className="w-3 h-3" />}
                                                                         >
-                                                                            Dispatch Rider 🛵
+                                                                            Dispatch Rider
                                                                         </Button>
                                                                     )}
                                                                     {order.status === "out_for_delivery" && (
@@ -574,7 +574,7 @@ export default function AdminLiveOrdersKanbanPage() {
                                                                             onClick={() => handleAdvanceStatus(order.id, "delivered")}
                                                                             rightIcon={<CheckCircle2 className="w-3 h-3" />}
                                                                         >
-                                                                            Mark Delivered ✅
+                                                                            Mark Delivered
                                                                         </Button>
                                                                     )}
                                                                 </>

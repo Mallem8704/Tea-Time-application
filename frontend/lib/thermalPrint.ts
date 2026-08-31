@@ -60,7 +60,7 @@ function parseAddons(jsonStr?: string | null): string[] {
  */
 export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null) {
     const isDelivery = order.order_type === "delivery";
-    const titleTag = isDelivery ? "🛵 FREE HOME DELIVERY" : `🍽️ TABLE ${order.table_label || "COUNTER"}`;
+    const titleTag = isDelivery ? "FREE HOME DELIVERY" : `TABLE ${order.table_label || "COUNTER"}`;
     const formattedTime = order.created_at
         ? new Date(order.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
         : new Date().toLocaleTimeString("en-IN");
@@ -230,7 +230,7 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
             <div style="font-size: 11px;">
                 <div><strong>Bill No:</strong> #${order.order_number}</div>
                 <div><strong>Date/Time:</strong> ${formattedDate}</div>
-                <div><strong>Type:</strong> ${isDelivery ? "🛵 Home Delivery" : `🍽️ Dine-in Table ${order.table_label || "1"}`}</div>
+                <div><strong>Type:</strong> ${isDelivery ? "Home Delivery" : `Dine-in Table ${order.table_label || "1"}`}</div>
                 ${order.customer_name ? `<div><strong>Customer:</strong> ${order.customer_name} (${order.customer_phone || ""})</div>` : ""}
                 ${isDelivery && order.delivery_address ? `<div style="font-size: 10px; margin-top: 2px;"><strong>Address:</strong> ${order.delivery_address}</div>` : ""}
             </div>

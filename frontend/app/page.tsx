@@ -3,9 +3,34 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-    QrCode, ChefHat, MapPin, Clock, Phone, ArrowRight, Star, Flame,
-    Leaf, Coffee, Utensils, ShieldCheck, Menu, X, Share2, Globe,
-    MessageCircle, Sparkles, ChevronDown, Truck, Bike,
+    QrCode,
+    ChefHat,
+    MapPin,
+    Clock,
+    Phone,
+    ArrowRight,
+    Star,
+    Flame,
+    Coffee,
+    Leaf,
+    Soup,
+    CakeSlice,
+    Wine,
+    GlassWater,
+    Layers,
+    UtensilsCrossed,
+    Crown,
+    Bike,
+    Sparkles,
+    Utensils,
+    ShieldCheck,
+    Menu,
+    X,
+    Share2,
+    Globe,
+    MessageCircle,
+    ChevronDown,
+    Truck,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -114,18 +139,18 @@ export default function HomePage() {
     ];
 
     const menuCats = [
-        { name: "Tiffin & Breakfast", emoji: "🍳" },
-        { name: "Dosa Specials", emoji: "🪴" },
-        { name: "Mandi", emoji: "🥖" },
-        { name: "Dum Biryanis", emoji: "🍚" },
-        { name: "Arabian Grills", emoji: "🔥" },
-        { name: "Veg Starters", emoji: "🥗" },
-        { name: "Non-Veg Starters", emoji: "🍗" },
-        { name: "Soups", emoji: "🍲" },
-        { name: "Indian Breads", emoji: "🪴" },
-        { name: "Fresh Juices", emoji: "🥤" },
-        { name: "Milkshakes", emoji: "🥛" },
-        { name: "Snacks & Sweets", emoji: "🍡" },
+        { name: "Tiffin & Breakfast", icon: Coffee },
+        { name: "Dosa Specials", icon: UtensilsCrossed },
+        { name: "Mandi", icon: Crown },
+        { name: "Dum Biryanis", icon: Sparkles },
+        { name: "Arabian Grills", icon: Flame },
+        { name: "Veg Starters", icon: Leaf },
+        { name: "Non-Veg Starters", icon: Utensils },
+        { name: "Soups", icon: Soup },
+        { name: "Indian Breads", icon: Layers },
+        { name: "Fresh Juices", icon: Wine },
+        { name: "Milkshakes", icon: GlassWater },
+        { name: "Snacks & Sweets", icon: CakeSlice },
     ];
 
     const navLinks = [
@@ -239,13 +264,13 @@ export default function HomePage() {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                         <Link href="/delivery?branch=2">
                             <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold text-base transition-all shadow-2xl shadow-amber-500/40 hover:scale-105 anim-glow cursor-pointer">
-                                <Truck className="w-5 h-5" /> 🛵 Free Home Delivery (Kadiri)
+                                <Bike className="w-5 h-5" /> Free Home Delivery (Kadiri)
                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </Link>
                         <Link href="/order?branch=2&table=T1">
                             <button className="flex items-center gap-3 px-8 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold text-base transition-all hover:scale-105 border border-white/20 cursor-pointer">
-                                <QrCode className="w-5 h-5 text-amber-400" /> 🍽️ Dine-in Table Order
+                                <Utensils className="w-5 h-5 text-amber-400" /> Dine-in Table Order
                             </button>
                         </Link>
                     </div>
@@ -267,11 +292,15 @@ export default function HomePage() {
             {/* MARQUEE STRIP */}
             <div className="relative py-5 bg-amber-500/10 border-y border-amber-500/20 overflow-hidden">
                 <div className="flex gap-4 anim-scrollX w-max">
-                    {[...menuCats, ...menuCats].map((cat, i) => (
-                        <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white font-bold text-sm whitespace-nowrap">
-                            <span>{cat.emoji}</span>{cat.name}
-                        </div>
-                    ))}
+                    {[...menuCats, ...menuCats].map((cat, i) => {
+                        const Icon = cat.icon;
+                        return (
+                            <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white font-bold text-sm whitespace-nowrap">
+                                <Icon className="w-4 h-4 text-amber-400" />
+                                <span>{cat.name}</span>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -301,12 +330,17 @@ export default function HomePage() {
                         <p className="text-white/50 text-lg max-w-xl mx-auto">From hearty Mandi feasts to refreshing Cafe drinks.</p>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
-                        {menuCats.map((cat, i) => (
-                            <div key={i} className="group p-5 rounded-2xl glass hover:bg-amber-500/10 hover:border-amber-400/30 border border-white/5 transition-all hover:-translate-y-1 cursor-pointer text-center">
-                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{cat.emoji}</div>
-                                <p className="text-white/80 font-bold text-sm group-hover:text-amber-400 transition-colors">{cat.name}</p>
-                            </div>
-                        ))}
+                        {menuCats.map((cat, i) => {
+                            const Icon = cat.icon;
+                            return (
+                                <div key={i} className="group p-5 rounded-2xl glass hover:bg-amber-500/10 hover:border-amber-400/30 border border-white/5 transition-all hover:-translate-y-1 cursor-pointer text-center flex flex-col items-center justify-center">
+                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-400/20 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-amber-500/20 transition-all">
+                                        <Icon className="w-6 h-6 text-amber-400" />
+                                    </div>
+                                    <p className="text-white/80 font-bold text-sm group-hover:text-amber-400 transition-colors">{cat.name}</p>
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {branches.map(branch => (

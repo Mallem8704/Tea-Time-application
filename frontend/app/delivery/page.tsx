@@ -264,10 +264,10 @@ function DeliveryOrderContent() {
         setActiveOrder((prev) => (prev ? { ...prev, ...updatedData } : null));
         if (updatedData.status === "out_for_delivery") {
             soundManager.playReadyChime();
-            toast.success("🛵 Rider is on the way with your food!");
+            toast.success("Rider is on the way with your food!");
         } else if (updatedData.status === "delivered") {
             soundManager.playReadyChime();
-            toast.success("🎉 Food Delivered! Enjoy your Arabian feast!");
+            toast.success("Food Delivered! Enjoy your Arabian feast!");
         }
     });
 
@@ -436,7 +436,7 @@ function DeliveryOrderContent() {
             if (!isOnline) {
                 const queueId = await enqueueOrder(payload, "delivery");
                 soundManager.playOrderPlacedSuccess();
-                toast.success(`🛵 You are currently offline. Order #${queueId} has been safely queued and will auto-submit when connected!`);
+                toast.success(`You are currently offline. Order #${queueId} has been safely queued and will auto-submit when connected!`);
                 createdOrder = {
                     id: Date.now(),
                     order_number: `OFFLINE-${queueId.slice(-6).toUpperCase()}`,
@@ -466,7 +466,7 @@ function DeliveryOrderContent() {
             } else {
                 createdOrder = await api.createOrder(payload);
                 soundManager.playOrderPlacedSuccess();
-                toast.success(`🛵 Delivery Order #${createdOrder.order_number} Placed Successfully!`);
+                toast.success(`Delivery Order #${createdOrder.order_number} Placed Successfully!`);
             }
 
             // Auto-login & persist customer profile and address (Zero OTP / Zero Cost)
@@ -573,12 +573,12 @@ function DeliveryOrderContent() {
                                 </span>
                                 <h2 className="text-2xl sm:text-3xl font-serif font-black text-white mt-2">
                                     {orderStatus === "delivered"
-                                        ? "Delivered & Enjoyed! 🎉"
+                                        ? "Delivered & Enjoyed!"
                                         : orderStatus === "out_for_delivery"
-                                        ? "Rider Dispatched 🛵"
+                                        ? "Rider Dispatched"
                                         : orderStatus === "preparing"
-                                        ? "Sizzling in Kitchen 🔥"
-                                        : "Order Placed & Accepted ✅"}
+                                        ? "Sizzling in Kitchen"
+                                        : "Order Placed & Accepted"}
                                 </h2>
                                 <p className="text-xs text-cream-200/80 mt-1">
                                     Estimated Delivery: <strong className="text-saffron-300">25–35 mins</strong> within Kadiri limits
@@ -1258,8 +1258,8 @@ function DeliveryOrderContent() {
                                             onChange={(e) => setPaymentMethod(e.target.value as "cod" | "upi")}
                                             className="w-full px-3 py-2 text-xs rounded-xl border border-terracotta-200 focus:ring-2 focus:ring-terracotta-500 bg-cream-50/20 text-espresso-900 font-bold"
                                         >
-                                            <option value="cod">💵 Cash on Delivery (COD)</option>
-                                            <option value="upi">📱 UPI QR on Delivery / Online</option>
+                                            <option value="cod">Cash on Delivery (COD)</option>
+                                            <option value="upi">UPI QR on Delivery / Online</option>
                                         </select>
                                     </div>
                                 </div>
