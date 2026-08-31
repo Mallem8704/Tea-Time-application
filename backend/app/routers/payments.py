@@ -274,8 +274,9 @@ def get_dynamic_upi_qr(
     amount_rs = round(balance_paise / 100.0, 2)
 
     # Standard NPCI UPI URI: upi://pay?pa={vpa}&pn={name}&am={amount}&tn={note}&cu=INR
-    encoded_name = urllib.parse.quote(outlet_name)
-    encoded_note = urllib.parse.quote(f"Order_{order.order_number}")
+    encoded_name = urllib.parse.quote(outlet_name.replace("&", "and"))
+    clean_note = f"Bill {order.order_number}".replace("_", " ")
+    encoded_note = urllib.parse.quote(clean_note)
     upi_uri = f"upi://pay?pa={upi_vpa}&pn={encoded_name}&am={amount_rs:.2f}&tn={encoded_note}&cu=INR"
 
     return DynamicUpiQrResponse(

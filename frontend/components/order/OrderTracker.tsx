@@ -19,6 +19,8 @@ import {
     QrCode,
     ExternalLink,
     Smartphone,
+    Copy,
+    Check,
 } from "lucide-react";
 import { formatRupees, formatDateTime } from "@/lib/formatters";
 import { useLanguage } from "@/context/LanguageContext";
@@ -81,6 +83,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
     const [callingService, setCallingService] = useState<string | null>(null);
     const [dynamicUpi, setDynamicUpi] = useState<any>(null);
     const [showUpiQr, setShowUpiQr] = useState(false);
+    const [copiedUpi, setCopiedUpi] = useState(false);
     const [isBillRequested, setIsBillRequested] = useState(false);
 
     // Fetch dynamic UPI details if unpaid
@@ -381,25 +384,42 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                         )}
                     </div>
 
-                    {/* Collapsible Dynamic UPI QR */}
+                    {/* Collapsible Dynamic UPI QR & Copy Section */}
                     {order.payment_status !== "paid" && showUpiQr && dynamicUpi && (
-                        <div className="pt-3 border-t border-cream-200 flex flex-col items-center gap-2 text-center animate-in fade-in">
-                            <div className="bg-white p-2 rounded-2xl border border-cream-300 shadow-md">
+                        <div className="pt-3 border-t border-cream-200 flex flex-col items-center gap-2.5 text-center animate-in fade-in">
+                            <div className="bg-white p-2.5 rounded-2xl border border-cream-300 shadow-md">
                                 <img
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
                                         dynamicUpi.upi_uri
                                     )}`}
                                     alt="Dynamic UPI QR"
-                                    className="w-36 h-36 object-contain rounded-lg"
+                                    className="w-40 h-40 object-contain rounded-lg"
                                 />
                             </div>
-                            <div>
+                            <div className="space-y-1">
                                 <p className="text-xs font-black text-espresso-950">
-                                    Scan & Pay <span className="text-emerald-700 font-mono">₹{dynamicUpi.amount_rs.toFixed(2)}</span>
+                                    Scan & Pay <span className="text-emerald-700 font-mono font-black">₹{dynamicUpi.amount_rs.toFixed(2)}</span>
                                 </p>
-                                <p className="text-[10px] text-espresso-500 font-mono">
-                                    UPI VPA: {dynamicUpi.upi_vpa}
-                                </p>
+                                <div className="flex items-center justify-center gap-2">
+                                    <span className="text-[11px] font-mono font-bold text-espresso-800 bg-cream-100 px-2 py-0.5 rounded-lg border border-cream-300">
+                                        {dynamicUpi.upi_vpa}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (navigator.clipboard) {
+                                                navigator.clipboard.writeText(dynamicUpi.upi_vpa);
+                                                setCopiedUpi(true);
+                                                setTimeout(() => setCopiedUpi(false), 2500);
+                                                toast.success("UPI ID copied to clipboard!");
+                                            }
+                                        }}
+                                        className="p-1 rounded-md bg-cream-200 hover:bg-cream-300 text-espresso-800 transition cursor-pointer"
+                                        title="Copy UPI ID"
+                                    >
+                                        {copiedUpi ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
