@@ -66,6 +66,26 @@ function CustomerOrderContent() {
     const [tableId, setTableId] = useState<number>(1);
     const [availableTables, setAvailableTables] = useState<any[]>([]);
     const [showTablePicker, setShowTablePicker] = useState<boolean>(false);
+    const [showServiceModal, setShowServiceModal] = useState<boolean>(false);
+    const [isCallingWaiter, setIsCallingWaiter] = useState<boolean>(false);
+
+    const handleCallService = async (callType: string = "waiter") => {
+        if (!tableId) return;
+        setIsCallingWaiter(true);
+        try {
+            await api.createServiceCall(tableId, callType);
+            toast.success(
+                language === "te"
+                    ? `టేబుల్ ${tableLabel} కోసం సిబ్బందికి సమాచారం పంపబడింది!`
+                    : `🔔 Staff notified for Table ${tableLabel}! Coming right over.`
+            );
+            setShowServiceModal(false);
+        } catch (err: any) {
+            toast.error(err.message || "Failed to notify staff");
+        } finally {
+            setIsCallingWaiter(false);
+        }
+    };
 
     // Menu Data
     const [categories, setCategories] = useState<any[]>([]);
@@ -502,6 +522,16 @@ function CustomerOrderContent() {
                             <span>{t("table")} {tableLabel}</span>
                         </button>
 
+                        {/* Call Waiter Pill */}
+                        <button
+                            onClick={() => setShowServiceModal(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-400/80 bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-extrabold shadow-2xs transition cursor-pointer"
+                        >
+                            <Bell className="w-3.5 h-3.5 text-amber-600 animate-bounce" />
+                            <span className="hidden sm:inline">Call Waiter</span>
+                            <span className="sm:hidden">Bell</span>
+                        </button>
+
                         <LanguageToggle />
                     </div>
                 </div>
@@ -758,6 +788,82 @@ function CustomerOrderContent() {
                             size="sm"
                             className="w-full"
                             onClick={() => setShowTablePicker(false)}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Call Waiter / Service Bell Modal */}
+            {showServiceModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-950/60 backdrop-blur-xs animate-in fade-in">
+                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-cream-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <span className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                                    <Bell className="w-4 h-4" />
+                                </span>
+                                <div>
+                                    <h3 className="text-base font-black text-espresso-950">Table {tableLabel} Assistance</h3>
+                                    <p className="text-[11px] text-espresso-500 font-medium">How can our staff assist you?</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowServiceModal(false)}
+                                className="p-1 rounded-lg text-espresso-400 hover:text-espresso-800 hover:bg-cream-100 transition cursor-pointer"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5 mb-5">
+                            <button
+                                disabled={isCallingWaiter}
+                                onClick={() => handleCallService("waiter")}
+                                className="p-3.5 rounded-2xl border border-cream-300 bg-cream-50 hover:border-terracotta-400 hover:bg-cream-100 transition flex flex-col items-center text-center gap-1.5 cursor-pointer"
+                            >
+                                <span className="text-2xl">🛎️</span>
+                                <span className="text-xs font-black text-espresso-900">Call Waiter</span>
+                                <span className="text-[10px] text-espresso-500 font-medium">Order assistance</span>
+                            </button>
+
+                            <button
+                                disabled={isCallingWaiter}
+                                onClick={() => handleCallService("water")}
+                                className="p-3.5 rounded-2xl border border-cream-300 bg-cream-50 hover:border-cyan-400 hover:bg-cyan-50/50 transition flex flex-col items-center text-center gap-1.5 cursor-pointer"
+                            >
+                                <span className="text-2xl">💧</span>
+                                <span className="text-xs font-black text-espresso-900">Drinking Water</span>
+                                <span className="text-[10px] text-espresso-500 font-medium">Refill water</span>
+                            </button>
+
+                            <button
+                                disabled={isCallingWaiter}
+                                onClick={() => handleCallService("bill")}
+                                className="p-3.5 rounded-2xl border border-cream-300 bg-cream-50 hover:border-emerald-400 hover:bg-emerald-50/50 transition flex flex-col items-center text-center gap-1.5 cursor-pointer"
+                            >
+                                <span className="text-2xl">🧾</span>
+                                <span className="text-xs font-black text-espresso-900">Request Bill</span>
+                                <span className="text-[10px] text-espresso-500 font-medium">Pay at table</span>
+                            </button>
+
+                            <button
+                                disabled={isCallingWaiter}
+                                onClick={() => handleCallService("clean")}
+                                className="p-3.5 rounded-2xl border border-cream-300 bg-cream-50 hover:border-amber-400 hover:bg-amber-50/50 transition flex flex-col items-center text-center gap-1.5 cursor-pointer"
+                            >
+                                <span className="text-2xl">🧹</span>
+                                <span className="text-xs font-black text-espresso-900">Clean Table</span>
+                                <span className="text-[10px] text-espresso-500 font-medium">Clear table</span>
+                            </button>
+                        </div>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setShowServiceModal(false)}
                         >
                             Cancel
                         </Button>
