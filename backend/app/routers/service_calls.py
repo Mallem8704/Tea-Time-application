@@ -66,16 +66,23 @@ async def create_service_call(
 
 @router.get("", response_model=List[ServiceCallOut])
 def list_service_calls(
+    outlet_id: Optional[int] = Query(None, description="Filter by outlet ID"),
     status: Optional[str] = Query(None, description="Filter by status: pending, attended"),
     limit: int = Query(50, ge=1, le=200),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Admin endpoint to list all service buzzer requests."""
+    from app.routers.outlets import get_effective_outlet_id
+    if current_user.role == "owner" and outlet_id is not None:
+        target_outlet_id = get_effective_outlet_id(outlet_id, db)
+    else:
+        target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+
     query = (
         db.query(ServiceCall)
         .options(joinedload(ServiceCall.table))
-        .filter(ServiceCall.outlet_id == current_user.outlet_id)
+        .filter(ServiceCall.outlet_id == target_outlet_id)
     )
 
     if status:

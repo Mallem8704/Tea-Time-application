@@ -7,18 +7,18 @@ import { api } from "@/lib/api";
 
 /**
  * Shared hook for admin pages that need live WebSocket state.
- * Provides real wsConnected status and live pending service calls.
+ * Scoped dynamically to the selected branch / outlet.
  */
 export function useAdminLiveState() {
     const { outlet } = useOutlet();
     const [pendingServiceCalls, setPendingServiceCalls] = useState<any[]>([]);
 
-    // Fetch initial pending service calls
+    // Fetch initial pending service calls whenever selected branch changes
     useEffect(() => {
-        api.getServiceCalls("pending")
+        api.getServiceCalls("pending", outlet?.id)
             .then((calls: any[]) => setPendingServiceCalls(calls))
             .catch(() => {});
-    }, []);
+    }, [outlet?.id]);
 
     const handleWsEvent = useCallback((event: SocketEvent) => {
         if (event.event === "service_call" && event.data) {

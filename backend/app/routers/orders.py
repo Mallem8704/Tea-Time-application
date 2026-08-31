@@ -421,6 +421,7 @@ async def update_order_status(
 
 @router.get("", response_model=List[OrderOut])
 def list_orders(
+    outlet_id: Optional[int] = Query(None, description="Filter by outlet ID (Owners can switch branches)"),
     status: Optional[str] = Query(None, description="Filter by status (e.g. 'placed,preparing')"),
     table_id: Optional[int] = Query(None, description="Filter by table ID"),
     order_type: Optional[str] = Query(None, description="Filter by order type ('dine_in' or 'delivery')"),
@@ -431,10 +432,15 @@ def list_orders(
     db: Session = Depends(get_db),
 ):
     """Admin endpoint to list and filter cafe orders."""
+    if current_user.role == "owner" and outlet_id is not None:
+        target_outlet_id = get_effective_outlet_id(outlet_id, db)
+    else:
+        target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+
     query = (
         db.query(Order)
         .options(joinedload(Order.items), joinedload(Order.table))
-        .filter(Order.outlet_id == current_user.outlet_id)
+        .filter(Order.outlet_id == target_outlet_id)
     )
 
     if order_type:

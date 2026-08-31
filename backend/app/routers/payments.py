@@ -247,6 +247,7 @@ async def mark_cash_payment_paid(
 
 @router.get("", response_model=List[PaymentOut])
 def list_payments(
+    outlet_id: Optional[int] = Query(None, description="Filter by outlet ID"),
     method: Optional[str] = Query(None, description="Filter by method: cash, upi, card"),
     status: Optional[str] = Query(None, description="Filter by status: completed, pending, refunded"),
     limit: int = Query(100, ge=1, le=500),
@@ -254,10 +255,16 @@ def list_payments(
     db: Session = Depends(get_db),
 ):
     """List all payment records for accounting and reconciliation."""
+    from app.routers.outlets import get_effective_outlet_id
+    if current_user.role == "owner" and outlet_id is not None:
+        target_outlet_id = get_effective_outlet_id(outlet_id, db)
+    else:
+        target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+
     query = (
         db.query(Payment)
         .join(Order, Payment.order_id == Order.id)
-        .filter(Order.outlet_id == current_user.outlet_id)
+        .filter(Order.outlet_id == target_outlet_id)
     )
 
     if method:

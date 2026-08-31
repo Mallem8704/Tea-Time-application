@@ -72,8 +72,8 @@ export default function AdminLiveOrdersKanbanPage() {
         setIsLoadingOrders(true);
         try {
             const [ordersResult, callsResult] = await Promise.allSettled([
-                api.getOrders(),
-                api.getServiceCalls("pending"),
+                api.getOrders({ outlet_id: outlet?.id }),
+                api.getServiceCalls("pending", outlet?.id),
             ]);
 
             if (ordersResult.status === "fulfilled" && Array.isArray(ordersResult.value)) {
@@ -87,13 +87,13 @@ export default function AdminLiveOrdersKanbanPage() {
         } finally {
             setIsLoadingOrders(false);
         }
-    }, []);
+    }, [outlet?.id]);
 
     useEffect(() => {
         if (isAuthenticated) {
             fetchOrders();
         }
-    }, [isAuthenticated, fetchOrders, outlet?.id]);
+    }, [isAuthenticated, fetchOrders]);
 
     // Real-Time WebSocket Hook with Audio Chimes
     const { isConnected: wsConnected } = useAdminSocket(outlet?.id || 1, (event) => {

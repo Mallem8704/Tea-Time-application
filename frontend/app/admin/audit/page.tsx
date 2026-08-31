@@ -1,5 +1,6 @@
 "use client";
 
+import { useOutlet } from "@/context/OutletContext";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -29,6 +30,7 @@ export default function AdminAuditLogPage() {
     const toast = useToast();
     const router = useRouter();
     const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
+    const { outlet } = useOutlet();
 
     const [logs, setLogs] = useState<any[]>([]);
     const [filterEntity, setFilterEntity] = useState<string>("all");
@@ -47,6 +49,7 @@ export default function AdminAuditLogPage() {
         setIsLoading(true);
         try {
             const data = await api.getAuditLogs({
+                outlet_id: outlet?.id,
                 entity_type: filterEntity === "all" ? undefined : filterEntity,
                 limit: 100,
             });
@@ -56,7 +59,7 @@ export default function AdminAuditLogPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [filterEntity, toast]);
+    }, [filterEntity, toast, outlet?.id]);
 
     useEffect(() => {
         if (isAuthenticated) {

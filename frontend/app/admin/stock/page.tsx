@@ -1,5 +1,6 @@
 "use client";
 
+import { useOutlet } from "@/context/OutletContext";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -31,6 +32,7 @@ export default function AdminStockManagementPage() {
     const toast = useToast();
     const router = useRouter();
     const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
+    const { outlet } = useOutlet();
 
     const [stockItems, setStockItems] = useState<any[]>([]);
     const [lowStockItems, setLowStockItems] = useState<any[]>([]);
@@ -56,9 +58,9 @@ export default function AdminStockManagementPage() {
         setIsLoading(true);
         try {
             const [overview, low, logs] = await Promise.all([
-                api.getStockOverview(),
-                api.getLowStockItems(),
-                api.getStockLogs({ limit: 50 }),
+                api.getStockOverview(outlet?.id),
+                api.getLowStockItems(outlet?.id),
+                api.getStockLogs({ outlet_id: outlet?.id, limit: 50 }),
             ]);
             setStockItems(overview);
             setLowStockItems(low);
@@ -68,7 +70,7 @@ export default function AdminStockManagementPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, outlet?.id]);
 
     useEffect(() => {
         if (isAuthenticated) {

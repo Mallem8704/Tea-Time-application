@@ -1,5 +1,6 @@
 "use client";
 
+import { useOutlet } from "@/context/OutletContext";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -30,6 +31,7 @@ export default function AdminPaymentsPage() {
     const toast = useToast();
     const router = useRouter();
     const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
+    const { outlet } = useOutlet();
 
     const [payments, setPayments] = useState<any[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
@@ -49,8 +51,8 @@ export default function AdminPaymentsPage() {
         setIsLoading(true);
         try {
             const [paymentsData, ordersData] = await Promise.all([
-                api.getPayments(),
-                api.getOrders(),
+                api.getPayments({ outlet_id: outlet?.id }),
+                api.getOrders({ outlet_id: outlet?.id }),
             ]);
             setPayments(paymentsData);
             setOrders(ordersData);
@@ -59,7 +61,7 @@ export default function AdminPaymentsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, outlet?.id]);
 
     useEffect(() => {
         if (isAuthenticated) {

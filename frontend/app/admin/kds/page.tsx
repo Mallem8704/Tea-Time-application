@@ -74,8 +74,8 @@ export default function KitchenDisplaySystemPage() {
         setIsLoadingOrders(true);
         try {
             const [ordersResult, callsResult] = await Promise.allSettled([
-                api.getOrders(),
-                api.getServiceCalls("pending"),
+                api.getOrders({ outlet_id: outlet?.id }),
+                api.getServiceCalls("pending", outlet?.id),
             ]);
             if (ordersResult.status === "fulfilled" && Array.isArray(ordersResult.value)) {
                 setOrders(ordersResult.value);

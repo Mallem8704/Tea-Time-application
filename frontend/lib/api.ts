@@ -169,15 +169,15 @@ export const api = {
         apiFetch("/api/orders", { method: "POST", body: JSON.stringify(data) }),
     getOrder: (orderId: number) =>
         apiFetch(`/api/orders/${orderId}`),
-    getOrders: (params?: { status?: string; table_id?: number; order_type?: string; date?: string }) =>
+    getOrders: (params?: { outlet_id?: number; status?: string; table_id?: number; order_type?: string; date?: string }) =>
         apiFetch("/api/orders", { params }),
     updateOrderStatus: (orderId: number, status: string) =>
         apiFetch(`/api/orders/${orderId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
 
     // Stock & Inventory
-    getStockOverview: () => apiFetch("/api/stock"),
-    getLowStockItems: () => apiFetch("/api/stock/low"),
-    getStockLogs: (params?: { item_id?: number; reason?: string; limit?: number }) =>
+    getStockOverview: (outletId?: number) => apiFetch("/api/stock", { params: outletId ? { outlet_id: outletId } : undefined }),
+    getLowStockItems: (outletId?: number) => apiFetch("/api/stock/low", { params: outletId ? { outlet_id: outletId } : undefined }),
+    getStockLogs: (params?: { outlet_id?: number; item_id?: number; reason?: string; limit?: number }) =>
         apiFetch("/api/stock/logs", { params }),
     adjustStockManual: (data: { item_id: number; change_qty: number; reason: string; notes?: string }) =>
         apiFetch("/api/stock/adjust", { method: "POST", body: JSON.stringify(data) }),
@@ -191,33 +191,33 @@ export const api = {
         apiFetch("/api/payments/verify-razorpay-payment", { method: "POST", body: JSON.stringify(data) }),
     markCashPaid: (orderId: number, notes?: string) =>
         apiFetch(`/api/payments/${orderId}/mark-cash-paid`, { method: "POST", body: JSON.stringify({ notes }) }),
-    getPayments: (params?: { method?: string; status?: string }) =>
+    getPayments: (params?: { outlet_id?: number; method?: string; status?: string }) =>
         apiFetch("/api/payments", { params }),
 
     // Service Calls
-    getServiceCalls: (status?: string) =>
-        apiFetch("/api/service-calls", { params: { status } }),
+    getServiceCalls: (status?: string, outletId?: number) =>
+        apiFetch("/api/service-calls", { params: { status, outlet_id: outletId } }),
     createServiceCall: (table_id: number, call_type: string, notes?: string) =>
         apiFetch("/api/service-calls", { method: "POST", body: JSON.stringify({ table_id, call_type, notes }) }),
     attendServiceCall: (callId: number) =>
         apiFetch(`/api/service-calls/${callId}/attend`, { method: "PATCH" }),
 
     // Analytics
-    getAnalyticsSummary: (params?: { start_date?: string; end_date?: string }) =>
+    getAnalyticsSummary: (params?: { outlet_id?: number; start_date?: string; end_date?: string }) =>
         apiFetch("/api/analytics/summary", { params }),
-    getRevenueTrend: (days = 7) =>
-        apiFetch("/api/analytics/revenue-over-time", { params: { days } }),
-    getTopItems: (limit = 10) =>
-        apiFetch("/api/analytics/top-items", { params: { limit } }),
-    getHourlyDistribution: () =>
-        apiFetch("/api/analytics/hourly-distribution"),
-    getCategoryBreakdown: () =>
-        apiFetch("/api/analytics/category-breakdown"),
-    getTableTurnover: () =>
-        apiFetch("/api/analytics/table-turnover"),
+    getRevenueTrend: (days = 7, outletId?: number) =>
+        apiFetch("/api/analytics/revenue-over-time", { params: { days, outlet_id: outletId } }),
+    getTopItems: (limit = 10, outletId?: number) =>
+        apiFetch("/api/analytics/top-items", { params: { limit, outlet_id: outletId } }),
+    getHourlyDistribution: (outletId?: number) =>
+        apiFetch("/api/analytics/hourly-distribution", { params: outletId ? { outlet_id: outletId } : undefined }),
+    getCategoryBreakdown: (outletId?: number) =>
+        apiFetch("/api/analytics/category-breakdown", { params: outletId ? { outlet_id: outletId } : undefined }),
+    getTableTurnover: (outletId?: number) =>
+        apiFetch("/api/analytics/table-turnover", { params: outletId ? { outlet_id: outletId } : undefined }),
 
     // Audit Logs
-    getAuditLogs: (params?: { entity_type?: string; limit?: number }) =>
+    getAuditLogs: (params?: { outlet_id?: number; entity_type?: string; limit?: number }) =>
         apiFetch("/api/audit", { params }),
 
     // Outlet Settings

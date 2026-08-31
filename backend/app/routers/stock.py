@@ -13,14 +13,21 @@ router = APIRouter(prefix="", tags=["Inventory & Stock"])
 
 @router.get("", response_model=List[StockItemOverview])
 def get_stock_overview(
+    outlet_id: Optional[int] = Query(None, description="Filter by outlet ID"),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Retrieve full inventory status overview across all menu items."""
+    from app.routers.outlets import get_effective_outlet_id
+    if current_user.role == "owner" and outlet_id is not None:
+        target_outlet_id = get_effective_outlet_id(outlet_id, db)
+    else:
+        target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+
     items = (
         db.query(MenuItem)
         .options(joinedload(MenuItem.category))
-        .filter(MenuItem.outlet_id == current_user.outlet_id)
+        .filter(MenuItem.outlet_id == target_outlet_id)
         .order_by(MenuItem.category_id.asc(), MenuItem.id.asc())
         .all()
     )
@@ -53,15 +60,22 @@ def get_stock_overview(
 
 @router.get("/low", response_model=List[StockItemOverview])
 def get_low_stock_items(
+    outlet_id: Optional[int] = Query(None, description="Filter by outlet ID"),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Retrieve list of items that have fallen below their low-stock threshold."""
+    from app.routers.outlets import get_effective_outlet_id
+    if current_user.role == "owner" and outlet_id is not None:
+        target_outlet_id = get_effective_outlet_id(outlet_id, db)
+    else:
+        target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+
     items = (
         db.query(MenuItem)
         .options(joinedload(MenuItem.category))
         .filter(
-            MenuItem.outlet_id == current_user.outlet_id,
+            MenuItem.outlet_id == target_outlet_id,
             MenuItem.track_stock == True,
             MenuItem.stock_qty <= MenuItem.low_stock_threshold,
         )

@@ -13,14 +13,21 @@ router = APIRouter(prefix="", tags=["Sales & Analytics"])
 
 @router.get("/summary")
 def get_analytics_summary(
+    outlet_id: Optional[int] = Query(None, description="Filter by outlet ID"),
     start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
     current_user: User = Depends(require_staff_or_owner),
     db: Session = Depends(get_db),
 ):
     """Overall cafe KPI summary: total orders, total revenue, average order value, active orders."""
+    from app.routers.outlets import get_effective_outlet_id
+    if current_user.role == "owner" and outlet_id is not None:
+        target_outlet_id = get_effective_outlet_id(outlet_id, db)
+    else:
+        target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+
     # Base query for orders of this outlet
-    base_orders = db.query(Order).filter(Order.outlet_id == current_user.outlet_id)
+    base_orders = db.query(Order).filter(Order.outlet_id == target_outlet_id)
 
     if start_date:
         try:

@@ -1,5 +1,6 @@
 "use client";
 
+import { useOutlet } from "@/context/OutletContext";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -30,6 +31,7 @@ export default function AdminAnalyticsDashboardPage() {
     const toast = useToast();
     const router = useRouter();
     const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
+    const { outlet } = useOutlet();
 
     const [summary, setSummary] = useState<any>(null);
     const [revenueTrend, setRevenueTrend] = useState<any[]>([]);
@@ -51,12 +53,12 @@ export default function AdminAnalyticsDashboardPage() {
         setIsLoading(true);
         try {
             const [sumData, trendData, topData, hourlyData, catData, tableData] = await Promise.all([
-                api.getAnalyticsSummary(),
-                api.getRevenueTrend(timeRangeDays),
-                api.getTopItems(10),
-                api.getHourlyDistribution(),
-                api.getCategoryBreakdown(),
-                api.getTableTurnover(),
+                api.getAnalyticsSummary({ outlet_id: outlet?.id }),
+                api.getRevenueTrend(timeRangeDays, outlet?.id),
+                api.getTopItems(10, outlet?.id),
+                api.getHourlyDistribution(outlet?.id),
+                api.getCategoryBreakdown(outlet?.id),
+                api.getTableTurnover(outlet?.id),
             ]);
 
             setSummary(sumData);
@@ -70,7 +72,7 @@ export default function AdminAnalyticsDashboardPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [timeRangeDays, toast]);
+    }, [timeRangeDays, toast, outlet?.id]);
 
     useEffect(() => {
         if (isAuthenticated) {
