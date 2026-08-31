@@ -88,6 +88,93 @@ class SoundManager {
             console.warn("Could not play service alert", e);
         }
     }
+
+    /**
+     * Play a short bubbly pop sound when an item is added to cart.
+     */
+    playAddToCartPop() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+
+        try {
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(520, now);
+            osc.frequency.exponentialRampToValueAtTime(980, now + 0.08);
+
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.09);
+        } catch (e) {
+            console.warn("Could not play add to cart sound", e);
+        }
+    }
+
+    /**
+     * Play an energetic celebratory chime when an order is placed.
+     */
+    playOrderPlacedSuccess() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+
+        try {
+            const now = ctx.currentTime;
+            const chords = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+            chords.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                const noteStart = now + i * 0.09;
+
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(freq, noteStart);
+
+                gain.gain.setValueAtTime(0.22, noteStart);
+                gain.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.5);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(noteStart);
+                osc.stop(noteStart + 0.5);
+            });
+        } catch (e) {
+            console.warn("Could not play order success sound", e);
+        }
+    }
+
+    /**
+     * Play a clear, high chime when food is ready / rider dispatched.
+     */
+    playReadyChime() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+
+        try {
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.setValueAtTime(1760, now + 0.15);
+
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.7);
+        } catch (e) {
+            console.warn("Could not play ready chime", e);
+        }
+    }
 }
 
 export const soundManager = new SoundManager();
