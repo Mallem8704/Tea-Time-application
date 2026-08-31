@@ -263,14 +263,21 @@ export default function HomePage() {
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                         <Link href="/delivery?branch=2">
-                            <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold text-base transition-all shadow-2xl shadow-amber-500/40 hover:scale-105 anim-glow cursor-pointer">
-                                <Bike className="w-5 h-5" /> Free Home Delivery (Kadiri)
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-base transition-all shadow-2xl shadow-amber-500/40 hover:scale-105 anim-glow cursor-pointer">
+                                <div className="w-8 h-8 rounded-xl bg-black/20 flex items-center justify-center">
+                                    <Bike className="w-5 h-5 text-black" />
+                                </div>
+                                <span>Free Home Delivery (Kadiri)</span>
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform ml-1" />
                             </button>
                         </Link>
                         <Link href="/order?branch=2&table=T1">
-                            <button className="flex items-center gap-3 px-8 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold text-base transition-all hover:scale-105 border border-white/20 cursor-pointer">
-                                <Utensils className="w-5 h-5 text-amber-400" /> Dine-in Table Order
+                            <button className="group flex items-center gap-3 px-8 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold text-base transition-all hover:scale-105 border border-white/20 hover:border-amber-400/40 cursor-pointer shadow-xl">
+                                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center">
+                                    <QrCode className="w-4 h-4 text-amber-400" />
+                                </div>
+                                <span>Dine-in Table Order</span>
+                                <Utensils className="w-4 h-4 text-white/50 group-hover:text-amber-400 transition-colors ml-1" />
                             </button>
                         </Link>
                     </div>
