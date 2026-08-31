@@ -625,15 +625,10 @@ async def append_order_items(
 
     # Broadcast WebSocket update
     resp = format_order_response(order)
-    await manager.broadcast_to_outlet(
+    await manager.broadcast_to_admin(
         outlet_id=order.outlet_id,
-        message={
-            "event": "running_kot_added",
-            "data": resp.model_dump(mode="json"),
-            "appended_items_count": len(appended_order_items),
-            "table_label": resp.table_label,
-            "order_id": order.id,
-        }
+        event_type="running_kot_added",
+        data=resp.model_dump(mode="json"),
     )
 
     log_audit(
@@ -697,16 +692,10 @@ async def transfer_order_table(
     db.refresh(order)
 
     resp = format_order_response(order)
-    await manager.broadcast_to_outlet(
+    await manager.broadcast_to_admin(
         outlet_id=order.outlet_id,
-        message={
-            "event": "table_transferred",
-            "data": resp.model_dump(mode="json"),
-            "prev_table_id": prev_table_id,
-            "new_table_id": target_table.id,
-            "table_label": resp.table_label,
-            "order_id": order.id,
-        }
+        event_type="table_transferred",
+        data=resp.model_dump(mode="json"),
     )
 
     log_audit(
