@@ -62,8 +62,10 @@ function CustomerOrderContent() {
         }
     }, [outletId]);
 
-    // Table State
-    const [tableLabel, setTableLabel] = useState<string>("T1");
+    // Table State — initialize immediately from URL query parameter
+    const [tableLabel, setTableLabel] = useState<string>(() => {
+        return (tableParam || "T1").toUpperCase();
+    });
     const [tableId, setTableId] = useState<number>(1);
     const [availableTables, setAvailableTables] = useState<any[]>([]);
     const [showTablePicker, setShowTablePicker] = useState<boolean>(false);
@@ -105,27 +107,40 @@ function CustomerOrderContent() {
     // Active Tracking Order
     const [activeOrder, setActiveOrder] = useState<OrderDetail | null>(null);
 
-    // 1. Initialize Table from URL or Storage
+    // 1. Initialize Table from URL or Storage with instant reflection and fuzzy matching
     useEffect(() => {
+        const savedTable = safeStorage.getItem("teatime_table", "session");
+        const targetLabel = (tableParam || savedTable || "T1").toUpperCase();
+        setTableLabel(targetLabel);
+
         api.getTables(outletId)
             .then((tables) => {
-                if (Array.isArray(tables)) {
+                if (Array.isArray(tables) && tables.length > 0) {
                     setAvailableTables(tables);
 
-                    const savedTable = safeStorage.getItem("teatime_table", "session");
-                    const targetLabel = (tableParam || savedTable || "T1").toUpperCase();
-
                     const matched = tables.find(
-                        (t: any) => t.label?.toUpperCase() === targetLabel || String(t.id) === targetLabel
+                        (t: any) =>
+                            t.label?.toUpperCase() === targetLabel ||
+                            String(t.id) === targetLabel ||
+                            `T${t.id}` === targetLabel ||
+                            t.label?.toUpperCase() === `TABLE ${targetLabel}` ||
+                            `T${t.label}`.toUpperCase() === targetLabel
                     );
 
                     if (matched) {
                         setTableLabel(matched.label);
                         setTableId(matched.id);
                         safeStorage.setItem("teatime_table", matched.label, "session");
-                    } else if (tables.length > 0) {
-                        setTableLabel(tables[0].label);
-                        setTableId(tables[0].id);
+                    } else {
+                        const numericId = parseInt(targetLabel.replace(/\D/g, ""), 10);
+                        const matchNum = !isNaN(numericId) ? tables.find((t: any) => t.id === numericId) : null;
+                        if (matchNum) {
+                            setTableLabel(matchNum.label);
+                            setTableId(matchNum.id);
+                            safeStorage.setItem("teatime_table", matchNum.label, "session");
+                        } else {
+                            setTableId(tables[0].id);
+                        }
                     }
                 }
             })
