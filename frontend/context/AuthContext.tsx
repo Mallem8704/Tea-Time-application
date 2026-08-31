@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { safeStorage } from "@/lib/safeStorage";
 
 export interface AuthUser {
     id: number;
@@ -31,25 +32,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     const logout = useCallback(() => {
-        if (typeof window !== "undefined") {
-            localStorage.removeItem("teatime_token");
-            localStorage.removeItem("teatime_user");
-        }
+        safeStorage.removeItem("teatime_token");
+        safeStorage.removeItem("teatime_user");
         setUser(null);
         setToken(null);
         router.push("/admin/login");
     }, [router]);
 
     useEffect(() => {
-        const storedToken = localStorage.getItem("teatime_token");
-        const storedUser = localStorage.getItem("teatime_user");
+        const storedToken = safeStorage.getItem("teatime_token");
+        const storedUser = safeStorage.getItem("teatime_user");
 
         if (storedToken && storedUser) {
             try {
                 setToken(storedToken);
                 setUser(JSON.parse(storedUser));
             } catch {
-                localStorage.removeItem("teatime_user");
+                safeStorage.removeItem("teatime_user");
             }
         }
         setIsLoading(false);
@@ -67,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             outlet_id: freshUser.outlet_id,
                         };
                         setUser(updated);
-                        localStorage.setItem("teatime_user", JSON.stringify(updated));
+                        safeStorage.setItem("teatime_user", JSON.stringify(updated));
                     }
                 })
                 .catch(() => {});
@@ -88,10 +87,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(authToken);
         setUser(authUser);
 
-        if (typeof window !== "undefined") {
-            localStorage.setItem("teatime_token", authToken);
-            localStorage.setItem("teatime_user", JSON.stringify(authUser));
-        }
+        safeStorage.setItem("teatime_token", authToken);
+        safeStorage.setItem("teatime_user", JSON.stringify(authUser));
 
         router.push("/admin");
     };

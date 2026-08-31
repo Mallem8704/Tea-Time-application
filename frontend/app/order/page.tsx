@@ -33,6 +33,7 @@ import { useOffline } from "@/context/OfflineContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { api } from "@/lib/api";
 import { useOutlet } from "@/context/OutletContext";
+import { safeStorage } from "@/lib/safeStorage";
 import type { MenuItemData } from "@/components/order/MenuItemCard";
 import {
     DishCustomizerModal,
@@ -48,8 +49,9 @@ function CustomerOrderContent() {
     const { taxRate, outlet } = useOutlet();
     const toast = useToast();
 
-    // ── Branch / Outlet from URL param ─────────────────────────────────────
+    // ── Branch / Outlet & Table from URL params ─────────────────────────────
     const branchParam = searchParams.get("branch");
+    const tableParam = searchParams.get("table");
     const outletId = branchParam ? Number(branchParam) : undefined;
     const [branchOutlet, setBranchOutlet] = useState<any>(null);
 
@@ -107,29 +109,30 @@ function CustomerOrderContent() {
     useEffect(() => {
         api.getTables(outletId)
             .then((tables) => {
-                setAvailableTables(tables);
+                if (Array.isArray(tables)) {
+                    setAvailableTables(tables);
 
-                const paramTable = searchParams.get("table");
-                const savedTable = typeof window !== "undefined" ? sessionStorage.getItem("teatime_table") : null;
-                const targetLabel = (paramTable || savedTable || "T1").toUpperCase();
+                    const savedTable = safeStorage.getItem("teatime_table", "session");
+                    const targetLabel = (tableParam || savedTable || "T1").toUpperCase();
 
-                const matched = tables.find(
-                    (t: any) => t.label.toUpperCase() === targetLabel || String(t.id) === targetLabel
-                );
+                    const matched = tables.find(
+                        (t: any) => t.label?.toUpperCase() === targetLabel || String(t.id) === targetLabel
+                    );
 
-                if (matched) {
-                    setTableLabel(matched.label);
-                    setTableId(matched.id);
-                    sessionStorage.setItem("teatime_table", matched.label);
-                } else if (tables.length > 0) {
-                    setTableLabel(tables[0].label);
-                    setTableId(tables[0].id);
+                    if (matched) {
+                        setTableLabel(matched.label);
+                        setTableId(matched.id);
+                        safeStorage.setItem("teatime_table", matched.label, "session");
+                    } else if (tables.length > 0) {
+                        setTableLabel(tables[0].label);
+                        setTableId(tables[0].id);
+                    }
                 }
             })
             .catch(() => {});
 
         // Check if there is an existing active order in session
-        const savedOrderId = typeof window !== "undefined" ? sessionStorage.getItem("teatime_active_order_id") : null;
+        const savedOrderId = safeStorage.getItem("teatime_active_order_id", "session");
         if (savedOrderId) {
             api.getOrder(Number(savedOrderId))
                 .then((ord) => {
@@ -139,7 +142,7 @@ function CustomerOrderContent() {
                 })
                 .catch(() => {});
         }
-    }, [searchParams, outletId]);
+    }, [tableParam, outletId]);
 
     // 2. Fetch Categories & Menu Items
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -406,7 +409,7 @@ function CustomerOrderContent() {
             setCart([]);
             setIsCartOpen(false);
             setActiveOrder(createdOrder);
-            sessionStorage.setItem("teatime_active_order_id", String(createdOrder.id));
+            safeStorage.setItem("teatime_active_order_id", String(createdOrder.id), "session");
 
             toast.success(
                 language === "en"
@@ -425,7 +428,7 @@ function CustomerOrderContent() {
     const handleSelectTable = (tbl: any) => {
         setTableLabel(tbl.label);
         setTableId(tbl.id);
-        sessionStorage.setItem("teatime_table", tbl.label);
+        safeStorage.setItem("teatime_table", tbl.label, "session");
         setShowTablePicker(false);
         toast.info(`Switched to Table ${tbl.label}`);
     };
@@ -451,9 +454,7 @@ function CustomerOrderContent() {
                     initialOrder={activeOrder}
                     onOrderMore={() => {
                         setActiveOrder(null);
-                        if (typeof window !== "undefined") {
-                            sessionStorage.removeItem("teatime_active_order_id");
-                        }
+                        safeStorage.removeItem("teatime_active_order_id", "session");
                     }}
                 />
             </main>

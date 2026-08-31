@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
+import { safeStorage } from "@/lib/safeStorage";
 
 export interface CustomerAddress {
   id: number;
@@ -41,7 +42,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshCustomer = useCallback(async () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    const token = safeStorage.getItem(TOKEN_KEY);
     if (!token) {
       setCustomer(null);
       setIsLoading(false);
@@ -53,9 +54,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       setCustomer(profile);
     } catch (err) {
       console.warn("Failed to refresh customer profile, session may have expired:", err);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(TOKEN_KEY);
-      }
+      safeStorage.removeItem(TOKEN_KEY);
       setCustomer(null);
     } finally {
       setIsLoading(false);
@@ -63,7 +62,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchPastOrders = useCallback(async () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    const token = safeStorage.getItem(TOKEN_KEY);
     if (!token) return;
 
     try {
@@ -87,16 +86,12 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   }, [customer, fetchPastOrders]);
 
   const loginCustomer = useCallback((token: string, customerData: CustomerProfile) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(TOKEN_KEY, token);
-    }
+    safeStorage.setItem(TOKEN_KEY, token);
     setCustomer(customerData);
   }, []);
 
   const logoutCustomer = useCallback(() => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(TOKEN_KEY);
-    }
+    safeStorage.removeItem(TOKEN_KEY);
     setCustomer(null);
     setPastOrders([]);
   }, []);

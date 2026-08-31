@@ -34,15 +34,19 @@ import {
     Flame,
     UtensilsCrossed,
     SlidersHorizontal,
+    UserCheck,
+    LogIn,
+    RotateCcw,
+    Bookmark,
 } from "lucide-react";
 import { useCustomer } from "@/context/CustomerContext";
 import { useOffline } from "@/context/OfflineContext";
 import { CustomerAuthModal } from "@/components/customer/CustomerAuthModal";
 import { RepeatOrderCard } from "@/components/customer/RepeatOrderCard";
-import { LogIn, UserCheck, RotateCcw, Bookmark } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { safeStorage } from "@/lib/safeStorage";
 import { useOutlet } from "@/context/OutletContext";
 import { formatRupees, formatRelativeTime } from "@/lib/formatters";
 import { Button } from "@/components/ui/Button";
@@ -214,27 +218,25 @@ function DeliveryOrderContent() {
 
     // Load saved customer contact details
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            const savedName = localStorage.getItem("arabieq_cust_name");
-            const savedPhone = localStorage.getItem("arabieq_cust_phone");
-            const savedAddress = localStorage.getItem("arabieq_cust_address");
-            const savedLandmark = localStorage.getItem("arabieq_cust_landmark");
-            if (savedName) setCustomerName(savedName);
-            if (savedPhone) setCustomerPhone(savedPhone);
-            if (savedAddress) setDeliveryAddress(savedAddress);
-            if (savedLandmark) setLandmark(savedLandmark);
+        const savedName = safeStorage.getItem("arabieq_cust_name");
+        const savedPhone = safeStorage.getItem("arabieq_cust_phone");
+        const savedAddress = safeStorage.getItem("arabieq_cust_address");
+        const savedLandmark = safeStorage.getItem("arabieq_cust_landmark");
+        if (savedName) setCustomerName(savedName);
+        if (savedPhone) setCustomerPhone(savedPhone);
+        if (savedAddress) setDeliveryAddress(savedAddress);
+        if (savedLandmark) setLandmark(savedLandmark);
 
-            // Restore active order from session if exists
-            const savedOrderId = sessionStorage.getItem("arabieq_delivery_order_id");
-            if (savedOrderId) {
-                api.getOrder(Number(savedOrderId))
-                    .then((ord) => {
-                        if (ord && ord.status !== "cancelled" && ord.status !== "delivered") {
-                            setActiveOrder(ord);
-                        }
-                    })
-                    .catch(() => {});
-            }
+        // Restore active order from session if exists
+        const savedOrderId = safeStorage.getItem("arabieq_delivery_order_id", "session");
+        if (savedOrderId) {
+            api.getOrder(Number(savedOrderId))
+                .then((ord) => {
+                    if (ord && ord.status !== "cancelled" && ord.status !== "delivered") {
+                        setActiveOrder(ord);
+                    }
+                })
+                .catch(() => {});
         }
     }, []);
 
@@ -474,28 +476,26 @@ function DeliveryOrderContent() {
             }
 
             // Auto-login & persist customer profile and address (Zero OTP / Zero Cost)
-            if (typeof window !== "undefined") {
-                localStorage.setItem("arabieq_cust_name", customerName.trim());
-                localStorage.setItem("arabieq_cust_phone", phoneClean);
-                localStorage.setItem("arabieq_cust_address", deliveryAddress.trim());
-                localStorage.setItem("arabieq_cust_landmark", landmark.trim());
-                sessionStorage.setItem("arabieq_delivery_order_id", String(createdOrder.id));
+            safeStorage.setItem("arabieq_cust_name", customerName.trim());
+            safeStorage.setItem("arabieq_cust_phone", phoneClean);
+            safeStorage.setItem("arabieq_cust_address", deliveryAddress.trim());
+            safeStorage.setItem("arabieq_cust_landmark", landmark.trim());
+            safeStorage.setItem("arabieq_delivery_order_id", String(createdOrder.id), "session");
 
-                if (!isCustomerLoggedIn) {
-                    api.quickLoginCustomer({ phone: phoneClean, name: customerName.trim() || undefined })
-                        .then((res) => {
-                            loginCustomer(res.access_token, res.customer);
-                            if (deliveryAddress.trim()) {
-                                api.addCustomerAddress({
-                                    label: "Home",
-                                    address_line: deliveryAddress.trim(),
-                                    landmark: landmark.trim() || undefined,
-                                    is_default: true,
-                                }).catch(() => {});
-                            }
-                        })
-                        .catch(() => {});
-                }
+            if (!isCustomerLoggedIn) {
+                api.quickLoginCustomer({ phone: phoneClean, name: customerName.trim() || undefined })
+                    .then((res) => {
+                        loginCustomer(res.access_token, res.customer);
+                        if (deliveryAddress.trim()) {
+                            api.addCustomerAddress({
+                                label: "Home",
+                                address_line: deliveryAddress.trim(),
+                                landmark: landmark.trim() || undefined,
+                                is_default: true,
+                            }).catch(() => {});
+                        }
+                    })
+                    .catch(() => {});
             }
 
             setCart([]);
@@ -552,9 +552,7 @@ function DeliveryOrderContent() {
                             variant="secondary"
                             size="sm"
                             onClick={() => {
-                                if (typeof window !== "undefined") {
-                                    sessionStorage.removeItem("arabieq_delivery_order_id");
-                                }
+                                safeStorage.removeItem("arabieq_delivery_order_id", "session");
                                 setActiveOrder(null);
                             }}
                             className="text-xs"

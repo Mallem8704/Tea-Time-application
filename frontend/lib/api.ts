@@ -8,6 +8,8 @@ export const API_BASE =
         ? "https://tea-time-backend-1f44.onrender.com"
         : "http://127.0.0.1:8000");
 
+import { safeStorage } from "@/lib/safeStorage";
+
 interface FetchOptions extends RequestInit {
     params?: Record<string, string | number | boolean | undefined>;
 }
@@ -38,17 +40,15 @@ export async function apiFetch<T = any>(endpoint: string, options: FetchOptions 
     }
 
     // Inject JWT token if available in client storage
-    if (typeof window !== "undefined") {
-        if (endpoint.startsWith("/api/customer") || endpoint.startsWith("/customer")) {
-            const custToken = localStorage.getItem("arabieq_customer_token");
-            if (custToken) {
-                defaultHeaders["Authorization"] = `Bearer ${custToken}`;
-            }
-        } else {
-            const token = localStorage.getItem("teatime_token");
-            if (token) {
-                defaultHeaders["Authorization"] = `Bearer ${token}`;
-            }
+    if (endpoint.startsWith("/api/customer") || endpoint.startsWith("/customer")) {
+        const custToken = safeStorage.getItem("arabieq_customer_token");
+        if (custToken) {
+            defaultHeaders["Authorization"] = `Bearer ${custToken}`;
+        }
+    } else {
+        const token = safeStorage.getItem("teatime_token");
+        if (token) {
+            defaultHeaders["Authorization"] = `Bearer ${token}`;
         }
     }
 

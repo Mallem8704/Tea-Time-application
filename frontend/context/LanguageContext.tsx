@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { dictionary, Language, TranslationKey } from "@/lib/i18n";
+import { safeStorage } from "@/lib/safeStorage";
 
 interface LanguageContextType {
     language: Language;
@@ -18,7 +19,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         setMounted(true);
-        const savedLang = localStorage.getItem("teatime_lang") as Language;
+        const savedLang = safeStorage.getItem("teatime_lang") as Language;
         if (savedLang && (savedLang === "en" || savedLang === "te")) {
             setLanguageState(savedLang);
         }
@@ -26,9 +27,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     const setLanguage = (lang: Language) => {
         setLanguageState(lang);
-        if (typeof window !== "undefined") {
-            localStorage.setItem("teatime_lang", lang);
-        }
+        safeStorage.setItem("teatime_lang", lang);
     };
 
     const toggleLanguage = () => {

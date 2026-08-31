@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
+import { safeStorage } from "@/lib/safeStorage";
 
 export interface QueuedOfflineOrder {
   id: string; // client uuid
@@ -30,13 +31,13 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   const [queuedOrders, setQueuedOrders] = useState<QueuedOfflineOrder[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load queued orders from localStorage on mount
+  // Load queued orders from storage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       setIsOnline(navigator.onLine);
 
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = safeStorage.getItem(STORAGE_KEY);
         if (stored) {
           setQueuedOrders(JSON.parse(stored));
         }
@@ -64,11 +65,9 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Save queue to localStorage whenever it changes
+  // Save queue to storage whenever it changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(queuedOrders));
-    }
+    safeStorage.setItem(STORAGE_KEY, JSON.stringify(queuedOrders));
   }, [queuedOrders]);
 
   const enqueueOrder = useCallback(async (orderPayload: any, orderType: "dine_in" | "delivery" = "dine_in") => {
