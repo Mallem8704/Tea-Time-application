@@ -331,52 +331,53 @@ export default function AdminPaymentsPage() {
                             </div>
                         </div>
 
-                        <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr className="border-b border-cream-200 bg-cream-50/40 text-espresso-600 font-extrabold uppercase tracking-wider text-[11px]">
-                                    <th className="py-3 px-4">Txn ID</th>
-                                    <th className="py-3 px-4">Order Ref</th>
-                                    <th className="py-3 px-4">Method</th>
-                                    <th className="py-3 px-4">Amount (₹)</th>
-                                    <th className="py-3 px-4">Status</th>
-                                    <th className="py-3 px-4">Payment Reference / Notes</th>
-                                    <th className="py-3 px-4 text-right">Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-cream-100">
-                                {filteredPayments.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="text-center py-10 text-espresso-400">
-                                            No payment transactions match filters.
-                                        </td>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs border-collapse min-w-[650px]">
+                                <thead>
+                                    <tr className="border-b border-cream-200 bg-cream-50/40 text-espresso-600 font-extrabold uppercase tracking-wider text-[11px]">
+                                        <th className="py-3 px-4">Txn ID</th>
+                                        <th className="py-3 px-4">Order Ref</th>
+                                        <th className="py-3 px-4">Method</th>
+                                        <th className="py-3 px-4">Amount (₹)</th>
+                                        <th className="py-3 px-4">Status</th>
+                                        <th className="py-3 px-4">Payment Reference / Notes</th>
+                                        <th className="py-3 px-4 text-right">Timestamp</th>
                                     </tr>
-                                ) : (
-                                    filteredPayments.map((p) => {
-                                        const isPaid = isPaymentCompleted(p.status);
-                                        const isUpi = p.method === "upi" || p.method === "card";
+                                </thead>
+                                <tbody className="divide-y divide-cream-100">
+                                    {filteredPayments.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="text-center py-10 text-espresso-400">
+                                                No payment transactions match filters.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredPayments.map((p) => {
+                                            const isPaid = isPaymentCompleted(p.status);
+                                            const isUpi = p.method === "upi" || p.method === "card";
 
-                                        return (
-                                            <tr key={p.id} className="hover:bg-cream-50/50 transition">
-                                                <td className="py-3.5 px-4 font-mono font-bold text-espresso-900">
-                                                    #{p.id}
-                                                </td>
+                                            return (
+                                                <tr key={p.id} className="hover:bg-cream-50/50 transition">
+                                                    <td className="py-3.5 px-4 font-mono font-bold text-espresso-900">
+                                                        #{p.id}
+                                                    </td>
 
-                                                <td className="py-3.5 px-4 font-bold text-espresso-950">
-                                                    Order #{p.order_id}
-                                                </td>
+                                                    <td className="py-3.5 px-4 font-bold text-espresso-950">
+                                                        Order #{p.order_id}
+                                                    </td>
 
-                                                <td className="py-3.5 px-4">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
-                                                            isUpi
-                                                                ? "bg-terracotta-100 text-terracotta-800"
-                                                                : "bg-amber-100 text-amber-900"
-                                                        }`}
-                                                    >
-                                                        {isUpi ? <CreditCard className="w-3 h-3" /> : <Banknote className="w-3 h-3" />}
-                                                        <span>{p.method.toUpperCase()}</span>
-                                                    </span>
-                                                </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                                                                isUpi
+                                                                    ? "bg-terracotta-100 text-terracotta-800"
+                                                                    : "bg-amber-100 text-amber-900"
+                                                            }`}
+                                                        >
+                                                            {isUpi ? <CreditCard className="w-3 h-3" /> : <Banknote className="w-3 h-3" />}
+                                                            <span>{p.method.toUpperCase()}</span>
+                                                        </span>
+                                                    </td>
 
                                                 <td className="py-3.5 px-4 font-mono font-black text-sm text-espresso-950">
                                                     {formatRupees(p.amount_paise)}
@@ -418,8 +419,9 @@ export default function AdminPaymentsPage() {
                             </tbody>
                         </table>
                     </div>
-                </main>
-            </div>
+                </div>
+            </main>
         </div>
-    );
+    </div>
+);
 }

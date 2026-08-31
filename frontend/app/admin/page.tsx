@@ -226,7 +226,7 @@ export default function AdminLiveOrdersKanbanPage() {
                 )}
 
                 {/* KANBAN BOARD CONTAINER */}
-                <main className="flex-1 overflow-x-auto overflow-y-hidden p-6 bg-cream-100 flex flex-col">
+                <main className="flex-1 overflow-x-auto overflow-y-hidden p-4 sm:p-6 bg-cream-100 flex flex-col">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0">
                         <div>
                             <h2 className="text-xl font-extrabold text-espresso-950 tracking-tight flex items-center gap-2">
@@ -286,7 +286,7 @@ export default function AdminLiveOrdersKanbanPage() {
                     </div>
 
                     {/* Columns Grid */}
-                    <div className="flex-1 grid grid-cols-5 gap-4 min-w-[1100px] pb-2 overflow-hidden">
+                    <div className="flex-1 flex md:grid md:grid-cols-5 gap-4 min-w-[1300px] md:min-w-0 pb-2 overflow-x-auto md:overflow-hidden snap-x">
                         {KANBAN_COLUMNS.map((col) => {
                             const columnOrders = orders.filter((o) => {
                                 if (orderTypeFilter === "dine_in" && o.order_type === "delivery") return false;

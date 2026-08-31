@@ -47,7 +47,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
 
     return (
         <aside
-            className={`w-64 bg-espresso-950 text-white flex flex-col justify-between border-r border-espresso-800 shrink-0 ${className}`}
+            className={`hidden md:flex w-64 bg-espresso-950 text-white flex-col justify-between border-r border-espresso-800 shrink-0 ${className}`}
         >
             {/* Top Brand */}
             <div>

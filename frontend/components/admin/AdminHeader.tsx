@@ -1,12 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Radio, Bell, Check, Droplets, Receipt, Sparkle, AlertTriangle, Building2, ChevronDown, MapPin } from "lucide-react";
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+    Radio,
+    Bell,
+    Building2,
+    ChevronDown,
+    Menu,
+    X,
+    LayoutDashboard,
+    ChefHat,
+    Utensils,
+    QrCode,
+    Package,
+    CreditCard,
+    BarChart3,
+    History,
+    Settings,
+    LogOut,
+    Shield,
+    User,
+} from "lucide-react";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
-import { api } from "@/lib/api";
 import { useOutlet } from "@/context/OutletContext";
 
 interface AdminHeaderProps {
@@ -20,99 +40,210 @@ export function AdminHeader({
     pendingServiceCalls,
     onAttendServiceCall,
 }: AdminHeaderProps) {
-    const { user, isOwner } = useAuth();
+    const pathname = usePathname();
+    const { user, isOwner, logout } = useAuth();
     const { t } = useLanguage();
     const { outlet, allOutlets, switchBranch } = useOutlet();
     const toast = useToast();
     const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
+    const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
     const pendingCount = pendingServiceCalls.length;
     const isBranch2 = outlet?.id === 2 || (outlet?.name || "").includes("Cafe");
 
+    const navLinks = [
+        { href: "/admin", labelKey: "live_orders", icon: LayoutDashboard, exact: true },
+        { href: "/admin/kds", labelKey: "kds_view", icon: ChefHat },
+        { href: "/admin/menu", labelKey: "menu_management", icon: Utensils },
+        { href: "/admin/tables", labelKey: "tables_qr", icon: QrCode },
+        { href: "/admin/stock", labelKey: "inventory_stock", icon: Package },
+        { href: "/admin/payments", labelKey: "payments_cashier", icon: CreditCard },
+        { href: "/admin/analytics", labelKey: "sales_analytics", icon: BarChart3 },
+        { href: "/admin/audit", labelKey: "audit_log", icon: History },
+        { href: "/admin/settings", labelKey: "store_settings", icon: Settings },
+    ];
+
+    const isActive = (href: string, exact = false) => {
+        if (exact) return pathname === href || pathname === "/admin/orders";
+        return pathname.startsWith(href);
+    };
+
     return (
-        <header className="bg-white border-b border-cream-200 px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
-            <div className="flex items-center gap-3">
-                {/* Branch Badge / Switcher */}
-                <div className="relative">
+        <>
+            <header className="bg-white border-b border-cream-200 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+                <div className="flex items-center gap-2 sm:gap-3">
+                    {/* Mobile Hamburger Button */}
                     <button
-                        onClick={() => allOutlets.length > 1 && setBranchDropdownOpen(!branchDropdownOpen)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all text-left ${
-                            isBranch2
-                                ? "bg-emerald-50 border-emerald-300 text-emerald-950"
-                                : "bg-amber-50 border-amber-300 text-amber-950"
-                        } ${allOutlets.length > 1 ? "cursor-pointer hover:shadow-xs" : "cursor-default"}`}
+                        onClick={() => setMobileDrawerOpen(true)}
+                        className="md:hidden p-2 rounded-xl text-espresso-700 hover:bg-cream-100 transition cursor-pointer"
+                        aria-label="Open Navigation Menu"
                     >
-                        <span className={`w-2.5 h-2.5 rounded-full ${isBranch2 ? "bg-emerald-500" : "bg-amber-500"} animate-pulse`} />
-                        <span className="text-xs font-black tracking-wide">
-                            {outlet?.name || "Arabieq Restaurant"}
-                        </span>
-                        {allOutlets.length > 1 && (
-                            <ChevronDown className="w-3.5 h-3.5 opacity-60 ml-0.5" />
-                        )}
+                        <Menu className="w-5 h-5" />
                     </button>
 
-                    {/* Branch Switcher Dropdown */}
-                    {branchDropdownOpen && allOutlets.length > 1 && (
-                        <div className="absolute top-full left-0 mt-1.5 w-72 bg-white rounded-2xl border border-cream-200 shadow-xl p-2 z-50 animate-in fade-in">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-espresso-400 px-2 py-1">
-                                Switch Branch View
-                            </p>
-                            {allOutlets.map((b) => (
-                                <button
-                                    key={b.id}
-                                    onClick={() => {
-                                        switchBranch(b.id);
-                                        setBranchDropdownOpen(false);
-                                        toast.info(`Switched view to ${b.name}`);
-                                    }}
-                                    className={`w-full p-2 rounded-xl text-left flex items-start gap-2.5 transition ${
-                                        outlet?.id === b.id
-                                            ? "bg-terracotta-50 border border-terracotta-200 text-terracotta-900 font-bold"
-                                            : "hover:bg-cream-50 text-espresso-800"
-                                    }`}
-                                >
-                                    <Building2 className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
-                                    <div>
-                                        <p className="text-xs font-bold">{b.name}</p>
-                                        <p className="text-[10px] text-espresso-500 line-clamp-1">{b.address}</p>
-                                    </div>
-                                </button>
-                            ))}
+                    {/* Branch Badge / Switcher */}
+                    <div className="relative">
+                        <button
+                            onClick={() => allOutlets.length > 1 && setBranchDropdownOpen(!branchDropdownOpen)}
+                            className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all text-left ${
+                                isBranch2
+                                    ? "bg-emerald-50 border-emerald-300 text-emerald-950"
+                                    : "bg-amber-50 border-amber-300 text-amber-950"
+                            } ${allOutlets.length > 1 ? "cursor-pointer hover:shadow-xs" : "cursor-default"}`}
+                        >
+                            <span className={`w-2.5 h-2.5 rounded-full ${isBranch2 ? "bg-emerald-500" : "bg-amber-500"} animate-pulse shrink-0`} />
+                            <span className="text-xs font-black tracking-wide max-w-[140px] sm:max-w-[220px] truncate">
+                                {outlet?.name || "Arabieq Restaurant"}
+                            </span>
+                            {allOutlets.length > 1 && (
+                                <ChevronDown className="w-3.5 h-3.5 opacity-60 ml-0.5 shrink-0" />
+                            )}
+                        </button>
+
+                        {/* Branch Switcher Dropdown */}
+                        {branchDropdownOpen && allOutlets.length > 1 && (
+                            <div className="absolute top-full left-0 mt-1.5 w-72 bg-white rounded-2xl border border-cream-200 shadow-xl p-2 z-50 animate-in fade-in">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-espresso-400 px-2 py-1">
+                                    Switch Branch View
+                                </p>
+                                {allOutlets.map((b) => (
+                                    <button
+                                        key={b.id}
+                                        onClick={() => {
+                                            switchBranch(b.id);
+                                            setBranchDropdownOpen(false);
+                                            toast.info(`Switched view to ${b.name}`);
+                                        }}
+                                        className={`w-full p-2 rounded-xl text-left flex items-start gap-2.5 transition cursor-pointer ${
+                                            outlet?.id === b.id
+                                                ? "bg-terracotta-50 border border-terracotta-200 text-terracotta-900 font-bold"
+                                                : "hover:bg-cream-50 text-espresso-800"
+                                        }`}
+                                    >
+                                        <Building2 className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
+                                        <div>
+                                            <p className="text-xs font-bold">{b.name}</p>
+                                            <p className="text-[10px] text-espresso-500 line-clamp-1">{b.address}</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* WebSocket Status */}
+                    <div
+                        className={`hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                            wsConnected
+                                ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                                : "bg-saffron-50 border-saffron-300 text-saffron-800"
+                        }`}
+                    >
+                        <Radio className={`w-3 h-3 ${wsConnected ? "animate-pulse text-emerald-600" : "text-saffron-600"}`} />
+                        <span>{wsConnected ? "Socket Active" : "Connecting..."}</span>
+                    </div>
+                </div>
+
+                {/* Right Controls */}
+                <div className="flex items-center gap-2 sm:gap-4">
+                    {/* Pending Service Calls Banner Button */}
+                    {pendingCount > 0 && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 border border-red-300 text-red-900 text-xs font-extrabold animate-bounce shadow-xs">
+                            <Bell className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                            <span>{pendingCount}</span>
                         </div>
                     )}
-                </div>
 
-                {/* WebSocket Status */}
-                <div
-                    className={`hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                        wsConnected
-                            ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                            : "bg-saffron-50 border-saffron-300 text-saffron-800"
-                    }`}
-                >
-                    <Radio className={`w-3 h-3 ${wsConnected ? "animate-pulse text-emerald-600" : "text-saffron-600"}`} />
-                    <span>{wsConnected ? "Socket Active" : "Connecting..."}</span>
-                </div>
-            </div>
+                    {/* Language Switcher */}
+                    <LanguageToggle />
 
-            {/* Right Controls */}
-            <div className="flex items-center gap-4">
-                {/* Pending Service Calls Banner Button */}
-                {pendingCount > 0 && (
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 border border-red-300 text-red-900 text-xs font-extrabold animate-bounce shadow-xs">
-                        <Bell className="w-3.5 h-3.5 text-red-600" />
-                        <span>{pendingCount} Table Alert{pendingCount > 1 ? "s" : ""}</span>
+                    {/* Role Pill */}
+                    <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-extrabold tracking-wider uppercase border border-cream-300 bg-cream-100 text-espresso-800">
+                        <span>{user?.name ? `${user.name} (${user.role})` : user?.role || "Staff"}</span>
                     </div>
-                )}
-
-                {/* Language Switcher */}
-                <LanguageToggle />
-
-                {/* Role Pill */}
-                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-extrabold tracking-wider uppercase border border-cream-300 bg-cream-100 text-espresso-800">
-                    <span>{user?.name ? `${user.name} (${user.role})` : user?.role || "Staff"}</span>
                 </div>
-            </div>
-        </header>
+            </header>
+
+            {/* Mobile Slide-over Drawer */}
+            {mobileDrawerOpen && (
+                <div className="fixed inset-0 z-50 flex md:hidden animate-in fade-in">
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setMobileDrawerOpen(false)}
+                    />
+
+                    {/* Drawer Content */}
+                    <div className="relative w-72 max-w-[85vw] bg-espresso-950 text-white flex flex-col justify-between h-full p-4 shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+                        <div>
+                            {/* Drawer Header */}
+                            <div className="flex items-center justify-between pb-4 border-b border-espresso-800 mb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="h-9 px-2 py-0.5 rounded-xl bg-white flex items-center justify-center">
+                                        <img src="/logo.png" alt="Logo" className="h-7 w-auto object-contain" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-extrabold text-sm text-white">{t("app_title")}</h3>
+                                        <p className="text-[10px] text-terracotta-400 font-bold">{outlet?.name || "Admin"}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setMobileDrawerOpen(false)}
+                                    className="p-1.5 rounded-lg text-espresso-400 hover:text-white hover:bg-espresso-900 transition cursor-pointer"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Nav Items */}
+                            <nav className="space-y-1">
+                                {navLinks.map((item) => {
+                                    const active = isActive(item.href, item.exact);
+                                    const Icon = item.icon;
+
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setMobileDrawerOpen(false)}
+                                            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                                                active
+                                                    ? "bg-terracotta-500 text-white shadow-md shadow-terracotta-500/30"
+                                                    : "text-espresso-300 hover:bg-espresso-900 hover:text-white"
+                                            }`}
+                                        >
+                                            <Icon className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-espresso-400"}`} />
+                                            <span>{t(item.labelKey as any)}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
+                        </div>
+
+                        {/* Drawer Footer User Info & Logout */}
+                        <div className="pt-4 border-t border-espresso-800">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-espresso-800 flex items-center justify-center text-xs font-bold">
+                                        {isOwner ? <Shield className="w-4 h-4 text-saffron-400" /> : <User className="w-4 h-4 text-emerald-400" />}
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-white truncate max-w-[120px]">{user?.name || "Staff"}</p>
+                                        <p className="text-[10px] text-espresso-400 uppercase">{user?.role || "Staff"}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={logout}
+                                    className="p-2 rounded-xl text-red-400 hover:bg-red-950/50 hover:text-red-300 transition cursor-pointer"
+                                    title="Logout"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
