@@ -31,6 +31,10 @@ export interface OrderDetail {
     outlet_id: number;
     table_id: number;
     table_label?: string;
+    order_type?: string;
+    customer_name?: string;
+    customer_phone?: string;
+    delivery_address?: string;
     order_number: string;
     status: string;
     subtotal_paise: number;
@@ -45,6 +49,8 @@ export interface OrderDetail {
         id: number;
         item_id?: number;
         item_name: string;
+        variant_name?: string | null;
+        selected_addons_json?: string | null;
         qty: number;
         unit_price_paise: number;
         total_price_paise: number;
@@ -290,15 +296,35 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                 </div>
 
                 <div className="divide-y divide-cream-100">
-                    {order.items.map((it) => (
-                        <div key={it.id} className="py-2.5 flex items-center justify-between text-xs">
-                            <div>
-                                <span className="font-bold text-espresso-900">{it.qty}x {it.item_name}</span>
-                                {it.notes && <p className="text-[11px] text-espresso-500 italic mt-0.5">"{it.notes}"</p>}
+                    {order.items.map((it) => {
+                        let addonsList: Array<{ name: string; price_paise: number }> = [];
+                        if (it.selected_addons_json) {
+                            try {
+                                addonsList = JSON.parse(it.selected_addons_json);
+                            } catch {}
+                        }
+                        return (
+                            <div key={it.id} className="py-2.5 flex items-start justify-between text-xs gap-2">
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-bold text-espresso-900">{it.qty}x {it.item_name}</span>
+                                        {it.variant_name && (
+                                            <span className="text-[10px] font-black uppercase bg-saffron-100 text-saffron-900 border border-saffron-300 px-1.5 py-0.2 rounded-md">
+                                                {it.variant_name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {addonsList.length > 0 && (
+                                        <p className="text-[10px] text-terracotta-700 font-semibold">
+                                            + {addonsList.map((a) => a.name).join(", ")}
+                                        </p>
+                                    )}
+                                    {it.notes && <p className="text-[11px] text-espresso-500 italic">"{it.notes}"</p>}
+                                </div>
+                                <span className="font-extrabold text-espresso-950 shrink-0">{formatRupees(it.total_price_paise)}</span>
                             </div>
-                            <span className="font-extrabold text-espresso-950">{formatRupees(it.total_price_paise)}</span>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Financial Breakdown */}
