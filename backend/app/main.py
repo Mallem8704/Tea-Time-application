@@ -30,13 +30,62 @@ app = FastAPI(
 
 @app.on_event("startup")
 def on_startup():
-    """Ensure database schema tables exist and seed initial store data if database is empty."""
+    """Ensure database schema tables exist, run column migrations, and seed initial store data if database is empty."""
     Base.metadata.create_all(bind=engine)
+    
+    # Run auto-migrations for PostgreSQL tables
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        migrations = [
+            "ALTER TABLE orders ALTER COLUMN table_id DROP NOT NULL;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type VARCHAR(50) DEFAULT 'dine_in';",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee_paise INTEGER DEFAULT 0;",
+            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS opening_hours VARCHAR(100);",
+            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS tagline VARCHAR(255);",
+            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);",
+        ]
+        for sql in migrations:
+            try:
+                conn.execute(text(sql))
+            except Exception as mig_err:
+                print(f"[MIGRATION] Note: {mig_err}")
+
     try:
         from app.seed import auto_seed_if_empty
         auto_seed_if_empty()
     except Exception as e:
         print(f"[STARTUP] Auto-seed warning: {e}")
+
+
+@app.get("/api/migrate-db")
+def trigger_db_migration():
+    """Endpoint to trigger schema column migrations on demand."""
+    from sqlalchemy import text
+    results = []
+    with engine.begin() as conn:
+        migrations = [
+            "ALTER TABLE orders ALTER COLUMN table_id DROP NOT NULL;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type VARCHAR(50) DEFAULT 'dine_in';",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee_paise INTEGER DEFAULT 0;",
+            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS opening_hours VARCHAR(100);",
+            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS tagline VARCHAR(255);",
+            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);",
+        ]
+        for sql in migrations:
+            try:
+                conn.execute(text(sql))
+                results.append({"query": sql, "status": "success"})
+            except Exception as err:
+                results.append({"query": sql, "status": f"skipped/error: {err}"})
+    return {"status": "ok", "migrations": results}
 
 # CORS configuration
 frontend_env_raw = os.getenv("FRONTEND_URL", "http://localhost:3000")
