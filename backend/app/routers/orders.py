@@ -633,13 +633,13 @@ async def append_order_items(
     )
 
     log_audit(
-        db,
+        db=db,
         outlet_id=order.outlet_id,
         user_id=current_user.id,
         action="append_running_kot",
         entity_type="order",
         entity_id=order.id,
-        details_json=json.dumps({"appended_items": len(appended_order_items), "added_paise": added_subtotal}),
+        details={"appended_items": len(appended_order_items), "added_paise": added_subtotal},
     )
 
     return resp
@@ -700,13 +700,13 @@ async def transfer_order_table(
     )
 
     log_audit(
-        db,
+        db=db,
         outlet_id=order.outlet_id,
         user_id=current_user.id,
         action="transfer_table",
         entity_type="order",
         entity_id=order.id,
-        details_json=json.dumps({"from_table": prev_table_id, "to_table": target_table.id}),
+        details={"from_table": prev_table_id, "to_table": target_table.id},
     )
 
     return resp
