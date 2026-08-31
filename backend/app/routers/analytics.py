@@ -298,3 +298,167 @@ def get_table_turnover(
         })
 
     return turnover
+
+
+@router.get("/eod-report")
+def get_daily_eod_z_report(
+    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (defaults to today)"),
+    outlet_id: Optional[int] = Query(None, description="Filter by outlet ID"),
+    current_user: User = Depends(require_staff_or_owner),
+    db: Session = Depends(get_db),
+):
+    """Daily End-of-Day (EOD) Z-Report & Cash Drawer Reconciliation."""
+    from app.routers.outlets import get_effective_outlet_id
+    from app.models import Outlet
+
+    if current_user.role == "owner" and outlet_id is not None:
+        target_outlet_id = get_effective_outlet_id(outlet_id, db)
+    else:
+        target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+
+    outlet = db.query(Outlet).filter(Outlet.id == target_outlet_id).first()
+
+    # Determine date range
+    if date:
+        try:
+            report_date_start = datetime.datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Use YYYY-MM-DD")
+    else:
+        now = datetime.datetime.utcnow()
+        report_date_start = datetime.datetime(now.year, now.month, now.day)
+
+    report_date_end = report_date_start + datetime.timedelta(days=1)
+    report_date_str = report_date_start.strftime("%Y-%m-%d")
+
+    # Fetch orders for this date and outlet
+    orders = (
+        db.query(Order)
+        .filter(
+            Order.outlet_id == target_outlet_id,
+            Order.created_at >= report_date_start,
+            Order.created_at < report_date_end,
+        )
+        .all()
+    )
+
+    valid_orders = [o for o in orders if o.status != "cancelled"]
+    cancelled_orders = [o for o in orders if o.status == "cancelled"]
+
+    # Totals
+    total_orders = len(valid_orders)
+    gross_sales_paise = sum(o.subtotal_paise for o in valid_orders)
+    total_discount_paise = sum((o.discount_paise or 0) for o in valid_orders)
+    net_sales_paise = max(0, gross_sales_paise - total_discount_paise)
+    total_tax_paise = sum(o.tax_paise for o in valid_orders)
+    total_revenue_paise = sum(o.total_paise for o in valid_orders)
+    avg_order_value_paise = int(total_revenue_paise / total_orders) if total_orders > 0 else 0
+
+    # Payment Methods
+    pm_breakdown = {
+        "cash": {"count": 0, "total_paise": 0, "total_rupees": 0.0},
+        "upi": {"count": 0, "total_paise": 0, "total_rupees": 0.0},
+        "card": {"count": 0, "total_paise": 0, "total_rupees": 0.0},
+        "cod": {"count": 0, "total_paise": 0, "total_rupees": 0.0},
+        "counter": {"count": 0, "total_paise": 0, "total_rupees": 0.0},
+    }
+
+    for o in valid_orders:
+        method = (o.payment_method or "counter").lower()
+        if method not in pm_breakdown:
+            pm_breakdown[method] = {"count": 0, "total_paise": 0, "total_rupees": 0.0}
+        pm_breakdown[method]["count"] += 1
+        pm_breakdown[method]["total_paise"] += o.total_paise
+        pm_breakdown[method]["total_rupees"] = round(pm_breakdown[method]["total_paise"] / 100.0, 2)
+
+    # Order Type (Dine-in vs Delivery)
+    dine_in_orders = [o for o in valid_orders if (o.order_type or "dine_in") != "delivery"]
+    delivery_orders = [o for o in valid_orders if (o.order_type or "").lower() == "delivery"]
+
+    order_type_breakdown = {
+        "dine_in": {
+            "count": len(dine_in_orders),
+            "total_paise": sum(o.total_paise for o in dine_in_orders),
+            "total_rupees": round(sum(o.total_paise for o in dine_in_orders) / 100.0, 2),
+        },
+        "delivery": {
+            "count": len(delivery_orders),
+            "total_paise": sum(o.total_paise for o in delivery_orders),
+            "total_rupees": round(sum(o.total_paise for o in delivery_orders) / 100.0, 2),
+        }
+    }
+
+    # Promo Codes Used
+    coupons_map = {}
+    for o in valid_orders:
+        if o.coupon_code:
+            code = o.coupon_code.upper()
+            if code not in coupons_map:
+                coupons_map[code] = {"code": code, "times_used": 0, "discount_paise": 0}
+            coupons_map[code]["times_used"] += 1
+            coupons_map[code]["discount_paise"] += (o.discount_paise or 0)
+
+    # Top 5 Best-Selling Dishes of the Day
+    top_items_query = (
+        db.query(
+            OrderItem.item_name,
+            func.sum(OrderItem.qty).label("qty_sold"),
+            func.sum(OrderItem.total_price_paise).label("revenue_paise"),
+        )
+        .join(Order, OrderItem.order_id == Order.id)
+        .filter(
+            Order.outlet_id == target_outlet_id,
+            Order.status != "cancelled",
+            Order.created_at >= report_date_start,
+            Order.created_at < report_date_end,
+        )
+        .group_by(OrderItem.item_name)
+        .order_by(func.sum(OrderItem.qty).desc())
+        .limit(5)
+        .all()
+    )
+
+    top_items = [
+        {
+            "item_name": r.item_name,
+            "qty_sold": int(r.qty_sold or 0),
+            "revenue_paise": int(r.revenue_paise or 0),
+            "revenue_rupees": round(int(r.revenue_paise or 0) / 100.0, 2),
+        }
+        for r in top_items_query
+    ]
+
+    return {
+        "report_date": report_date_str,
+        "generated_at": datetime.datetime.utcnow().isoformat(),
+        "outlet": {
+            "id": outlet.id if outlet else target_outlet_id,
+            "name": outlet.name if outlet else "Arabieq Restaurant",
+            "address": outlet.address if outlet else "",
+            "phone": outlet.phone if outlet else "",
+        },
+        "sales_summary": {
+            "total_orders": total_orders,
+            "gross_sales_paise": gross_sales_paise,
+            "gross_sales_rupees": round(gross_sales_paise / 100.0, 2),
+            "total_discount_paise": total_discount_paise,
+            "total_discount_rupees": round(total_discount_paise / 100.0, 2),
+            "net_sales_paise": net_sales_paise,
+            "net_sales_rupees": round(net_sales_paise / 100.0, 2),
+            "total_tax_paise": total_tax_paise,
+            "total_tax_rupees": round(total_tax_paise / 100.0, 2),
+            "total_revenue_paise": total_revenue_paise,
+            "total_revenue_rupees": round(total_revenue_paise / 100.0, 2),
+            "avg_order_value_paise": avg_order_value_paise,
+            "avg_order_value_rupees": round(avg_order_value_paise / 100.0, 2),
+        },
+        "payment_methods": pm_breakdown,
+        "order_channels": order_type_breakdown,
+        "coupons_used": list(coupons_map.values()),
+        "top_selling_items": top_items,
+        "cancelled_orders": {
+            "count": len(cancelled_orders),
+            "lost_revenue_paise": sum(o.total_paise for o in cancelled_orders),
+            "lost_revenue_rupees": round(sum(o.total_paise for o in cancelled_orders) / 100.0, 2),
+        }
+    }
