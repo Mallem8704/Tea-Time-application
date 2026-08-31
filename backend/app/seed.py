@@ -11,7 +11,10 @@ if sys.platform == "win32":
     sys.stderr.reconfigure(encoding="utf-8")
 
 from app.database import Base, engine, SessionLocal
-from app.models import Outlet, User, CafeTable, Category, MenuItem, StockLog, AuditLog, Order, OrderItem, Payment, ServiceCall
+from app.models import (
+    Outlet, User, CafeTable, Category, MenuItem, MenuItemVariant, MenuItemAddon,
+    StockLog, AuditLog, Order, OrderItem, Payment, ServiceCall
+)
 from app.auth_utils import get_password_hash
 from app.arabieq_data import CATEGORIES, ITEMS
 
@@ -36,6 +39,8 @@ def seed_database(clear_existing: bool = True):
             db.query(OrderItem).delete()
             db.query(Order).delete()
             db.query(StockLog).delete()
+            db.query(MenuItemVariant).delete()
+            db.query(MenuItemAddon).delete()
             db.query(MenuItem).delete()
             db.query(Category).delete()
             db.query(CafeTable).delete()
@@ -154,17 +159,67 @@ def seed_database(clear_existing: bool = True):
         for it in ITEMS:
             if it["cat"] not in cat_map1:
                 continue
-            db.add(MenuItem(
-                outlet_id=outlet1.id, category_id=cat_map1[it["cat"]],
+            cat_id = it["cat"]
+            base_paise = int(it["price"] * 100)
+            has_var = cat_id in (8, 10, 11)  # Biryani, Mandi, Beverages
+
+            m_item = MenuItem(
+                outlet_id=outlet1.id, category_id=cat_map1[cat_id],
                 name=it["name"], name_te=it.get("name_te"), description=it.get("desc"),
-                price_paise=int(it["price"] * 100), image_url=it.get("img"),
+                price_paise=base_paise, image_url=it.get("img"),
                 is_available=True, is_veg=it.get("veg", False),
-                is_special=it.get("price", 0) >= 300 or "Special" in it["name"],
+                has_variants=has_var,
+                is_special=it.get("price", 0) >= 300 or "Special" in it["name"] or cat_id == 10,
                 stock_qty=100, track_stock=False,
-            ))
+            )
+            db.add(m_item)
+            db.flush()
+
+            # Seed Variants
+            if cat_id == 10:  # Mandi
+                db.add_all([
+                    MenuItemVariant(item_id=m_item.id, name="Single (1 Pax)", name_te="సింగిల్ (1)", price_paise=int(base_paise * 0.65), is_default=False),
+                    MenuItemVariant(item_id=m_item.id, name="Half (1-2 Pax)", name_te="హాఫ్ (1-2)", price_paise=base_paise, is_default=True),
+                    MenuItemVariant(item_id=m_item.id, name="Full (3-4 Pax)", name_te="ఫుల్ (3-4)", price_paise=int(base_paise * 1.85), is_default=False),
+                    MenuItemVariant(item_id=m_item.id, name="Jumbo / Family (5-6 Pax)", name_te="జంబో / ఫ్యామిలీ (5-6)", price_paise=int(base_paise * 3.4), is_default=False),
+                ])
+            elif cat_id == 8:  # Biryani
+                db.add_all([
+                    MenuItemVariant(item_id=m_item.id, name="Single", name_te="సింగిల్", price_paise=int(base_paise * 0.65), is_default=False),
+                    MenuItemVariant(item_id=m_item.id, name="Full / Regular", name_te="ఫుల్", price_paise=base_paise, is_default=True),
+                    MenuItemVariant(item_id=m_item.id, name="Family Pack (3-4 Pax)", name_te="ఫ్యామిలీ ప్యాక్", price_paise=int(base_paise * 2.2), is_default=False),
+                    MenuItemVariant(item_id=m_item.id, name="Jumbo Pack (5-6 Pax)", name_te="జంబో ప్యాక్", price_paise=int(base_paise * 3.4), is_default=False),
+                ])
+            elif cat_id == 11:  # Beverages & Shakes
+                db.add_all([
+                    MenuItemVariant(item_id=m_item.id, name="Regular (250ml)", name_te="రెగ్యులర్", price_paise=base_paise, is_default=True),
+                    MenuItemVariant(item_id=m_item.id, name="Large (400ml)", name_te="లార్జ్", price_paise=int(base_paise * 1.5), is_default=False),
+                ])
+
+            # Seed Add-ons
+            if cat_id in (8, 10):  # Biryani & Mandi Addons
+                db.add_all([
+                    MenuItemAddon(item_id=m_item.id, name="Extra Arabian Mayonnaise (50ml)", name_te="ఎక్స్ట్రా మయోన్నైస్", price_paise=2500),
+                    MenuItemAddon(item_id=m_item.id, name="Extra Spicy Garlic Raita (100ml)", name_te="ఎక్స్ట్రా రైతా", price_paise=2000),
+                    MenuItemAddon(item_id=m_item.id, name="Boiled Egg (1 pc)", name_te="ఉడికించిన గుడ్డు", price_paise=1500),
+                    MenuItemAddon(item_id=m_item.id, name="Extra Mandi / Salan Gravy", name_te="ఎక్స్ట్రా గ్రేవీ", price_paise=2500),
+                    MenuItemAddon(item_id=m_item.id, name="Fried Onions & Cashews", name_te="ఫ్రైడ్ ఆనియన్స్ & జీడిపప్పు", price_paise=3500),
+                ])
+            elif cat_id in (5, 6):  # Starters
+                db.add_all([
+                    MenuItemAddon(item_id=m_item.id, name="Extra Rumali Roti (1 Pc)", name_te="రుమాలీ రోటీ (1)", price_paise=2000),
+                    MenuItemAddon(item_id=m_item.id, name="Garlic Mayo Dip", name_te="గార్లిక్ మయో డిప్", price_paise=2500),
+                    MenuItemAddon(item_id=m_item.id, name="Mint Chutney", name_te="పుదీనా చట్నీ", price_paise=1500),
+                ])
+            elif cat_id == 11:  # Drinks & Shakes
+                db.add_all([
+                    MenuItemAddon(item_id=m_item.id, name="Vanilla Ice Cream Scoop", name_te="ఐస్ క్రీమ్ స్కూప్", price_paise=3000),
+                    MenuItemAddon(item_id=m_item.id, name="Roasted Badam & Cashew Mix", name_te="బాదం & జీడిపప్పు", price_paise=2500),
+                ])
+
             b1_items += 1
         db.flush()
-        print(f"[OK] Branch 1 Items: {b1_items}")
+        print(f"[OK] Branch 1 Items: {b1_items} (with portion variants & addons)")
 
         # CATEGORIES and ITEMS for Branch 2 (all 11 categories)
         cat_map2 = {}
@@ -178,17 +233,67 @@ def seed_database(clear_existing: bool = True):
 
         b2_items = 0
         for it in ITEMS:
-            db.add(MenuItem(
-                outlet_id=outlet2.id, category_id=cat_map2[it["cat"]],
+            cat_id = it["cat"]
+            base_paise = int(it["price"] * 100)
+            has_var = cat_id in (8, 10, 11)
+
+            m_item = MenuItem(
+                outlet_id=outlet2.id, category_id=cat_map2[cat_id],
                 name=it["name"], name_te=it.get("name_te"), description=it.get("desc"),
-                price_paise=int(it["price"] * 100), image_url=it.get("img"),
+                price_paise=base_paise, image_url=it.get("img"),
                 is_available=True, is_veg=it.get("veg", False),
-                is_special=it.get("price", 0) >= 300 or "Special" in it["name"],
+                has_variants=has_var,
+                is_special=it.get("price", 0) >= 300 or "Special" in it["name"] or cat_id == 10,
                 stock_qty=100, track_stock=False,
-            ))
+            )
+            db.add(m_item)
+            db.flush()
+
+            # Seed Variants
+            if cat_id == 10:  # Mandi
+                db.add_all([
+                    MenuItemVariant(item_id=m_item.id, name="Single (1 Pax)", name_te="సింగిల్ (1)", price_paise=int(base_paise * 0.65), is_default=False),
+                    MenuItemVariant(item_id=m_item.id, name="Half (1-2 Pax)", name_te="హాఫ్ (1-2)", price_paise=base_paise, is_default=True),
+                    MenuItemVariant(item_id=m_item.id, name="Full (3-4 Pax)", name_te="ఫుల్ (3-4)", price_paise=int(base_paise * 1.85), is_default=False),
+                    MenuItemVariant(item_id=m_item.id, name="Jumbo / Family (5-6 Pax)", name_te="జంబో / ఫ్యామిలీ (5-6)", price_paise=int(base_paise * 3.4), is_default=False),
+                ])
+            elif cat_id == 8:  # Biryani
+                db.add_all([
+                    MenuItemVariant(item_id=m_item.id, name="Single", name_te="సింగిల్", price_paise=int(base_paise * 0.65), is_default=False),
+                    MenuItemVariant(item_id=m_item.id, name="Full / Regular", name_te="ఫుల్", price_paise=base_paise, is_default=True),
+                    MenuItemVariant(item_id=m_item.id, name="Family Pack (3-4 Pax)", name_te="ఫ్యామిలీ ప్యాక్", price_paise=int(base_paise * 2.2), is_default=False),
+                    MenuItemVariant(item_id=m_item.id, name="Jumbo Pack (5-6 Pax)", name_te="జంబో ప్యాక్", price_paise=int(base_paise * 3.4), is_default=False),
+                ])
+            elif cat_id == 11:  # Beverages & Shakes
+                db.add_all([
+                    MenuItemVariant(item_id=m_item.id, name="Regular (250ml)", name_te="రెగ్యులర్", price_paise=base_paise, is_default=True),
+                    MenuItemVariant(item_id=m_item.id, name="Large (400ml)", name_te="లార్జ్", price_paise=int(base_paise * 1.5), is_default=False),
+                ])
+
+            # Seed Add-ons
+            if cat_id in (8, 10):  # Biryani & Mandi Addons
+                db.add_all([
+                    MenuItemAddon(item_id=m_item.id, name="Extra Arabian Mayonnaise (50ml)", name_te="ఎక్స్ట్రా మయోన్నైస్", price_paise=2500),
+                    MenuItemAddon(item_id=m_item.id, name="Extra Spicy Garlic Raita (100ml)", name_te="ఎక్స్ట్రా రైతా", price_paise=2000),
+                    MenuItemAddon(item_id=m_item.id, name="Boiled Egg (1 pc)", name_te="ఉడికించిన గుడ్డు", price_paise=1500),
+                    MenuItemAddon(item_id=m_item.id, name="Extra Mandi / Salan Gravy", name_te="ఎక్స్ట్రా గ్రేవీ", price_paise=2500),
+                    MenuItemAddon(item_id=m_item.id, name="Fried Onions & Cashews", name_te="ఫ్రైడ్ ఆనియన్స్ & జీడిపప్పు", price_paise=3500),
+                ])
+            elif cat_id in (5, 6):  # Starters
+                db.add_all([
+                    MenuItemAddon(item_id=m_item.id, name="Extra Rumali Roti (1 Pc)", name_te="రుమాలీ రోటీ (1)", price_paise=2000),
+                    MenuItemAddon(item_id=m_item.id, name="Garlic Mayo Dip", name_te="గార్లిక్ మయో డిప్", price_paise=2500),
+                    MenuItemAddon(item_id=m_item.id, name="Mint Chutney", name_te="పుదీనా చట్నీ", price_paise=1500),
+                ])
+            elif cat_id == 11:  # Drinks & Shakes
+                db.add_all([
+                    MenuItemAddon(item_id=m_item.id, name="Vanilla Ice Cream Scoop", name_te="ఐస్ క్రీమ్ స్కూప్", price_paise=3000),
+                    MenuItemAddon(item_id=m_item.id, name="Roasted Badam & Cashew Mix", name_te="బాదం & జీడిపప్పు", price_paise=2500),
+                ])
+
             b2_items += 1
         db.flush()
-        print(f"[OK] Branch 2 Items: {b2_items}")
+        print(f"[OK] Branch 2 Items: {b2_items} (with portion variants & addons)")
 
         db.commit()
         print("\n" + "=" * 70)

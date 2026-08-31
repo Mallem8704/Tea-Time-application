@@ -1,16 +1,18 @@
 import datetime
+import json
 import random
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import Order, OrderItem, MenuItem, CafeTable, Outlet, StockLog, User
+from app.models import Order, OrderItem, MenuItem, MenuItemVariant, MenuItemAddon, CafeTable, Outlet, StockLog, User
 from app.schemas import OrderCreate, OrderStatusUpdate, OrderOut, OrderItemOut
 from app.routers.auth import require_staff_or_owner
 from app.routers.ws import manager
 from app.audit_utils import log_audit
 from app.routers.outlets import get_effective_outlet_id
+from app.rate_limiter import order_creation_limiter
 
 router = APIRouter(prefix="", tags=["Orders"])
 
@@ -26,7 +28,7 @@ def generate_order_number():
 
 
 def format_order_response(order: Order) -> OrderOut:
-    """Helper to format Order model to OrderOut schema with table_label and delivery details."""
+    """Helper to format Order model to OrderOut schema with table_label, variants, and delivery details."""
     table_label = None
     if order.table:
         table_label = order.table.label
@@ -40,6 +42,7 @@ def format_order_response(order: Order) -> OrderOut:
         outlet_id=order.outlet_id,
         table_id=order.table_id,
         table_label=table_label,
+        idempotency_key=order.idempotency_key,
         order_type=order.order_type or "dine_in",
         customer_name=order.customer_name,
         customer_phone=order.customer_phone,
@@ -61,6 +64,9 @@ def format_order_response(order: Order) -> OrderOut:
                 id=item.id,
                 order_id=item.order_id,
                 item_id=item.item_id,
+                variant_id=item.variant_id,
+                variant_name=item.variant_name,
+                selected_addons_json=item.selected_addons_json,
                 item_name=item.item_name,
                 qty=item.qty,
                 unit_price_paise=item.unit_price_paise,
@@ -79,13 +85,29 @@ def format_order_response(order: Order) -> OrderOut:
 @router.post("", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
 async def create_order(
     data: OrderCreate,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Place a new customer order (Dine-in Table or Swiggy/Zomato-style Free Delivery).
 
-    Calculates subtotal, tax in paise, auto-deducts inventory for tracked items,
-    updates table occupancy (for dine-in), and broadcasts 'new_order' event to connected admin dashboards.
+    Features Idempotency Key validation, Rate Limiting, Portion Variants & Addons pricing,
+    auto-inventory deduction, and real-time WebSocket broadcasting.
     """
+    # 1. Rate Limiting Check
+    order_creation_limiter.check(request)
+
+    # 2. Idempotency Check: Return existing order on duplicate submit / network retry
+    if data.idempotency_key and data.idempotency_key.strip():
+        clean_key = data.idempotency_key.strip()
+        existing_order = (
+            db.query(Order)
+            .options(joinedload(Order.items), joinedload(Order.table))
+            .filter(Order.idempotency_key == clean_key)
+            .first()
+        )
+        if existing_order:
+            return format_order_response(existing_order)
+
     if not data.items:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -97,7 +119,7 @@ async def create_order(
     outlet_id = None
 
     if order_type == "delivery":
-        # 1. Delivery order validations
+        # Delivery order validations
         if not data.customer_phone or not data.customer_phone.strip():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -111,7 +133,7 @@ async def create_order(
 
         outlet_id = get_effective_outlet_id(data.outlet_id, db)
     else:
-        # 1. Dine-in Table order validations
+        # Dine-in Table order validations
         if not data.table_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -125,7 +147,7 @@ async def create_order(
             )
         outlet_id = table.outlet_id
 
-    # 2. Fetch Outlet for tax calculation
+    # Fetch Outlet for tax calculation
     outlet = db.query(Outlet).filter(Outlet.id == outlet_id).first()
     tax_rate = outlet.tax_rate_percent if outlet else 5
 
@@ -134,7 +156,7 @@ async def create_order(
     order_items_to_create = []
     stock_logs_to_create = []
 
-    # 3. Validate each item and calculate totals
+    # Validate each item, resolve variants/addons, and calculate totals
     for item_req in data.items:
         if item_req.qty <= 0:
             raise HTTPException(
@@ -160,6 +182,33 @@ async def create_order(
                 detail=f"Item '{menu_item.name}' is currently unavailable/out of stock",
             )
 
+        # Portion Variant resolution
+        variant = None
+        variant_name = None
+        base_unit_price = menu_item.price_paise
+        if item_req.variant_id:
+            variant = (
+                db.query(MenuItemVariant)
+                .filter(MenuItemVariant.id == item_req.variant_id, MenuItemVariant.item_id == menu_item.id)
+                .first()
+            )
+            if variant:
+                base_unit_price = variant.price_paise
+                variant_name = variant.name
+
+        # Add-ons resolution
+        selected_addons_list = []
+        addons_total_paise = 0
+        if item_req.addon_ids:
+            addons = (
+                db.query(MenuItemAddon)
+                .filter(MenuItemAddon.id.in_(item_req.addon_ids), MenuItemAddon.item_id == menu_item.id)
+                .all()
+            )
+            for addon in addons:
+                addons_total_paise += addon.price_paise
+                selected_addons_list.append({"name": addon.name, "price_paise": addon.price_paise})
+
         # Inventory check & deduction
         if menu_item.track_stock:
             if menu_item.stock_qty < item_req.qty:
@@ -182,12 +231,15 @@ async def create_order(
             )
             stock_logs_to_create.append(stock_log)
 
-        unit_price = menu_item.price_paise
+        unit_price = base_unit_price + addons_total_paise
         item_total = unit_price * item_req.qty
         subtotal_paise += item_total
 
         order_items_to_create.append({
             "item_id": menu_item.id,
+            "variant_id": variant.id if variant else None,
+            "variant_name": variant_name,
+            "selected_addons_json": json.dumps(selected_addons_list) if selected_addons_list else None,
             "item_name": menu_item.name,
             "qty": item_req.qty,
             "unit_price_paise": unit_price,
@@ -195,14 +247,15 @@ async def create_order(
             "notes": item_req.notes.strip() if item_req.notes else None,
         })
 
-    # 4. Financial Calculations in Paise (Free Delivery = 0 delivery fee)
+    # Financial Calculations in Paise (Free Delivery = 0 delivery fee)
     tax_paise = int(round(subtotal_paise * (tax_rate / 100.0)))
     total_paise = subtotal_paise + tax_paise
 
-    # 5. Create Order record
+    # Create Order record with Idempotency Key
     new_order = Order(
         outlet_id=outlet_id,
         table_id=table.id if table else None,
+        idempotency_key=data.idempotency_key.strip() if data.idempotency_key else None,
         order_type=order_type,
         customer_name=data.customer_name.strip() if data.customer_name else None,
         customer_phone=data.customer_phone.strip() if data.customer_phone else None,
@@ -221,11 +274,14 @@ async def create_order(
     db.add(new_order)
     db.flush()
 
-    # 6. Create Order Items
+    # Create Order Items with variant & addon metadata
     for oi_data in order_items_to_create:
         order_item = OrderItem(
             order_id=new_order.id,
             item_id=oi_data["item_id"],
+            variant_id=oi_data["variant_id"],
+            variant_name=oi_data["variant_name"],
+            selected_addons_json=oi_data["selected_addons_json"],
             item_name=oi_data["item_name"],
             qty=oi_data["qty"],
             unit_price_paise=oi_data["unit_price_paise"],
@@ -234,11 +290,11 @@ async def create_order(
         )
         db.add(order_item)
 
-    # 7. Add stock logs
+    # Add stock logs
     for s_log in stock_logs_to_create:
         db.add(s_log)
 
-    # 8. Update table status if dine-in
+    # Update table status if dine-in
     if table:
         table.status = "occupied"
         table.active_order_id = new_order.id

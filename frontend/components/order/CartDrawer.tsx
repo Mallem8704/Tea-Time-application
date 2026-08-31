@@ -9,6 +9,11 @@ import { Button } from "@/components/ui/Button";
 
 export interface CartItem {
     id: number;
+    cartKey?: string;
+    variant_id?: number;
+    variant_name?: string | null;
+    addon_ids?: number[];
+    addons?: Array<{ name: string; price_paise: number }>;
     name: string;
     name_te?: string;
     price_paise: number;
@@ -21,9 +26,9 @@ interface CartDrawerProps {
     onClose: () => void;
     items: CartItem[];
     tableLabel: string;
-    onUpdateQty: (id: number, delta: number) => void;
-    onUpdateNotes: (id: number, notes: string) => void;
-    onClearItem: (id: number) => void;
+    onUpdateQty: (id: number, delta: number, cartKey?: string) => void;
+    onUpdateNotes: (id: number, notes: string, cartKey?: string) => void;
+    onClearItem: (id: number, cartKey?: string) => void;
     onCheckout: (paymentMethod: "counter" | "upi", customerNotes: string) => Promise<void>;
     isPlacingOrder: boolean;
 }
@@ -95,10 +100,11 @@ export function CartDrawer({
                         </div>
                     ) : (
                         items.map((it) => {
+                            const itemKey = it.cartKey || `cart_${it.id}_${it.variant_id || "base"}`;
                             const displayName = language === "te" && it.name_te ? it.name_te : it.name;
                             return (
                                 <div
-                                    key={it.id}
+                                    key={itemKey}
                                     className="p-3.5 rounded-xl border border-cream-200 bg-cream-50/40 flex flex-col gap-2.5"
                                 >
                                     <div className="flex items-start justify-between gap-2">
@@ -106,9 +112,19 @@ export function CartDrawer({
                                             <h4 className="text-sm font-bold text-espresso-950 leading-tight">
                                                 {displayName}
                                             </h4>
-                                            <span className="text-xs font-semibold text-terracotta-600">
+                                            {it.variant_name && (
+                                                <span className="inline-block mt-0.5 text-[10px] font-bold text-saffron-900 bg-saffron-100 px-1.5 py-0.2 rounded-md">
+                                                    Portion: {it.variant_name}
+                                                </span>
+                                            )}
+                                            {it.addons && it.addons.length > 0 && (
+                                                <div className="text-[10px] text-espresso-500 mt-0.5">
+                                                    + {it.addons.map((a) => a.name).join(", ")}
+                                                </div>
+                                            )}
+                                            <div className="text-xs font-semibold text-terracotta-600 mt-0.5">
                                                 {formatRupees(it.price_paise)} each
-                                            </span>
+                                            </div>
                                         </div>
 
                                         <span className="text-sm font-extrabold text-espresso-900">
@@ -121,14 +137,14 @@ export function CartDrawer({
                                         type="text"
                                         placeholder={t("item_notes_placeholder")}
                                         value={it.notes || ""}
-                                        onChange={(e) => onUpdateNotes(it.id, e.target.value)}
+                                        onChange={(e) => onUpdateNotes(it.id, e.target.value, it.cartKey)}
                                         className="w-full text-xs px-3 py-1.5 rounded-lg border border-cream-300 bg-white placeholder:text-espresso-400 focus:outline-none focus:border-terracotta-500"
                                     />
 
                                     {/* Quantity and Remove */}
                                     <div className="flex items-center justify-between pt-1">
                                         <button
-                                            onClick={() => onClearItem(it.id)}
+                                            onClick={() => onClearItem(it.id, it.cartKey)}
                                             className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1 font-medium cursor-pointer"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
@@ -137,7 +153,7 @@ export function CartDrawer({
 
                                         <div className="inline-flex items-center gap-2 p-0.5 rounded-lg bg-white border border-cream-300 shadow-2xs">
                                             <button
-                                                onClick={() => onUpdateQty(it.id, -1)}
+                                                onClick={() => onUpdateQty(it.id, -1, it.cartKey)}
                                                 className="w-6 h-6 rounded-md bg-cream-100 hover:bg-cream-200 text-espresso-800 flex items-center justify-center font-bold text-xs cursor-pointer"
                                                 aria-label="Decrease quantity"
                                             >
@@ -147,7 +163,7 @@ export function CartDrawer({
                                                 {it.qty}
                                             </span>
                                             <button
-                                                onClick={() => onUpdateQty(it.id, 1)}
+                                                onClick={() => onUpdateQty(it.id, 1, it.cartKey)}
                                                 className="w-6 h-6 rounded-md bg-terracotta-500 hover:bg-terracotta-600 text-white flex items-center justify-center font-bold text-xs cursor-pointer"
                                                 aria-label="Increase quantity"
                                             >

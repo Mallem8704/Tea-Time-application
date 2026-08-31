@@ -150,11 +150,12 @@ export const api = {
     createOrder: (data: {
         table_id?: number;
         outlet_id?: number;
+        idempotency_key?: string;
         order_type?: "dine_in" | "delivery" | "takeaway";
         customer_name?: string;
         customer_phone?: string;
         delivery_address?: string;
-        items: Array<{ item_id: number; qty: number; notes?: string }>;
+        items: Array<{ item_id: number; variant_id?: number; addon_ids?: number[]; qty: number; notes?: string }>;
         customer_notes?: string;
         payment_method?: string;
     }) =>

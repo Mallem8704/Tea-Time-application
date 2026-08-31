@@ -402,21 +402,46 @@ export default function AdminLiveOrdersKanbanPage() {
                                                             </div>
                                                         )}
 
-                                                        {/* Items List */}
+                                                        {/* Items List with Variants & Add-ons */}
                                                         <div className="divide-y divide-cream-100 text-xs">
-                                                            {order.items?.map((it: any) => (
-                                                                <div key={it.id} className="py-1">
-                                                                    <div className="flex justify-between font-bold text-espresso-900">
-                                                                        <span>{it.qty}x {it.item_name}</span>
-                                                                        <span className="text-espresso-600 font-medium">{formatRupees(it.total_price_paise)}</span>
+                                                            {order.items?.map((it: any) => {
+                                                                let addonsList: Array<{ name: string; price_paise: number }> = [];
+                                                                if (it.selected_addons_json) {
+                                                                    try {
+                                                                        addonsList = JSON.parse(it.selected_addons_json);
+                                                                    } catch {}
+                                                                }
+
+                                                                return (
+                                                                    <div key={it.id} className="py-1.5">
+                                                                        <div className="flex justify-between items-start font-bold text-espresso-900">
+                                                                            <div className="flex-1 pr-2">
+                                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                                    <span>{it.qty}x {it.item_name}</span>
+                                                                                    {it.variant_name && (
+                                                                                        <span className="text-[10px] font-black uppercase bg-saffron-100 text-saffron-900 border border-saffron-300 px-1.5 py-0.2 rounded-md">
+                                                                                            {it.variant_name}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                {addonsList.length > 0 && (
+                                                                                    <p className="text-[10px] text-terracotta-700 font-semibold mt-0.5">
+                                                                                        + {addonsList.map((a) => a.name).join(", ")}
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+                                                                            <span className="text-espresso-600 font-medium shrink-0">
+                                                                                {formatRupees(it.total_price_paise)}
+                                                                            </span>
+                                                                        </div>
+                                                                        {it.notes && (
+                                                                            <p className="text-[10px] text-espresso-500 italic mt-0.5">
+                                                                                "{it.notes}"
+                                                                            </p>
+                                                                        )}
                                                                     </div>
-                                                                    {it.notes && (
-                                                                        <p className="text-[10px] text-espresso-500 italic mt-0.5">
-                                                                            "{it.notes}"
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            ))}
+                                                                );
+                                                            })}
                                                         </div>
 
                                                         {/* Customer Notes */}

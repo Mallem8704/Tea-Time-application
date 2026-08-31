@@ -101,10 +101,11 @@ class MenuItem(Base):
     name_te = Column(String(120), nullable=True)  # Telugu name
     description = Column(Text, nullable=True)
     description_te = Column(Text, nullable=True)  # Telugu description
-    price_paise = Column(Integer, nullable=False)  # e.g. 2000 for ₹20.00
+    price_paise = Column(Integer, nullable=False)  # Base price (e.g. 2000 for ₹20.00)
     image_url = Column(String(255), nullable=True)
     is_veg = Column(Boolean, default=True)
     is_available = Column(Boolean, default=True)
+    has_variants = Column(Boolean, default=False)
     track_stock = Column(Boolean, default=False)
     stock_qty = Column(Integer, default=100)
     low_stock_threshold = Column(Integer, default=10)
@@ -113,7 +114,38 @@ class MenuItem(Base):
 
     outlet = relationship("Outlet", back_populates="menu_items")
     category = relationship("Category", back_populates="items")
+    variants = relationship("MenuItemVariant", back_populates="item", cascade="all, delete-orphan", order_by="MenuItemVariant.price_paise.asc()")
+    addons = relationship("MenuItemAddon", back_populates="item", cascade="all, delete-orphan", order_by="MenuItemAddon.price_paise.asc()")
     stock_logs = relationship("StockLog", back_populates="item", cascade="all, delete-orphan")
+
+
+class MenuItemVariant(Base):
+    __tablename__ = "menu_item_variants"
+
+    id = Column(Integer, primary_key=True, index=True)
+    item_id = Column(Integer, ForeignKey("menu_items.id", ondelete="CASCADE"), index=True, nullable=False)
+    name = Column(String(100), nullable=False)  # e.g. "Single", "Half (1-2 Pax)", "Full (3-4 Pax)", "Jumbo"
+    name_te = Column(String(100), nullable=True)
+    price_paise = Column(Integer, nullable=False)
+    is_default = Column(Boolean, default=False)
+    is_available = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    item = relationship("MenuItem", back_populates="variants")
+
+
+class MenuItemAddon(Base):
+    __tablename__ = "menu_item_addons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    item_id = Column(Integer, ForeignKey("menu_items.id", ondelete="CASCADE"), index=True, nullable=False)
+    name = Column(String(100), nullable=False)  # e.g. "Extra Mayonnaise", "Extra Raita", "Boiled Egg (1 pc)"
+    name_te = Column(String(100), nullable=True)
+    price_paise = Column(Integer, nullable=False)
+    is_available = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    item = relationship("MenuItem", back_populates="addons")
 
 
 class Order(Base):
@@ -122,6 +154,7 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
     table_id = Column(Integer, ForeignKey("tables.id", ondelete="SET NULL"), index=True, nullable=True)
+    idempotency_key = Column(String(100), unique=True, index=True, nullable=True)  # Prevents duplicate checkout retries
     order_type = Column(String(20), default="dine_in", index=True)  # 'dine_in', 'delivery', 'takeaway'
     customer_name = Column(String(100), nullable=True)
     customer_phone = Column(String(20), nullable=True)
@@ -151,6 +184,9 @@ class OrderItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"), index=True, nullable=False)
     item_id = Column(Integer, ForeignKey("menu_items.id", ondelete="SET NULL"), index=True, nullable=True)
+    variant_id = Column(Integer, nullable=True)
+    variant_name = Column(String(100), nullable=True)  # e.g. "Full (3-4 Pax)"
+    selected_addons_json = Column(Text, nullable=True)  # JSON list of chosen addons
     item_name = Column(String(120), nullable=False)
     qty = Column(Integer, default=1)
     unit_price_paise = Column(Integer, nullable=False)

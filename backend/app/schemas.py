@@ -137,6 +137,49 @@ class CategoryOut(CategoryBase):
 
 
 # ==========================================
+# MENU ITEM VARIANT & ADDON SCHEMAS
+# ==========================================
+
+class MenuItemVariantBase(BaseModel):
+    name: str
+    name_te: Optional[str] = None
+    price_paise: int = Field(..., gt=0, description="Variant price in paise")
+    is_default: bool = False
+    is_available: bool = True
+
+
+class MenuItemVariantCreate(MenuItemVariantBase):
+    pass
+
+
+class MenuItemVariantOut(MenuItemVariantBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    item_id: int
+    created_at: datetime.datetime
+
+
+class MenuItemAddonBase(BaseModel):
+    name: str
+    name_te: Optional[str] = None
+    price_paise: int = Field(..., ge=0, description="Addon price in paise")
+    is_available: bool = True
+
+
+class MenuItemAddonCreate(MenuItemAddonBase):
+    pass
+
+
+class MenuItemAddonOut(MenuItemAddonBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    item_id: int
+    created_at: datetime.datetime
+
+
+# ==========================================
 # MENU ITEM SCHEMAS
 # ==========================================
 
@@ -146,10 +189,11 @@ class MenuItemBase(BaseModel):
     name_te: Optional[str] = None
     description: Optional[str] = None
     description_te: Optional[str] = None
-    price_paise: int = Field(..., gt=0, description="Price in paise must be positive")
+    price_paise: int = Field(..., gt=0, description="Base price in paise must be positive")
     image_url: Optional[str] = None
     is_veg: bool = True
     is_available: bool = True
+    has_variants: bool = False
     track_stock: bool = False
     stock_qty: int = Field(default=100, ge=0)
     low_stock_threshold: int = Field(default=10, ge=0)
@@ -170,6 +214,7 @@ class MenuItemUpdate(BaseModel):
     image_url: Optional[str] = None
     is_veg: Optional[bool] = None
     is_available: Optional[bool] = None
+    has_variants: Optional[bool] = None
     track_stock: Optional[bool] = None
     stock_qty: Optional[int] = None
     low_stock_threshold: Optional[int] = None
@@ -197,6 +242,8 @@ class MenuItemOut(MenuItemBase):
     outlet_id: int
     created_at: datetime.datetime
     category: Optional[CategoryOut] = None
+    variants: List[MenuItemVariantOut] = []
+    addons: List[MenuItemAddonOut] = []
 
 
 # ==========================================
@@ -205,6 +252,8 @@ class MenuItemOut(MenuItemBase):
 
 class OrderItemCreate(BaseModel):
     item_id: int
+    variant_id: Optional[int] = None
+    addon_ids: Optional[List[int]] = None
     qty: int = Field(default=1, ge=1, le=100)
     notes: Optional[str] = Field(None, max_length=255)
 
@@ -215,6 +264,9 @@ class OrderItemOut(BaseModel):
     id: int
     order_id: int
     item_id: Optional[int] = None
+    variant_id: Optional[int] = None
+    variant_name: Optional[str] = None
+    selected_addons_json: Optional[str] = None
     item_name: str
     qty: int
     unit_price_paise: int
@@ -225,6 +277,7 @@ class OrderItemOut(BaseModel):
 class OrderCreate(BaseModel):
     table_id: Optional[int] = None
     outlet_id: Optional[int] = None
+    idempotency_key: Optional[str] = Field(None, max_length=100)
     order_type: str = "dine_in"  # 'dine_in', 'delivery', 'takeaway'
     customer_name: Optional[str] = Field(None, max_length=100)
     customer_phone: Optional[str] = Field(None, max_length=20)
@@ -246,6 +299,7 @@ class OrderOut(BaseModel):
     outlet_id: int
     table_id: Optional[int] = None
     table_label: Optional[str] = None
+    idempotency_key: Optional[str] = None
     order_type: str = "dine_in"
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None

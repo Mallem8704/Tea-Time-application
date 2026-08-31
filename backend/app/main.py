@@ -44,9 +44,36 @@ def on_startup():
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50);",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee_paise INTEGER DEFAULT 0;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(100);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_orders_idempotency_key ON orders(idempotency_key) WHERE idempotency_key IS NOT NULL;",
             "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS opening_hours VARCHAR(100);",
             "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS tagline VARCHAR(255);",
             "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);",
+            "ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS has_variants BOOLEAN DEFAULT FALSE;",
+            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id INTEGER;",
+            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_name VARCHAR(100);",
+            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS selected_addons_json TEXT;",
+            """CREATE TABLE IF NOT EXISTS menu_item_variants (
+                id SERIAL PRIMARY KEY,
+                item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+                name VARCHAR(100) NOT NULL,
+                name_te VARCHAR(100),
+                price_paise INTEGER NOT NULL,
+                is_default BOOLEAN DEFAULT FALSE,
+                is_available BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );""",
+            """CREATE TABLE IF NOT EXISTS menu_item_addons (
+                id SERIAL PRIMARY KEY,
+                item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+                name VARCHAR(100) NOT NULL,
+                name_te VARCHAR(100),
+                price_paise INTEGER NOT NULL,
+                is_available BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );""",
+            "CREATE INDEX IF NOT EXISTS ix_menu_item_variants_item_id ON menu_item_variants(item_id);",
+            "CREATE INDEX IF NOT EXISTS ix_menu_item_addons_item_id ON menu_item_addons(item_id);",
         ]
         for sql in migrations:
             try:
@@ -75,16 +102,43 @@ def trigger_db_migration():
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50);",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee_paise INTEGER DEFAULT 0;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(100);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_orders_idempotency_key ON orders(idempotency_key) WHERE idempotency_key IS NOT NULL;",
             "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS opening_hours VARCHAR(100);",
             "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS tagline VARCHAR(255);",
             "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);",
+            "ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS has_variants BOOLEAN DEFAULT FALSE;",
+            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id INTEGER;",
+            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_name VARCHAR(100);",
+            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS selected_addons_json TEXT;",
+            """CREATE TABLE IF NOT EXISTS menu_item_variants (
+                id SERIAL PRIMARY KEY,
+                item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+                name VARCHAR(100) NOT NULL,
+                name_te VARCHAR(100),
+                price_paise INTEGER NOT NULL,
+                is_default BOOLEAN DEFAULT FALSE,
+                is_available BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );""",
+            """CREATE TABLE IF NOT EXISTS menu_item_addons (
+                id SERIAL PRIMARY KEY,
+                item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+                name VARCHAR(100) NOT NULL,
+                name_te VARCHAR(100),
+                price_paise INTEGER NOT NULL,
+                is_available BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );""",
+            "CREATE INDEX IF NOT EXISTS ix_menu_item_variants_item_id ON menu_item_variants(item_id);",
+            "CREATE INDEX IF NOT EXISTS ix_menu_item_addons_item_id ON menu_item_addons(item_id);",
         ]
         for sql in migrations:
             try:
                 conn.execute(text(sql))
-                results.append({"query": sql, "status": "success"})
+                results.append({"query": sql.strip()[:60] + "...", "status": "success"})
             except Exception as err:
-                results.append({"query": sql, "status": f"skipped/error: {err}"})
+                results.append({"query": sql.strip()[:60] + "...", "status": f"skipped/error: {err}"})
     return {"status": "ok", "migrations": results}
 
 # CORS configuration

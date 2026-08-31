@@ -33,6 +33,10 @@ import { api } from "@/lib/api";
 import { useOutlet } from "@/context/OutletContext";
 import { openRazorpayCheckout } from "@/lib/razorpay";
 import type { MenuItemData } from "@/components/order/MenuItemCard";
+import {
+    DishCustomizerModal,
+    CustomizedSelection,
+} from "@/components/order/DishCustomizerModal";
 
 function CustomerOrderContent() {
     const searchParams = useSearchParams();
@@ -70,6 +74,7 @@ function CustomerOrderContent() {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
     const [isPlacingOrder, setIsPlacingOrder] = useState<boolean>(false);
+    const [customizingItem, setCustomizingItem] = useState<MenuItemData | null>(null);
 
     // Active Tracking Order
     const [activeOrder, setActiveOrder] = useState<OrderDetail | null>(null);
@@ -206,62 +211,132 @@ function CustomerOrderContent() {
     const cartTotalPaise = cartSubtotalPaise + cartTaxPaise;
 
     const handleAddToCart = (item: MenuItemData) => {
+        const hasVariants = (item as any).variants && (item as any).variants.length > 0;
+        const hasAddons = (item as any).addons && (item as any).addons.length > 0;
+
+        if (hasVariants || hasAddons) {
+            setCustomizingItem(item);
+        } else {
+            const cartKey = `item_${item.id}`;
+            setCart((prev) => {
+                const existing = prev.find((i) => (i.cartKey || `item_${i.id}`) === cartKey);
+                if (existing) {
+                    return prev.map((i) =>
+                        (i.cartKey || `item_${i.id}`) === cartKey ? { ...i, qty: i.qty + 1 } : i
+                    );
+                }
+                return [
+                    ...prev,
+                    {
+                        id: item.id,
+                        cartKey,
+                        name: item.name,
+                        name_te: item.name_te || undefined,
+                        price_paise: item.price_paise,
+                        qty: 1,
+                    },
+                ];
+            });
+            toast.success(`${language === "te" && item.name_te ? item.name_te : item.name} ${t("added")}`);
+        }
+    };
+
+    const handleCustomizedAddToCart = (customized: CustomizedSelection) => {
+        const variantId = customized.variant?.id || "base";
+        const addonIdsKey = customized.addons.map((a) => a.id).sort().join("-");
+        const cartKey = `item_${customized.item.id}_v_${variantId}_a_${addonIdsKey}`;
+
+        const unitPaise =
+            (customized.variant ? customized.variant.price_paise : customized.item.price_paise) +
+            customized.addons.reduce((sum, a) => sum + a.price_paise, 0);
+
         setCart((prev) => {
-            const existing = prev.find((i) => i.id === item.id);
+            const existing = prev.find((ci) => ci.cartKey === cartKey);
             if (existing) {
-                return prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i));
+                return prev.map((ci) =>
+                    ci.cartKey === cartKey ? { ...ci, qty: ci.qty + customized.qty } : ci
+                );
             }
             return [
                 ...prev,
                 {
-                    id: item.id,
-                    name: item.name,
-                    name_te: item.name_te,
-                    price_paise: item.price_paise,
-                    qty: 1,
+                    id: customized.item.id,
+                    cartKey,
+                    variant_id: customized.variant?.id,
+                    variant_name: customized.variant?.name,
+                    addon_ids: customized.addons.map((a) => a.id),
+                    addons: customized.addons.map((a) => ({ name: a.name, price_paise: a.price_paise })),
+                    name: customized.item.name,
+                    name_te: customized.item.name_te || undefined,
+                    price_paise: unitPaise,
+                    qty: customized.qty,
+                    notes: customized.notes || undefined,
                 },
             ];
         });
-        toast.success(`${language === "te" && item.name_te ? item.name_te : item.name} ${t("added")}`);
+
+        toast.success(
+            `${language === "te" && customized.item.name_te ? customized.item.name_te : customized.item.name} ${customized.variant ? `(${customized.variant.name})` : ""} ${t("added")}`
+        );
     };
 
-    const handleRemoveFromCart = (itemId: number) => {
+    const handleRemoveFromCart = (itemId: number, cartKey?: string) => {
         setCart((prev) => {
-            const existing = prev.find((i) => i.id === itemId);
+            const matchKey = cartKey || `item_${itemId}`;
+            const existing = prev.find((i) => (i.cartKey || `item_${i.id}`) === matchKey);
             if (existing && existing.qty > 1) {
-                return prev.map((i) => (i.id === itemId ? { ...i, qty: i.qty - 1 } : i));
+                return prev.map((i) =>
+                    (i.cartKey || `item_${i.id}`) === matchKey ? { ...i, qty: i.qty - 1 } : i
+                );
             }
-            return prev.filter((i) => i.id !== itemId);
+            return prev.filter((i) => (i.cartKey || `item_${i.id}`) !== matchKey);
         });
     };
 
-    const handleUpdateQty = (itemId: number, delta: number) => {
+    const handleUpdateQty = (itemId: number, delta: number, cartKey?: string) => {
         if (delta > 0) {
-            const item = menuItems.find((i) => i.id === itemId);
-            if (item) handleAddToCart(item);
+            setCart((prev) => {
+                const matchKey = cartKey || `item_${itemId}`;
+                return prev.map((i) =>
+                    (i.cartKey || `item_${i.id}`) === matchKey ? { ...i, qty: i.qty + 1 } : i
+                );
+            });
         } else {
-            handleRemoveFromCart(itemId);
+            handleRemoveFromCart(itemId, cartKey);
         }
     };
 
-    const handleUpdateNotes = (itemId: number, notes: string) => {
-        setCart((prev) => prev.map((i) => (i.id === itemId ? { ...i, notes } : i)));
+    const handleUpdateNotes = (itemId: number, notes: string, cartKey?: string) => {
+        const matchKey = cartKey || `item_${itemId}`;
+        setCart((prev) =>
+            prev.map((i) => ((i.cartKey || `item_${i.id}`) === matchKey ? { ...i, notes } : i))
+        );
     };
 
-    const handleClearItem = (itemId: number) => {
-        setCart((prev) => prev.filter((i) => i.id !== itemId));
+    const handleClearItem = (itemId: number, cartKey?: string) => {
+        const matchKey = cartKey || `item_${itemId}`;
+        setCart((prev) => prev.filter((i) => (i.cartKey || `item_${i.id}`) !== matchKey));
     };
 
-    // Checkout Flow
+    // Checkout Flow with Idempotency Key
     const handleCheckout = async (paymentMethod: "counter" | "upi", customerNotes: string) => {
         setIsPlacingOrder(true);
         try {
+            const idempotencyKey =
+                typeof crypto !== "undefined" && crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `idemp_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+
             const payload = {
                 table_id: tableId,
+                outlet_id: outletId,
+                idempotency_key: idempotencyKey,
                 customer_notes: customerNotes,
                 payment_method: paymentMethod,
                 items: cart.map((i) => ({
                     item_id: i.id,
+                    variant_id: i.variant_id,
+                    addon_ids: i.addon_ids,
                     qty: i.qty,
                     notes: i.notes,
                 })),
@@ -308,7 +383,7 @@ function CustomerOrderContent() {
         } catch (err: any) {
             toast.error(err.message || "Failed to place order. Please check item availability.");
             // Refresh menu in case of stock race condition
-            api.getMenu().then((items) => setMenuItems(items)).catch(() => {});
+            api.getMenu(outletId).then((items) => setMenuItems(items)).catch(() => {});
         } finally {
             setIsPlacingOrder(false);
         }
@@ -593,6 +668,15 @@ function CustomerOrderContent() {
                 onClearItem={handleClearItem}
                 onCheckout={handleCheckout}
                 isPlacingOrder={isPlacingOrder}
+            />
+
+            {/* Customization Modal */}
+            <DishCustomizerModal
+                isOpen={!!customizingItem}
+                item={customizingItem}
+                language={language}
+                onClose={() => setCustomizingItem(null)}
+                onAddToCart={handleCustomizedAddToCart}
             />
 
             {/* Table Selector Modal */}

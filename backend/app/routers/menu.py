@@ -3,10 +3,10 @@ import uuid
 import shutil
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import MenuItem, Category, StockLog, OrderItem, User, Outlet
+from app.models import MenuItem, MenuItemVariant, MenuItemAddon, Category, StockLog, OrderItem, User, Outlet
 from app.schemas import (
     MenuItemCreate,
     MenuItemUpdate,
@@ -39,9 +39,13 @@ def list_menu_items(
     outlet_id: Optional[int] = Query(None, description="Outlet ID"),
     db: Session = Depends(get_db),
 ):
-    """Retrieve categorized menu items with stock and availability filters."""
+    """Retrieve categorized menu items with stock, portion variants, and addons."""
     target_id = get_effective_outlet_id(outlet_id, db)
-    query = db.query(MenuItem).filter(MenuItem.outlet_id == target_id)
+    query = (
+        db.query(MenuItem)
+        .options(joinedload(MenuItem.variants), joinedload(MenuItem.addons))
+        .filter(MenuItem.outlet_id == target_id)
+    )
 
     if category_id is not None:
         query = query.filter(MenuItem.category_id == category_id)
@@ -65,8 +69,13 @@ def list_menu_items(
 
 @router.get("/{item_id}", response_model=MenuItemOut)
 def get_menu_item(item_id: int, db: Session = Depends(get_db)):
-    """Fetch single menu item details by ID."""
-    item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+    """Fetch single menu item details with variants and addons by ID."""
+    item = (
+        db.query(MenuItem)
+        .options(joinedload(MenuItem.variants), joinedload(MenuItem.addons))
+        .filter(MenuItem.id == item_id)
+        .first()
+    )
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

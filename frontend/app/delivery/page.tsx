@@ -28,6 +28,7 @@ import {
     RefreshCw,
     Flame,
     UtensilsCrossed,
+    SlidersHorizontal,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
@@ -37,23 +38,27 @@ import { Button } from "@/components/ui/Button";
 import { VegBadge, SpecialBadge } from "@/components/ui/Badge";
 import { soundManager } from "@/lib/sound";
 import { useOrderSocket } from "@/hooks/useSockets";
+import {
+    DishCustomizerModal,
+    CustomizerItemData,
+    CustomizedSelection,
+    MenuItemVariantData,
+    MenuItemAddonData,
+} from "@/components/order/DishCustomizerModal";
 
-interface MenuItemData {
-    id: number;
+interface MenuItemData extends CustomizerItemData {
     category_id: number;
-    name: string;
-    name_te?: string | null;
-    description?: string | null;
-    price_paise: number;
-    image_url?: string | null;
-    is_veg: boolean;
     is_available: boolean;
     is_special: boolean;
 }
 
 interface CartItem {
+    cartKey: string;
     item: MenuItemData;
+    variant: MenuItemVariantData | null;
+    addons: MenuItemAddonData[];
     qty: number;
+    unitPricePaise: number;
     notes?: string;
 }
 
@@ -75,7 +80,10 @@ interface DeliveryOrder {
     items: Array<{
         id: number;
         item_name: string;
+        variant_name?: string | null;
+        selected_addons_json?: string | null;
         qty: number;
+        unit_price_paise: number;
         total_price_paise: number;
         notes?: string;
     }>;
@@ -85,7 +93,7 @@ function DeliveryOrderContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const toast = useToast();
-    const { t } = useLanguage();
+    const { language, t } = useLanguage();
 
     // Branch selection (default 2 for full menu, or 1 for grills/mandi)
     const branchParam = searchParams.get("branch");
@@ -99,65 +107,75 @@ function DeliveryOrderContent() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoadingMenu, setIsLoadingMenu] = useState(true);
 
-    // Cart & Checkout state
+    // Customizer Modal State
+    const [customizingItem, setCustomizingItem] = useState<MenuItemData | null>(null);
+
+    // Cart state
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-    // Delivery Form
+    // Checkout Form state
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
     const [landmark, setLandmark] = useState("");
     const [cookingNotes, setCookingNotes] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
+    const [paymentMethod, setPaymentMethod] = useState<"cod" | "upi">("cod");
+    const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-    // Active Tracking
+    // Active Delivery Order (for live tracking)
     const [activeOrder, setActiveOrder] = useState<DeliveryOrder | null>(null);
 
-    // Branch details
-    const branches = [
-        {
-            id: 1,
-            name: "Old Arabieq Restaurant",
-            tagline: "Authentic Mandi, Biryani & Arabian Grills",
-            address: "2nd Floor, Near More Super Market, Rahmath Tower, Madanapalli Road, Kadiri",
-            hours: "12:00 PM – 11:30 PM",
-            color: "amber",
-            badge: "bg-amber-500",
-            border: "border-amber-400",
-            phone: "+91 98765 43210",
-        },
-        {
-            id: 2,
-            name: "New Arabieq Restaurant & Cafe",
-            tagline: "Full Menu, Breakfast, Cafe, Mandi & Grills",
-            address: "Opposite to Girls High School, Kadiri, Andhra Pradesh",
-            hours: "7:00 AM – 11:30 PM",
-            color: "emerald",
-            badge: "bg-emerald-500",
-            border: "border-emerald-400",
-            phone: "+91 98765 43211",
-        },
-    ];
+    // Branch Information
+    const branch1Info = {
+        id: 1,
+        name: "Branch 1 (Old Arabieq)",
+        tagline: "Authentic Mandi & Grills",
+        address: "2nd Floor, Near More Super Market, Rahmath Tower, Madanapalli Road, Kadiri",
+        hours: "12:00 PM – 11:30 PM",
+        badge: "Grills, Mandi & Biryani Specialist",
+        noBreakfast: true,
+    };
 
-    const currentBranch = branches.find((b) => b.id === selectedBranch) || branches[1];
+    const branch2Info = {
+        id: 2,
+        name: "Branch 2 (New Arabieq & Cafe)",
+        tagline: "Full Menu, Breakfast, Cafe & Family Dining",
+        address: "Opposite to Girls High School, Kadiri",
+        hours: "7:00 AM – 11:30 PM",
+        badge: "Complete 11-Category Menu with Breakfast & Shakes",
+        noBreakfast: false,
+    };
 
-    // Load active delivery order from session
+    const currentBranchInfo = selectedBranch === 1 ? branch1Info : branch2Info;
+
+    // Load saved customer contact details
     useEffect(() => {
-        const savedOrderId = typeof window !== "undefined" ? sessionStorage.getItem("arabieq_delivery_order_id") : null;
-        if (savedOrderId) {
-            api.getOrder(Number(savedOrderId))
-                .then((ord) => {
-                    if (ord && ord.status !== "delivered" && ord.status !== "cancelled") {
-                        setActiveOrder(ord);
-                    }
-                })
-                .catch(() => {});
+        if (typeof window !== "undefined") {
+            const savedName = localStorage.getItem("arabieq_cust_name");
+            const savedPhone = localStorage.getItem("arabieq_cust_phone");
+            const savedAddress = localStorage.getItem("arabieq_cust_address");
+            const savedLandmark = localStorage.getItem("arabieq_cust_landmark");
+            if (savedName) setCustomerName(savedName);
+            if (savedPhone) setCustomerPhone(savedPhone);
+            if (savedAddress) setDeliveryAddress(savedAddress);
+            if (savedLandmark) setLandmark(savedLandmark);
+
+            // Restore active order from session if exists
+            const savedOrderId = sessionStorage.getItem("arabieq_delivery_order_id");
+            if (savedOrderId) {
+                api.getOrder(Number(savedOrderId))
+                    .then((ord) => {
+                        if (ord && ord.status !== "cancelled" && ord.status !== "delivered") {
+                            setActiveOrder(ord);
+                        }
+                    })
+                    .catch(() => {});
+            }
         }
     }, []);
 
-    // Fetch categories & menu for selected branch
+    // Fetch Menu for Selected Branch
     const fetchMenu = useCallback(async () => {
         setIsLoadingMenu(true);
         try {
@@ -167,8 +185,9 @@ function DeliveryOrderContent() {
             ]);
             if (Array.isArray(cats)) setCategories(cats);
             if (Array.isArray(items)) setMenuItems(items);
-        } catch {
-            toast.error("Connecting to restaurant server...");
+        } catch (err) {
+            console.error("Failed to load delivery menu:", err);
+            toast.error("Failed to load dishes. Please check connection.");
         } finally {
             setIsLoadingMenu(false);
         }
@@ -176,10 +195,12 @@ function DeliveryOrderContent() {
 
     useEffect(() => {
         fetchMenu();
+        // Clear category filter on branch switch
+        setSelectedCategory("all");
     }, [fetchMenu]);
 
     // WebSocket real-time delivery tracking
-    const { isConnected: socketConnected } = useOrderSocket(activeOrder?.id, (updatedData) => {
+    useOrderSocket(activeOrder?.id, (updatedData) => {
         console.log("[DeliverySocket] Order updated:", updatedData);
         setActiveOrder((prev) => (prev ? { ...prev, ...updatedData } : null));
         if (updatedData.status === "out_for_delivery") {
@@ -193,37 +214,97 @@ function DeliveryOrderContent() {
 
     // Cart calculations
     const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.qty, 0), [cart]);
-    const subtotalPaise = useMemo(() => cart.reduce((sum, item) => sum + item.item.price_paise * item.qty, 0), [cart]);
+    const subtotalPaise = useMemo(
+        () => cart.reduce((sum, item) => sum + item.unitPricePaise * item.qty, 0),
+        [cart]
+    );
     const taxPaise = useMemo(() => Math.round(subtotalPaise * 0.05), [subtotalPaise]);
     const deliveryFeePaise = 0; // 100% FREE DELIVERY
     const totalPaise = subtotalPaise + taxPaise + deliveryFeePaise;
 
-    // Add to cart
-    const handleAddToCart = (item: MenuItemData) => {
-        setCart((prev) => {
-            const existing = prev.find((ci) => ci.item.id === item.id);
-            if (existing) {
-                return prev.map((ci) => (ci.item.id === item.id ? { ...ci, qty: ci.qty + 1 } : ci));
-            }
-            return [...prev, { item, qty: 1 }];
-        });
-        soundManager.playAddToCartPop();
-        toast.success(`Added ${item.name} to delivery cart`);
+    // Handle Add to Cart Button Click on Dish Card
+    const handleDishCardClick = (item: MenuItemData) => {
+        const hasVariants = item.variants && item.variants.length > 0;
+        const hasAddons = item.addons && item.addons.length > 0;
+
+        if (hasVariants || hasAddons) {
+            // Open customization modal
+            setCustomizingItem(item);
+        } else {
+            // Direct add to cart
+            const cartKey = `item_${item.id}`;
+            setCart((prev) => {
+                const existing = prev.find((ci) => ci.cartKey === cartKey);
+                if (existing) {
+                    return prev.map((ci) => (ci.cartKey === cartKey ? { ...ci, qty: ci.qty + 1 } : ci));
+                }
+                return [
+                    ...prev,
+                    {
+                        cartKey,
+                        item,
+                        variant: null,
+                        addons: [],
+                        qty: 1,
+                        unitPricePaise: item.price_paise,
+                    },
+                ];
+            });
+            soundManager.playAddToCartPop();
+            toast.success(`Added ${item.name} to delivery cart`);
+        }
     };
 
-    // Update quantity
-    const handleUpdateQty = (itemId: number, delta: number) => {
+    // Callback from DishCustomizerModal
+    const handleCustomizedAddToCart = (customized: CustomizedSelection) => {
+        const variantId = customized.variant?.id || "base";
+        const addonIdsKey = customized.addons.map((a) => a.id).sort().join("-");
+        const cartKey = `item_${customized.item.id}_v_${variantId}_a_${addonIdsKey}`;
+
+        const unitPaise =
+            (customized.variant ? customized.variant.price_paise : customized.item.price_paise) +
+            customized.addons.reduce((sum, a) => sum + a.price_paise, 0);
+
         setCart((prev) => {
-            return prev
+            const existing = prev.find((ci) => ci.cartKey === cartKey);
+            if (existing) {
+                return prev.map((ci) =>
+                    ci.cartKey === cartKey ? { ...ci, qty: ci.qty + customized.qty } : ci
+                );
+            }
+            return [
+                ...prev,
+                {
+                    cartKey,
+                    item: customized.item as MenuItemData,
+                    variant: customized.variant,
+                    addons: customized.addons,
+                    qty: customized.qty,
+                    unitPricePaise: unitPaise,
+                    notes: customized.notes || undefined,
+                },
+            ];
+        });
+
+        soundManager.playAddToCartPop();
+        toast.success(
+            `Added ${customized.item.name} ${customized.variant ? `(${customized.variant.name})` : ""} to cart`
+        );
+    };
+
+    // Update quantity by cartKey
+    const handleUpdateCartQty = (cartKey: string, delta: number) => {
+        setCart((prev) =>
+            prev
                 .map((ci) => {
-                    if (ci.item.id === itemId) {
+                    if (ci.cartKey === cartKey) {
                         const newQty = ci.qty + delta;
                         return newQty > 0 ? { ...ci, qty: newQty } : null;
                     }
                     return ci;
                 })
-                .filter(Boolean) as CartItem[];
-        });
+                .filter(Boolean) as CartItem[]
+        );
         soundManager.playAddToCartPop();
     };
 
@@ -241,7 +322,7 @@ function DeliveryOrderContent() {
         });
     }, [menuItems, selectedCategory, vegFilter, searchQuery]);
 
-    // Place Delivery Order
+    // Place Delivery Order with Idempotency Key
     const handlePlaceDeliveryOrder = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -263,12 +344,19 @@ function DeliveryOrderContent() {
 
         setIsPlacingOrder(true);
         try {
+            // Generate client-side UUID idempotency key to prevent double submit
+            const idempotencyKey =
+                typeof crypto !== "undefined" && crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `idemp_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+
             const fullAddress = landmark.trim()
                 ? `${deliveryAddress.trim()}, Landmark: ${landmark.trim()}, Kadiri`
                 : `${deliveryAddress.trim()}, Kadiri`;
 
             const payload = {
                 outlet_id: selectedBranch,
+                idempotency_key: idempotencyKey,
                 order_type: "delivery" as const,
                 customer_name: customerName.trim() || "Customer",
                 customer_phone: phoneClean,
@@ -277,6 +365,8 @@ function DeliveryOrderContent() {
                 payment_method: paymentMethod,
                 items: cart.map((ci) => ({
                     item_id: ci.item.id,
+                    variant_id: ci.variant?.id,
+                    addon_ids: ci.addons.map((a) => a.id),
                     qty: ci.qty,
                     notes: ci.notes,
                 })),
@@ -287,13 +377,18 @@ function DeliveryOrderContent() {
             soundManager.playOrderPlacedSuccess();
             toast.success(`🛵 Delivery Order #${createdOrder.order_number} Placed Successfully!`);
 
+            // Save details to localStorage for fast reordering
+            if (typeof window !== "undefined") {
+                localStorage.setItem("arabieq_cust_name", customerName.trim());
+                localStorage.setItem("arabieq_cust_phone", phoneClean);
+                localStorage.setItem("arabieq_cust_address", deliveryAddress.trim());
+                localStorage.setItem("arabieq_cust_landmark", landmark.trim());
+                sessionStorage.setItem("arabieq_delivery_order_id", String(createdOrder.id));
+            }
+
             setCart([]);
             setIsCartOpen(false);
             setActiveOrder(createdOrder);
-
-            if (typeof window !== "undefined") {
-                sessionStorage.setItem("arabieq_delivery_order_id", String(createdOrder.id));
-            }
         } catch (err: any) {
             toast.error(err.message || "Failed to place delivery order. Please try again.");
         } finally {
@@ -324,618 +419,779 @@ function DeliveryOrderContent() {
         const currentRank = statusRank[orderStatus] ?? 0;
 
         return (
-            <main className="min-h-screen bg-stone-950 text-white flex flex-col justify-between p-4 sm:p-6 selection:bg-amber-500">
-                <div className="max-w-2xl w-full mx-auto space-y-6 pt-4">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
+            <div className="min-h-screen bg-cream-50/50 pb-20">
+                {/* Header */}
+                <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-terracotta-100 px-4 py-3 shadow-xs">
+                    <div className="max-w-3xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <img src="/logo.png" alt="Arabieq" className="h-12 w-auto object-contain" />
-                            <div>
-                                <h1 className="text-xl font-black text-amber-400">Arabieq Live Delivery Tracker</h1>
-                                <p className="text-xs text-white/50">{currentBranch.name} • Kadiri</p>
+                            <div className="w-10 h-10 rounded-xl bg-terracotta-500/10 flex items-center justify-center text-terracotta-600">
+                                <Bike className="w-5 h-5" />
                             </div>
-                        </div>
-                        <button
-                            onClick={() => {
-                                if (confirm("Close tracking view? You can still check your order status later.")) {
-                                    setActiveOrder(null);
-                                    sessionStorage.removeItem("arabieq_delivery_order_id");
-                                }
-                            }}
-                            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 transition"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    {/* Rider Banner */}
-                    <div className="rounded-3xl p-6 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/10 border border-amber-500/30 backdrop-blur-md relative overflow-hidden">
-                        <div className="flex items-start justify-between gap-4">
                             <div>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 text-black text-xs font-black uppercase tracking-wider mb-2">
-                                    <Truck className="w-3.5 h-3.5" />
-                                    100% Free Delivery
-                                </span>
-                                <h2 className="text-2xl font-black text-white">
-                                    {orderStatus === "placed" && "Order Received by Kitchen"}
-                                    {orderStatus === "accepted" && "Preparing Your Meal"}
-                                    {orderStatus === "preparing" && "Chef Cooking in Kadiri Kitchen"}
-                                    {orderStatus === "ready" && "Food Packed & Ready for Rider"}
-                                    {orderStatus === "out_for_delivery" && "Rider Dispatched to Your Doorstep!"}
-                                    {orderStatus === "delivered" && "Delivered Successfully!"}
-                                    {orderStatus === "cancelled" && "Order Cancelled"}
-                                </h2>
-                                <p className="text-xs text-white/60 mt-1">
-                                    Order <span className="font-mono text-amber-400 font-bold">#{activeOrder.order_number}</span> • Estimated Delivery in <span className="text-emerald-400 font-bold">25-35 mins</span>
+                                <h1 className="text-base font-serif font-black text-espresso-950">
+                                    Arabieq Live Delivery Tracker
+                                </h1>
+                                <p className="text-xs text-espresso-500 font-mono">
+                                    Order #{activeOrder.order_number} &bull; {currentBranchInfo.name}
                                 </p>
                             </div>
-                            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shrink-0 animate-bounce">
-                                <Bike className="w-8 h-8" />
+                        </div>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                                if (typeof window !== "undefined") {
+                                    sessionStorage.removeItem("arabieq_delivery_order_id");
+                                }
+                                setActiveOrder(null);
+                            }}
+                            className="text-xs"
+                        >
+                            Order More Dishes
+                        </Button>
+                    </div>
+                </header>
+
+                <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
+                    {/* Live Tracker Status Card */}
+                    <div className="bg-gradient-to-br from-espresso-950 via-espresso-900 to-terracotta-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 rounded-full bg-saffron-500/10 blur-2xl pointer-events-none" />
+
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
+                            <div>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-saffron-500/20 text-saffron-300 border border-saffron-500/30">
+                                    <span className="w-2 h-2 rounded-full bg-saffron-400 animate-ping" />
+                                    100% Free Home Delivery (Kadiri)
+                                </span>
+                                <h2 className="text-2xl sm:text-3xl font-serif font-black text-white mt-2">
+                                    {orderStatus === "delivered"
+                                        ? "Delivered & Enjoyed! 🎉"
+                                        : orderStatus === "out_for_delivery"
+                                        ? "Rider Dispatched 🛵"
+                                        : orderStatus === "preparing"
+                                        ? "Sizzling in Kitchen 🔥"
+                                        : "Order Placed & Accepted ✅"}
+                                </h2>
+                                <p className="text-xs text-cream-200/80 mt-1">
+                                    Estimated Delivery: <strong className="text-saffron-300">25–35 mins</strong> within Kadiri limits
+                                </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <div className="text-2xl font-mono font-black text-saffron-400">
+                                    {formatRupees(activeOrder.total_paise)}
+                                </div>
+                                <div className="text-xs text-cream-300">
+                                    Payment: <span className="uppercase font-bold text-white">{activeOrder.payment_method}</span> ({activeOrder.payment_status})
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* 4-Step Progress Stepper */}
-                    <div className="bg-white/5 rounded-3xl p-6 border border-white/10 space-y-5">
-                        <p className="text-xs font-black uppercase tracking-widest text-white/40">Delivery Status Timeline</p>
-                        <div className="space-y-4">
+                        {/* 4 Step Timeline */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                             {steps.map((step, idx) => {
-                                const isCompleted = currentRank > idx;
-                                const isCurrent = currentRank === idx;
-                                const StepIcon = step.icon;
+                                const Icon = step.icon;
+                                const isDone = idx <= currentRank;
+                                const isCurrent = idx === currentRank;
 
                                 return (
-                                    <div key={step.key} className="flex items-start gap-4">
-                                        <div className="flex flex-col items-center">
+                                    <div
+                                        key={step.key}
+                                        className={`rounded-2xl p-3.5 border transition-all ${
+                                            isCurrent
+                                                ? "bg-saffron-500/20 border-saffron-400/80 shadow-md shadow-saffron-500/10"
+                                                : isDone
+                                                ? "bg-white/10 border-white/20"
+                                                : "bg-white/5 border-white/5 opacity-50"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2 mb-2">
                                             <div
-                                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                                                    isCompleted
-                                                        ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
-                                                        : isCurrent
-                                                        ? "bg-amber-500 text-black ring-4 ring-amber-500/30 animate-pulse"
-                                                        : "bg-white/10 text-white/30"
+                                                className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                                                    isDone ? "bg-saffron-400 text-espresso-950 font-bold" : "bg-white/10 text-white"
                                                 }`}
                                             >
-                                                <StepIcon className="w-5 h-5" />
+                                                <Icon className="w-4 h-4" />
                                             </div>
-                                            {idx < steps.length - 1 && (
-                                                <div
-                                                    className={`w-0.5 h-10 mt-2 ${
-                                                        isCompleted ? "bg-emerald-500" : "bg-white/10"
-                                                    }`}
-                                                />
-                                            )}
+                                            <span className="text-[10px] font-mono font-bold text-cream-300">
+                                                0{idx + 1}
+                                            </span>
                                         </div>
-                                        <div className="pt-1">
-                                            <p
-                                                className={`text-sm font-black ${
-                                                    isCurrent ? "text-amber-400" : isCompleted ? "text-emerald-400" : "text-white/40"
-                                                }`}
-                                            >
-                                                {step.title}
-                                            </p>
-                                            <p className="text-xs text-white/50">{step.desc}</p>
-                                        </div>
+                                        <h4 className="text-xs font-bold text-white leading-tight">{step.title}</h4>
+                                        <p className="text-[10px] text-cream-200/70 mt-0.5 leading-snug">{step.desc}</p>
                                     </div>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Delivery Address & Contact Card */}
-                    <div className="bg-white/5 rounded-3xl p-6 border border-white/10 space-y-4 text-xs">
-                        <div className="flex items-start gap-3">
-                            <MapPin className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                            <div>
-                                <span className="text-white/40 uppercase font-black tracking-wider block text-[10px]">Delivering To</span>
-                                <p className="text-white font-bold text-sm mt-0.5">{activeOrder.customer_name} ({activeOrder.customer_phone})</p>
-                                <p className="text-white/70 mt-0.5">{activeOrder.delivery_address}</p>
+                    {/* Delivery & Customer Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Address Card */}
+                        <div className="bg-white rounded-2xl p-5 border border-terracotta-100 shadow-xs space-y-3">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-espresso-500 flex items-center gap-1.5">
+                                <MapPin className="w-4 h-4 text-terracotta-600" />
+                                Kadiri Drop-off Location
+                            </h3>
+                            <div className="bg-cream-50/60 rounded-xl p-3 border border-terracotta-100/60 text-xs">
+                                <p className="font-bold text-espresso-900 text-sm mb-1">{activeOrder.customer_name || "Customer"}</p>
+                                <p className="text-espresso-700 leading-relaxed">{activeOrder.delivery_address}</p>
+                                <p className="text-terracotta-700 font-mono font-bold mt-2 flex items-center gap-1">
+                                    <Phone className="w-3.5 h-3.5" /> +91 {activeOrder.customer_phone}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                            <div>
-                                <span className="text-white/40 uppercase font-black tracking-wider block text-[10px]">Payment</span>
-                                <span className="text-white font-bold text-xs uppercase">{activeOrder.payment_method} • {formatRupees(activeOrder.total_paise)}</span>
-                            </div>
-                            <a
-                                href={`tel:${currentBranch.phone}`}
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs transition cursor-pointer"
-                            >
-                                <PhoneCall className="w-3.5 h-3.5" />
-                                Call Branch
-                            </a>
-                        </div>
-                    </div>
+                        {/* Order Items Card */}
+                        <div className="bg-white rounded-2xl p-5 border border-terracotta-100 shadow-xs space-y-3">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-espresso-500 flex items-center gap-1.5">
+                                <ShoppingBag className="w-4 h-4 text-terracotta-600" />
+                                Ordered Dishes ({activeOrder.items?.length || 0})
+                            </h3>
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                {activeOrder.items?.map((it) => {
+                                    let addonsList: Array<{ name: string; price_paise: number }> = [];
+                                    if (it.selected_addons_json) {
+                                        try {
+                                            addonsList = JSON.parse(it.selected_addons_json);
+                                        } catch {}
+                                    }
 
-                    {/* Ordered Items Summary */}
-                    <div className="bg-white/5 rounded-3xl p-6 border border-white/10 space-y-3 text-xs">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-white/40">Order Summary</p>
-                        <div className="divide-y divide-white/10">
-                            {activeOrder.items?.map((it) => (
-                                <div key={it.id} className="py-2 flex items-center justify-between text-white">
-                                    <span>{it.qty}x {it.item_name}</span>
-                                    <span className="font-bold text-amber-400">{formatRupees(it.total_price_paise)}</span>
-                                </div>
-                            ))}
+                                    return (
+                                        <div key={it.id} className="flex flex-col py-1.5 border-b border-terracotta-50 last:border-0 text-xs">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-mono font-bold text-terracotta-700 bg-terracotta-50 px-1.5 py-0.5 rounded">
+                                                        {it.qty}x
+                                                    </span>
+                                                    <span className="font-bold text-espresso-900">{it.item_name}</span>
+                                                    {it.variant_name && (
+                                                        <span className="text-[10px] bg-saffron-100 text-saffron-900 font-bold px-1.5 py-0.2 rounded-md">
+                                                            {it.variant_name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="font-mono font-bold text-espresso-900">
+                                                    {formatRupees(it.total_price_paise)}
+                                                </span>
+                                            </div>
+                                            {addonsList.length > 0 && (
+                                                <div className="text-[10px] text-espresso-500 pl-6 mt-0.5">
+                                                    + {addonsList.map((a) => a.name).join(", ")}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
         );
     }
 
-    // ── MAIN DELIVERY ORDERING INTERFACE ────────────────────────────────────
+    // ── MAIN MENU & ORDERING VIEW ───────────────────────────────────────────
     return (
-        <main className="min-h-screen bg-stone-950 text-white flex flex-col justify-between pb-32 selection:bg-amber-500">
-            {/* Top Swiggy-Style Free Delivery Header */}
-            <header className="sticky top-0 z-40 bg-stone-900/95 backdrop-blur-md border-b border-white/10 shadow-xl">
-                {/* Free Delivery Ribbon */}
-                <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 px-4 py-1.5 text-center text-[11px] font-black text-black tracking-wide flex items-center justify-center gap-2">
-                    <Truck className="w-3.5 h-3.5" />
-                    <span>⚡ 100% FREE HOME DELIVERY IN KADIRI • NO MINIMUM ORDER • 30-40 MINS</span>
-                </div>
+        <div className="min-h-screen bg-[#FDFBF7] pb-28">
+            {/* Top Announcement Bar */}
+            <div className="bg-gradient-to-r from-espresso-950 via-terracotta-900 to-espresso-950 text-white text-[11px] font-bold py-2 px-4 text-center tracking-wide flex items-center justify-center gap-2 shadow-inner">
+                <Bike className="w-3.5 h-3.5 text-saffron-400 animate-bounce" />
+                <span>⚡ 100% FREE Home Delivery Anywhere in Kadiri Town Limits &bull; 0 Delivery Charges &bull; Hot & Fresh</span>
+            </div>
 
-                <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-                    {/* Brand */}
+            {/* Sticky Header with Branch Switcher */}
+            <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-terracotta-100 px-4 py-3 shadow-xs">
+                <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+                    {/* Logo & Branch Selector */}
                     <div className="flex items-center gap-3">
-                        <img src="/logo.png" alt="Arabieq" className="h-10 w-auto object-contain" />
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-terracotta-600 to-saffron-500 flex items-center justify-center text-white font-serif font-black text-xl shadow-md shadow-terracotta-500/20">
+                            ع
+                        </div>
                         <div>
-                            <span className="text-sm font-black text-amber-400 flex items-center gap-1.5">
-                                Arabieq Free Delivery
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-black">Live</span>
-                            </span>
-                            <p className="text-[10px] text-white/50">{currentBranch.name}</p>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-base sm:text-lg font-serif font-black text-espresso-950 leading-none">
+                                    Arabieq Online Food Delivery
+                                </h1>
+                                <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                                    Free Delivery
+                                </span>
+                            </div>
+                            <p className="text-xs text-espresso-600 mt-1 flex items-center gap-1 font-medium">
+                                <Store className="w-3 h-3 text-terracotta-600" />
+                                <span>{currentBranchInfo.name} &bull; {currentBranchInfo.hours}</span>
+                            </p>
                         </div>
                     </div>
 
-                    {/* Branch Switcher Buttons */}
-                    <div className="flex items-center gap-1 bg-white/10 p-1 rounded-2xl border border-white/10">
-                        {branches.map((b) => (
-                            <button
-                                key={b.id}
-                                onClick={() => {
-                                    setSelectedBranch(b.id);
-                                    router.push(`/delivery?branch=${b.id}`);
-                                }}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                                    selectedBranch === b.id
-                                        ? "bg-amber-500 text-black shadow-md shadow-amber-500/30"
-                                        : "text-white/60 hover:text-white"
-                                }`}
-                            >
-                                Branch {b.id}
-                            </button>
-                        ))}
-                    </div>
+                    {/* Floating Cart Button */}
+                    <button
+                        onClick={() => setIsCartOpen(true)}
+                        className="relative flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-terracotta-600/30 transition-all transform active:scale-95"
+                    >
+                        <ShoppingBag className="w-4 h-4" />
+                        <span className="hidden sm:inline">Delivery Cart</span>
+                        {cartCount > 0 && (
+                            <span className="bg-saffron-400 text-espresso-950 text-[11px] font-black font-mono w-5 h-5 rounded-full flex items-center justify-center">
+                                {cartCount}
+                            </span>
+                        )}
+                        {cartCount > 0 && (
+                            <span className="hidden sm:inline font-mono font-black border-l border-white/20 pl-2">
+                                {formatRupees(totalPaise)}
+                            </span>
+                        )}
+                    </button>
                 </div>
             </header>
 
-            {/* Main Delivery Menu Area */}
-            <div className="max-w-6xl mx-auto px-4 pt-6 w-full space-y-6">
-                {/* Branch Showcase Card */}
-                <div className="p-5 rounded-3xl bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full ${currentBranch.badge} animate-pulse`} />
-                            <h2 className="text-lg font-black text-white">{currentBranch.name}</h2>
+            {/* Branch Selector Tabs */}
+            <div className="max-w-5xl mx-auto px-4 pt-4 pb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-2 rounded-2xl border border-terracotta-100 shadow-xs">
+                    {/* Branch 1 Tab */}
+                    <button
+                        onClick={() => {
+                            setSelectedBranch(1);
+                            router.replace("/delivery?branch=1");
+                        }}
+                        className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                            selectedBranch === 1
+                                ? "bg-gradient-to-r from-terracotta-50 to-cream-50 border-terracotta-500 ring-2 ring-terracotta-400/30 shadow-xs"
+                                : "border-transparent hover:bg-cream-50/50"
+                        }`}
+                    >
+                        <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                selectedBranch === 1 ? "bg-terracotta-600 text-white font-black" : "bg-terracotta-100 text-terracotta-700 font-bold"
+                            }`}
+                        >
+                            1
                         </div>
-                        <p className="text-xs text-white/50 mt-0.5 flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
-                            {currentBranch.address}
-                        </p>
-                        <p className="text-xs text-amber-400 font-bold mt-1">🕐 {currentBranch.hours} • Free Delivery in Kadiri</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-white/80">
-                            🛵 30-40 Mins
-                        </span>
-                        <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
-                            ₹0 Delivery
-                        </span>
-                    </div>
-                </div>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-xs text-espresso-950">Branch 1: Old Arabieq</span>
+                                {selectedBranch === 1 && (
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                )}
+                            </div>
+                            <p className="text-[11px] text-terracotta-700 font-medium truncate">
+                                Madanapalli Road &bull; Mandi & Grills
+                            </p>
+                            <span className="text-[10px] text-espresso-500 font-mono">12:00 PM – 11:30 PM (No Breakfast)</span>
+                        </div>
+                    </button>
 
-                {/* Search & Dietary Filters */}
+                    {/* Branch 2 Tab */}
+                    <button
+                        onClick={() => {
+                            setSelectedBranch(2);
+                            router.replace("/delivery?branch=2");
+                        }}
+                        className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                            selectedBranch === 2
+                                ? "bg-gradient-to-r from-saffron-50 to-cream-50 border-saffron-500 ring-2 ring-saffron-400/30 shadow-xs"
+                                : "border-transparent hover:bg-cream-50/50"
+                        }`}
+                    >
+                        <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                selectedBranch === 2 ? "bg-saffron-600 text-white font-black" : "bg-saffron-100 text-saffron-800 font-bold"
+                            }`}
+                        >
+                            2
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-xs text-espresso-950">Branch 2: New Arabieq & Cafe</span>
+                                {selectedBranch === 2 && (
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                )}
+                            </div>
+                            <p className="text-[11px] text-saffron-800 font-medium truncate">
+                                Opp. Girls High School &bull; Full Menu + Breakfast
+                            </p>
+                            <span className="text-[10px] text-espresso-500 font-mono">7:00 AM – 11:30 PM (All Categories)</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            {/* Search & Veg/Non-Veg Filter Bar */}
+            <div className="max-w-5xl mx-auto px-4 py-3">
                 <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Search Input */}
                     <div className="relative flex-1">
-                        <Search className="w-4 h-4 text-white/40 absolute left-4 top-1/2 -translate-y-1/2" />
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-espresso-400" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search Arabian mandi, biryani, grills, starters..."
-                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/10 border border-white/15 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-amber-400 transition"
+                            placeholder={
+                                language === "te"
+                                    ? "బిర్యానీ, మండి, చికెన్ కబాబ్స్ కోసం వెతకండి..."
+                                    : "Search chicken mandi, mutton biryani, starters, shakes..."
+                            }
+                            className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-terracotta-100 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-terracotta-500 shadow-xs text-espresso-900 placeholder:text-espresso-400"
                         />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-espresso-400 hover:text-espresso-700"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 bg-white/10 p-1 rounded-2xl border border-white/15 shrink-0">
+                    {/* Veg / Non-Veg Toggle Filter */}
+                    <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-terracotta-100 shrink-0">
                         <button
                             onClick={() => setVegFilter("all")}
-                            className={`px-3 py-2 rounded-xl text-xs font-bold transition ${
-                                vegFilter === "all" ? "bg-white/20 text-white" : "text-white/60 hover:text-white"
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                vegFilter === "all" ? "bg-espresso-900 text-white" : "text-espresso-600 hover:bg-cream-100"
                             }`}
                         >
-                            All ({menuItems.length})
+                            All
                         </button>
                         <button
                             onClick={() => setVegFilter("veg")}
-                            className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-                                vegFilter === "veg" ? "bg-emerald-500 text-black font-black" : "text-emerald-400 hover:text-emerald-300"
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                vegFilter === "veg" ? "bg-emerald-600 text-white" : "text-emerald-700 hover:bg-emerald-50"
                             }`}
                         >
-                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                            Veg Only
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            Veg
                         </button>
                         <button
                             onClick={() => setVegFilter("non_veg")}
-                            className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-                                vegFilter === "non_veg" ? "bg-red-500 text-white font-black" : "text-red-400 hover:text-red-300"
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                vegFilter === "non_veg" ? "bg-terracotta-600 text-white" : "text-terracotta-700 hover:bg-terracotta-50"
                             }`}
                         >
-                            <span className="w-2 h-2 rounded-full bg-red-400" />
+                            <span className="w-2 h-2 rounded-full bg-terracotta-600" />
                             Non-Veg
                         </button>
                     </div>
                 </div>
+            </div>
 
-                {/* Category Pills Strip */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+            {/* Category Pills (Horizontal Scroll) */}
+            <div className="sticky top-[69px] z-20 bg-[#FDFBF7]/95 backdrop-blur-md py-2 border-b border-terracotta-100/60 shadow-2xs">
+                <div className="max-w-5xl mx-auto px-4 flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <button
                         onClick={() => setSelectedCategory("all")}
-                        className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
+                        className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
                             selectedCategory === "all"
-                                ? "bg-amber-500 text-black shadow-md shadow-amber-500/20"
-                                : "bg-white/10 hover:bg-white/15 text-white/70"
+                                ? "bg-terracotta-600 text-white shadow-xs"
+                                : "bg-white text-espresso-700 border border-terracotta-100 hover:bg-cream-100"
                         }`}
                     >
-                        All Categories
+                        {language === "te" ? "అన్నీ (ఆల్ కేటగిరీలు)" : "All Dishes"}
                     </button>
-                    {categories.map((c) => (
+                    {categories.map((cat) => (
                         <button
-                            key={c.id}
-                            onClick={() => setSelectedCategory(c.id)}
-                            className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
-                                selectedCategory === c.id
-                                    ? "bg-amber-500 text-black shadow-md shadow-amber-500/20"
-                                    : "bg-white/10 hover:bg-white/15 text-white/70"
+                            key={cat.id}
+                            onClick={() => setSelectedCategory(cat.id)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+                                selectedCategory === cat.id
+                                    ? "bg-terracotta-600 text-white shadow-xs"
+                                    : "bg-white text-espresso-700 border border-terracotta-100 hover:bg-cream-100"
                             }`}
                         >
-                            {c.name}
+                            {language === "te" && cat.name_te ? cat.name_te : cat.name}
                         </button>
                     ))}
                 </div>
+            </div>
 
-                {/* Menu Items Grid */}
+            {/* Dishes Grid */}
+            <main className="max-w-5xl mx-auto px-4 py-6">
                 {isLoadingMenu ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="h-44 rounded-3xl bg-white/5 border border-white/10 animate-pulse" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="h-44 bg-white rounded-2xl border border-terracotta-100 animate-pulse" />
                         ))}
                     </div>
                 ) : filteredItems.length === 0 ? (
-                    <div className="py-16 text-center text-white/40 space-y-2">
-                        <UtensilsCrossed className="w-8 h-8 mx-auto opacity-40" />
-                        <p className="text-sm font-bold">No dishes found in this category</p>
+                    <div className="bg-white rounded-3xl p-12 text-center border border-terracotta-100 max-w-md mx-auto my-8">
+                        <UtensilsCrossed className="w-12 h-12 text-espresso-300 mx-auto mb-3" />
+                        <h3 className="text-base font-bold text-espresso-950">No dishes found</h3>
+                        <p className="text-xs text-espresso-500 mt-1">Try clearing your filters or search keywords.</p>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                                setSelectedCategory("all");
+                                setVegFilter("all");
+                                setSearchQuery("");
+                            }}
+                            className="mt-4"
+                        >
+                            Reset Filters
+                        </Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredItems.map((item) => {
-                            const cartEntry = cart.find((ci) => ci.item.id === item.id);
+                            const hasVariants = item.variants && item.variants.length > 0;
+                            const hasAddons = item.addons && item.addons.length > 0;
+
+                            // Find total items of this dish in cart across variants
+                            const countInCart = cart
+                                .filter((ci) => ci.item.id === item.id)
+                                .reduce((sum, ci) => sum + ci.qty, 0);
 
                             return (
                                 <div
                                     key={item.id}
-                                    className="bg-stone-900/80 rounded-3xl p-5 border border-white/10 hover:border-amber-400/40 hover:bg-stone-900 transition-all flex flex-col justify-between gap-4 group shadow-xl"
+                                    className="bg-white rounded-2xl p-4 border border-terracotta-100/80 hover:border-terracotta-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
                                 >
-                                    <div className="space-y-2">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex items-center gap-2">
-                                                {/* Veg / Non-veg dot symbol */}
-                                                <div
-                                                    className={`w-4 h-4 rounded-md border flex items-center justify-center ${
-                                                        item.is_veg
-                                                            ? "border-emerald-500 text-emerald-500"
-                                                            : "border-red-500 text-red-500"
-                                                    }`}
-                                                >
-                                                    <div
-                                                        className={`w-2 h-2 rounded-full ${
-                                                            item.is_veg ? "bg-emerald-500" : "bg-red-500"
-                                                        }`}
-                                                    />
-                                                </div>
-                                                {item.is_special && (
-                                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                                        ★ Chef Special
+                                    <div>
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-1.5">
+                                                <VegBadge isVeg={item.is_veg} />
+                                                {item.is_special && <SpecialBadge />}
+                                                {hasVariants && (
+                                                    <span className="text-[10px] font-bold text-terracotta-700 bg-terracotta-50 border border-terracotta-200/60 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                                                        <SlidersHorizontal className="w-2.5 h-2.5" />
+                                                        Portions
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <h3 className="font-black text-white text-base group-hover:text-amber-400 transition-colors">
-                                            {item.name}
+                                        <h3 className="text-base font-serif font-black text-espresso-950 leading-snug group-hover:text-terracotta-700 transition-colors">
+                                            {language === "te" && item.name_te ? item.name_te : item.name}
                                         </h3>
-                                        {item.name_te && (
-                                            <p className="text-xs text-amber-200/60 font-medium">{item.name_te}</p>
-                                        )}
+
                                         {item.description && (
-                                            <p className="text-xs text-white/50 line-clamp-2 leading-relaxed">
+                                            <p className="text-xs text-espresso-500 line-clamp-2 mt-1 leading-relaxed">
                                                 {item.description}
                                             </p>
                                         )}
                                     </div>
 
-                                    {/* Price & Add Button */}
-                                    <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                                    <div className="flex items-center justify-between pt-4 mt-3 border-t border-terracotta-50">
                                         <div>
-                                            <span className="text-lg font-black text-amber-400">
-                                                {formatRupees(item.price_paise)}
+                                            <span className="text-[10px] text-espresso-400 block font-medium">
+                                                {hasVariants ? "Starts from" : "Price"}
                                             </span>
-                                            <span className="text-[10px] text-white/40 block">Free Delivery</span>
+                                            <span className="text-base font-mono font-black text-espresso-950">
+                                                {formatRupees(
+                                                    hasVariants && item.variants && item.variants[0]
+                                                        ? item.variants[0].price_paise
+                                                        : item.price_paise
+                                                )}
+                                            </span>
                                         </div>
 
-                                        {cartEntry ? (
-                                            <div className="flex items-center gap-2 bg-amber-500 text-black px-2.5 py-1.5 rounded-2xl font-black text-sm shadow-md shadow-amber-500/30">
-                                                <button
-                                                    onClick={() => handleUpdateQty(item.id, -1)}
-                                                    className="w-6 h-6 rounded-lg hover:bg-black/10 flex items-center justify-center cursor-pointer transition"
-                                                >
-                                                    <Minus className="w-3.5 h-3.5" />
-                                                </button>
-                                                <span className="w-5 text-center">{cartEntry.qty}</span>
-                                                <button
-                                                    onClick={() => handleUpdateQty(item.id, 1)}
-                                                    className="w-6 h-6 rounded-lg hover:bg-black/10 flex items-center justify-center cursor-pointer transition"
-                                                >
-                                                    <Plus className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleAddToCart(item)}
-                                                className="px-5 py-2 rounded-2xl bg-white/10 hover:bg-amber-500 hover:text-black border border-white/20 hover:border-amber-400 text-xs font-black transition-all duration-200 flex items-center gap-1.5 cursor-pointer group-hover:bg-amber-500 group-hover:text-black"
-                                            >
-                                                <Plus className="w-3.5 h-3.5" />
-                                                ADD
-                                            </button>
-                                        )}
+                                        {/* Add to Cart / Customizer Trigger */}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDishCardClick(item)}
+                                            className="px-4 py-2 rounded-xl bg-terracotta-50 hover:bg-terracotta-600 text-terracotta-700 hover:text-white border border-terracotta-200 hover:border-terracotta-600 font-bold text-xs shadow-2xs transition-all transform active:scale-95 flex items-center gap-1.5"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            <span>{hasVariants || hasAddons ? "CUSTOMIZE" : "ADD"}</span>
+                                            {countInCart > 0 && (
+                                                <span className="ml-1 bg-terracotta-600 text-white group-hover:bg-white group-hover:text-terracotta-700 text-[10px] font-mono font-black w-4 h-4 rounded-full flex items-center justify-center">
+                                                    {countInCart}
+                                                </span>
+                                            )}
+                                        </button>
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
                 )}
-            </div>
+            </main>
 
-            {/* Bottom Floating Delivery Cart Bar */}
-            {cart.length > 0 && (
-                <aside aria-label="Delivery cart summary" className="fixed bottom-4 left-4 right-4 z-40 max-w-2xl mx-auto">
+            {/* Customization Modal */}
+            <DishCustomizerModal
+                isOpen={!!customizingItem}
+                item={customizingItem}
+                language={language}
+                onClose={() => setCustomizingItem(null)}
+                onAddToCart={handleCustomizedAddToCart}
+            />
+
+            {/* Floating Bottom Cart Bar (if items in cart) */}
+            {cartCount > 0 && !isCartOpen && (
+                <div className="fixed bottom-4 left-4 right-4 z-40 max-w-xl mx-auto animate-in slide-in-from-bottom-6">
                     <button
                         onClick={() => setIsCartOpen(true)}
-                        className="w-full p-4 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-black font-black shadow-2xl shadow-amber-500/40 flex items-center justify-between transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                        className="w-full bg-gradient-to-r from-terracotta-600 via-terracotta-700 to-espresso-950 text-white p-4 rounded-2xl shadow-xl shadow-terracotta-600/30 flex items-center justify-between border border-terracotta-500/30 transform active:scale-98 transition-all"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-black/10 flex items-center justify-center">
-                                <ShoppingBag className="w-5 h-5 text-black" />
+                        <div className="flex items-center gap-3 text-left">
+                            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                                <ShoppingBag className="w-5 h-5" />
                             </div>
-                            <div className="text-left">
-                                <span className="text-xs uppercase tracking-wider block text-black/70">
-                                    {cartCount} item{cartCount > 1 ? "s" : ""} • FREE DELIVERY
+                            <div>
+                                <span className="text-xs font-mono font-bold text-saffron-300">
+                                    {cartCount} {cartCount === 1 ? "Dish" : "Dishes"} &bull; Free Home Delivery
                                 </span>
-                                <span className="text-lg font-black">{formatRupees(totalPaise)}</span>
+                                <div className="text-base font-serif font-black">
+                                    Total: {formatRupees(totalPaise)}
+                                </div>
                             </div>
                         </div>
-
-                        <div className="flex items-center gap-1.5 bg-black text-amber-400 px-4 py-2 rounded-2xl text-xs font-black">
-                            <span>Proceed to Checkout</span>
+                        <div className="flex items-center gap-1.5 font-bold text-xs bg-white text-espresso-950 px-4 py-2 rounded-xl shadow-xs">
+                            <span>Review & Order</span>
                             <ArrowRight className="w-4 h-4" />
                         </div>
                     </button>
-                </aside>
+                </div>
             )}
 
-            {/* Delivery Checkout Drawer Modal */}
+            {/* Cart Drawer / Slide-over */}
             {isCartOpen && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
-                    <div className="w-full max-w-lg bg-stone-900 border border-white/15 rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+                    <div
+                        className="w-full max-w-lg max-h-[92vh] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-terracotta-100 animate-in slide-in-from-bottom-6 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {/* Drawer Header */}
-                        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                        <div className="p-4 sm:p-5 border-b border-terracotta-100 flex items-center justify-between bg-cream-50/50">
                             <div>
-                                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                                    <Truck className="w-5 h-5 text-amber-400" />
-                                    Delivery Checkout (Kadiri)
-                                </h3>
-                                <p className="text-xs text-white/50">{currentBranch.name}</p>
+                                <h2 className="text-lg font-serif font-black text-espresso-950 flex items-center gap-2">
+                                    <Bike className="w-5 h-5 text-terracotta-600" />
+                                    Free Kadiri Home Delivery Checkout
+                                </h2>
+                                <p className="text-xs text-espresso-500 font-mono">
+                                    {currentBranchInfo.name} &bull; 0 Delivery Charges
+                                </p>
                             </div>
                             <button
                                 onClick={() => setIsCartOpen(false)}
-                                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 transition cursor-pointer"
+                                className="p-2 rounded-full text-espresso-500 hover:bg-terracotta-100 transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        {/* Cart Items List */}
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-white/40">Items in Cart</p>
-                            <div className="divide-y divide-white/10 max-h-40 overflow-y-auto">
-                                {cart.map((ci) => (
-                                    <div key={ci.item.id} className="py-2.5 flex items-center justify-between">
-                                        <div>
-                                            <p className="font-bold text-white text-xs">{ci.item.name}</p>
-                                            <p className="text-[10px] text-amber-400">{formatRupees(ci.item.price_paise)} each</p>
+                        {/* Scrollable Cart Content & Checkout Form */}
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6">
+                            {/* 1. Cart Items List */}
+                            <div>
+                                <h3 className="text-xs font-black uppercase tracking-wider text-espresso-500 mb-3 flex items-center justify-between">
+                                    <span>Selected Dishes ({cartCount})</span>
+                                    <button
+                                        onClick={() => setCart([])}
+                                        className="text-[11px] text-terracotta-600 hover:underline font-bold"
+                                    >
+                                        Clear Cart
+                                    </button>
+                                </h3>
+                                <div className="space-y-2.5">
+                                    {cart.map((ci) => (
+                                        <div
+                                            key={ci.cartKey}
+                                            className="flex items-start justify-between gap-3 p-3 rounded-xl bg-cream-50/40 border border-terracotta-100/60"
+                                        >
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <VegBadge isVeg={ci.item.is_veg} />
+                                                    <span className="text-xs font-bold text-espresso-900 leading-tight">
+                                                        {ci.item.name}
+                                                    </span>
+                                                </div>
+                                                {ci.variant && (
+                                                    <div className="text-[11px] font-bold text-saffron-800 bg-saffron-100/80 px-1.5 py-0.2 rounded-md inline-block mt-1">
+                                                        Portion: {ci.variant.name}
+                                                    </div>
+                                                )}
+                                                {ci.addons.length > 0 && (
+                                                    <div className="text-[10px] text-espresso-600 mt-1">
+                                                        + {ci.addons.map((a) => a.name).join(", ")}
+                                                    </div>
+                                                )}
+                                                {ci.notes && (
+                                                    <div className="text-[10px] text-terracotta-700 italic mt-0.5">
+                                                        Note: &ldquo;{ci.notes}&rdquo;
+                                                    </div>
+                                                )}
+                                                <div className="text-xs font-mono font-bold text-espresso-700 mt-1">
+                                                    {formatRupees(ci.unitPricePaise * ci.qty)}
+                                                </div>
+                                            </div>
+
+                                            {/* Quantity Stepper */}
+                                            <div className="flex items-center gap-2 bg-white border border-terracotta-200 rounded-lg p-1 shrink-0">
+                                                <button
+                                                    onClick={() => handleUpdateCartQty(ci.cartKey, -1)}
+                                                    className="w-6 h-6 rounded flex items-center justify-center text-espresso-700 hover:bg-terracotta-100"
+                                                >
+                                                    <Minus className="w-3 h-3" />
+                                                </button>
+                                                <span className="w-4 text-center text-xs font-bold font-mono">
+                                                    {ci.qty}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleUpdateCartQty(ci.cartKey, 1)}
+                                                    className="w-6 h-6 rounded flex items-center justify-center text-espresso-700 hover:bg-terracotta-100"
+                                                >
+                                                    <Plus className="w-3 h-3" />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2 bg-white/10 px-2 py-1 rounded-xl text-xs">
-                                            <button
-                                                onClick={() => handleUpdateQty(ci.item.id, -1)}
-                                                className="hover:text-amber-400"
-                                            >
-                                                <Minus className="w-3 h-3" />
-                                            </button>
-                                            <span className="font-bold">{ci.qty}</span>
-                                            <button
-                                                onClick={() => handleUpdateQty(ci.item.id, 1)}
-                                                className="hover:text-amber-400"
-                                            >
-                                                <Plus className="w-3 h-3" />
-                                            </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 2. Customer Delivery Address Form */}
+                            <form id="delivery-form" onSubmit={handlePlaceDeliveryOrder} className="space-y-4">
+                                <h3 className="text-xs font-black uppercase tracking-wider text-espresso-500">
+                                    Kadiri Delivery Information
+                                </h3>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-espresso-800 mb-1">
+                                            Your Full Name *
+                                        </label>
+                                        <div className="relative">
+                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-espresso-400" />
+                                            <input
+                                                type="text"
+                                                required
+                                                value={customerName}
+                                                onChange={(e) => setCustomerName(e.target.value)}
+                                                placeholder="e.g. Sreenivasulu"
+                                                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-terracotta-200 focus:ring-2 focus:ring-terracotta-500 bg-cream-50/20 text-espresso-900 placeholder:text-espresso-400"
+                                            />
                                         </div>
                                     </div>
-                                ))}
+                                    <div>
+                                        <label className="block text-xs font-bold text-espresso-800 mb-1">
+                                            Phone Number *
+                                        </label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-espresso-400" />
+                                            <input
+                                                type="tel"
+                                                required
+                                                value={customerPhone}
+                                                onChange={(e) => setCustomerPhone(e.target.value)}
+                                                placeholder="10-digit mobile number"
+                                                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-terracotta-200 focus:ring-2 focus:ring-terracotta-500 bg-cream-50/20 text-espresso-900 placeholder:text-espresso-400 font-mono"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-espresso-800 mb-1">
+                                        House No, Street & Area in Kadiri *
+                                    </label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-3 w-3.5 h-3.5 text-espresso-400" />
+                                        <textarea
+                                            required
+                                            rows={2}
+                                            value={deliveryAddress}
+                                            onChange={(e) => setDeliveryAddress(e.target.value)}
+                                            placeholder="e.g. Flat 302, Green Valley Apts, Near Clock Tower, Kadiri"
+                                            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-terracotta-200 focus:ring-2 focus:ring-terracotta-500 bg-cream-50/20 text-espresso-900 placeholder:text-espresso-400"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-espresso-800 mb-1">
+                                            Landmark (Optional)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={landmark}
+                                            onChange={(e) => setLandmark(e.target.value)}
+                                            placeholder="Near More Supermarket"
+                                            className="w-full px-3 py-2 text-xs rounded-xl border border-terracotta-200 focus:ring-2 focus:ring-terracotta-500 bg-cream-50/20 text-espresso-900 placeholder:text-espresso-400"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-espresso-800 mb-1">
+                                            Payment Method
+                                        </label>
+                                        <select
+                                            value={paymentMethod}
+                                            onChange={(e) => setPaymentMethod(e.target.value as "cod" | "upi")}
+                                            className="w-full px-3 py-2 text-xs rounded-xl border border-terracotta-200 focus:ring-2 focus:ring-terracotta-500 bg-cream-50/20 text-espresso-900 font-bold"
+                                        >
+                                            <option value="cod">💵 Cash on Delivery (COD)</option>
+                                            <option value="upi">📱 UPI QR on Delivery / Online</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-espresso-800 mb-1">
+                                        Cooking / Delivery Instructions (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={cookingNotes}
+                                        onChange={(e) => setCookingNotes(e.target.value)}
+                                        placeholder="e.g. Extra spicy, keep mayonnaise separate, call before arriving"
+                                        className="w-full px-3 py-2 text-xs rounded-xl border border-terracotta-200 focus:ring-2 focus:ring-terracotta-500 bg-cream-50/20 text-espresso-900 placeholder:text-espresso-400"
+                                    />
+                                </div>
+                            </form>
+
+                            {/* 3. Bill Summary */}
+                            <div className="bg-cream-50/70 rounded-2xl p-4 border border-terracotta-100 space-y-2 text-xs">
+                                <div className="flex justify-between text-espresso-600">
+                                    <span>Item Subtotal</span>
+                                    <span className="font-mono">{formatRupees(subtotalPaise)}</span>
+                                </div>
+                                <div className="flex justify-between text-espresso-600">
+                                    <span>GST (5%)</span>
+                                    <span className="font-mono">{formatRupees(taxPaise)}</span>
+                                </div>
+                                <div className="flex justify-between text-emerald-700 font-bold">
+                                    <span>Kadiri Delivery Fee</span>
+                                    <span className="uppercase tracking-wider">FREE (₹0)</span>
+                                </div>
+                                <div className="pt-2 border-t border-terracotta-200/60 flex justify-between text-sm font-black text-espresso-950 font-serif">
+                                    <span>Total Payable</span>
+                                    <span className="font-mono text-terracotta-700">{formatRupees(totalPaise)}</span>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Customer & Delivery Address Form */}
-                        <form onSubmit={handlePlaceDeliveryOrder} className="space-y-4">
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1">
-                                    Your Full Name
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                    placeholder="e.g. Sreenivasulu / Rafiq"
-                                    className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1">
-                                    Mobile Number (10 Digits) *
-                                </label>
-                                <div className="relative">
-                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 text-xs font-bold">+91</span>
-                                    <input
-                                        type="tel"
-                                        required
-                                        maxLength={10}
-                                        value={customerPhone}
-                                        onChange={(e) => setCustomerPhone(e.target.value)}
-                                        placeholder="9876543210"
-                                        className="w-full pl-12 pr-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1">
-                                    Delivery Address in Kadiri *
-                                </label>
-                                <textarea
-                                    required
-                                    rows={2}
-                                    value={deliveryAddress}
-                                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                                    placeholder="Flat/Door No, Street Name, Area in Kadiri..."
-                                    className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400 resize-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1">
-                                    Nearby Landmark (Optional)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={landmark}
-                                    onChange={(e) => setLandmark(e.target.value)}
-                                    placeholder="e.g. Near Girls High School / Clock Tower"
-                                    className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1">
-                                    Cooking / Delivery Note
-                                </label>
-                                <input
-                                    type="text"
-                                    value={cookingNotes}
-                                    onChange={(e) => setCookingNotes(e.target.value)}
-                                    placeholder="e.g. Extra raita, less spicy, call before delivery"
-                                    className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400"
-                                />
-                            </div>
-
-                            {/* Payment Method Selector */}
-                            <div className="space-y-2">
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60">
-                                    Payment Method
-                                </label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setPaymentMethod("cod")}
-                                        className={`p-3 rounded-2xl border text-left transition ${
-                                            paymentMethod === "cod"
-                                                ? "bg-amber-500/20 border-amber-400 text-amber-300 font-bold"
-                                                : "bg-white/5 border-white/10 text-white/60 hover:text-white"
-                                        }`}
-                                    >
-                                        <span className="text-xs font-black block">💵 Cash on Delivery</span>
-                                        <span className="text-[10px] text-white/50">Pay Cash / UPI to rider</span>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setPaymentMethod("online")}
-                                        className={`p-3 rounded-2xl border text-left transition ${
-                                            paymentMethod === "online"
-                                                ? "bg-amber-500/20 border-amber-400 text-amber-300 font-bold"
-                                                : "bg-white/5 border-white/10 text-white/60 hover:text-white"
-                                        }`}
-                                    >
-                                        <span className="text-xs font-black block">💳 Pay Online (UPI)</span>
-                                        <span className="text-[10px] text-white/50">Instant online payment</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Bill Breakdown */}
-                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
-                                <div className="flex justify-between text-white/70">
-                                    <span>Item Subtotal</span>
-                                    <span>{formatRupees(subtotalPaise)}</span>
-                                </div>
-                                <div className="flex justify-between text-white/70">
-                                    <span>GST (5%)</span>
-                                    <span>{formatRupees(taxPaise)}</span>
-                                </div>
-                                <div className="flex justify-between text-emerald-400 font-bold">
-                                    <span>Delivery Fee (Kadiri)</span>
-                                    <span>FREE (₹0)</span>
-                                </div>
-                                <div className="pt-2 border-t border-white/10 flex justify-between text-sm font-black text-amber-400">
-                                    <span>Grand Total</span>
-                                    <span>{formatRupees(totalPaise)}</span>
-                                </div>
-                            </div>
-
-                            {/* Submit Button */}
+                        {/* Drawer Footer / Submit Button */}
+                        <div className="p-4 sm:p-5 border-t border-terracotta-100 bg-white/95 backdrop-blur-md">
                             <Button
+                                form="delivery-form"
                                 type="submit"
                                 variant="primary"
                                 size="lg"
                                 isLoading={isPlacingOrder}
-                                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black shadow-lg shadow-amber-500/30 py-3.5 text-sm"
-                                rightIcon={<ArrowRight className="w-4 h-4" />}
+                                className="w-full py-3.5 text-sm font-bold shadow-lg shadow-terracotta-600/30 flex items-center justify-between"
                             >
-                                Confirm & Order Free Delivery • {formatRupees(totalPaise)}
+                                <span>Confirm & Order Free Delivery 🛵</span>
+                                <span className="font-mono font-black">{formatRupees(totalPaise)}</span>
                             </Button>
-                        </form>
+                        </div>
                     </div>
                 </div>
             )}
-        </main>
+        </div>
     );
 }
 
-export default function DeliveryPage() {
+export default function DeliveryOrderPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-400">Loading Arabieq Delivery...</div>}>
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center bg-cream-50">
+                    <div className="text-center space-y-3">
+                        <div className="w-12 h-12 border-4 border-terracotta-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                        <p className="text-xs font-bold text-espresso-700">Loading Arabieq Online Delivery...</p>
+                    </div>
+                </div>
+            }
+        >
             <DeliveryOrderContent />
         </Suspense>
     );

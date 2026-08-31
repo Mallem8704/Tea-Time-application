@@ -305,11 +305,29 @@ export default function KitchenDisplaySystemPage() {
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-1">
-                                                                    <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center justify-between flex-wrap gap-1">
                                                                         <span className="text-base font-black tracking-tight">
                                                                             {it.qty}x {it.item_name}
                                                                         </span>
+                                                                        {it.variant_name && (
+                                                                            <span className="text-xs font-black uppercase tracking-wider bg-saffron-400 text-espresso-950 px-2 py-0.5 rounded-md shadow-xs">
+                                                                                {it.variant_name}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
+                                                                    {it.selected_addons_json && (() => {
+                                                                        try {
+                                                                            const addons = JSON.parse(it.selected_addons_json);
+                                                                            if (Array.isArray(addons) && addons.length > 0) {
+                                                                                return (
+                                                                                    <div className="text-xs font-bold text-saffron-300 mt-1 pl-1">
+                                                                                        + {addons.map((a: any) => a.name).join(", ")}
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                        } catch {}
+                                                                        return null;
+                                                                    })()}
                                                                     {it.notes && (
                                                                         <span className="text-xs text-saffron-300 font-bold flex items-center gap-1 mt-0.5">
                                                                             <AlertTriangle className="w-3.5 h-3.5 text-saffron-400 shrink-0" />
