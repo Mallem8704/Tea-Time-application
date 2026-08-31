@@ -69,25 +69,31 @@ export default function AdminLiveOrdersKanbanPage() {
 
     // Fetch Initial Orders & Service Calls
     const fetchOrders = useCallback(async () => {
+        setIsLoadingOrders(true);
         try {
-            const [ordersData, callsData] = await Promise.all([
+            const [ordersResult, callsResult] = await Promise.allSettled([
                 api.getOrders(),
                 api.getServiceCalls("pending"),
             ]);
-            setOrders(ordersData);
-            setPendingServiceCalls(callsData);
-        } catch (err: any) {
-            toast.error("Failed to load live orders");
+
+            if (ordersResult.status === "fulfilled" && Array.isArray(ordersResult.value)) {
+                setOrders(ordersResult.value);
+            }
+            if (callsResult.status === "fulfilled" && Array.isArray(callsResult.value)) {
+                setPendingServiceCalls(callsResult.value);
+            }
+        } catch {
+            // Silently handle any unexpected errors
         } finally {
             setIsLoadingOrders(false);
         }
-    }, [toast]);
+    }, []);
 
     useEffect(() => {
         if (isAuthenticated) {
             fetchOrders();
         }
-    }, [isAuthenticated, fetchOrders]);
+    }, [isAuthenticated, fetchOrders, outlet?.id]);
 
     // Real-Time WebSocket Hook with Audio Chimes
     const { isConnected: wsConnected } = useAdminSocket(outlet?.id || 1, (event) => {

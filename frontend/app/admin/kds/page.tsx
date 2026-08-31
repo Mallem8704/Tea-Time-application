@@ -71,25 +71,30 @@ export default function KitchenDisplaySystemPage() {
 
     // Fetch Active Orders
     const fetchOrders = useCallback(async () => {
+        setIsLoadingOrders(true);
         try {
-            const [ordersData, callsData] = await Promise.all([
+            const [ordersResult, callsResult] = await Promise.allSettled([
                 api.getOrders(),
                 api.getServiceCalls("pending"),
             ]);
-            setOrders(ordersData);
-            setPendingServiceCalls(callsData);
+            if (ordersResult.status === "fulfilled" && Array.isArray(ordersResult.value)) {
+                setOrders(ordersResult.value);
+            }
+            if (callsResult.status === "fulfilled" && Array.isArray(callsResult.value)) {
+                setPendingServiceCalls(callsResult.value);
+            }
         } catch {
-            toast.error("Failed to load KDS orders");
+            // Silently handle any unexpected errors
         } finally {
             setIsLoadingOrders(false);
         }
-    }, [toast]);
+    }, []);
 
     useEffect(() => {
         if (isAuthenticated) {
             fetchOrders();
         }
-    }, [isAuthenticated, fetchOrders]);
+    }, [isAuthenticated, fetchOrders, outlet?.id]);
 
     // Timer Ticker every 1s
     useEffect(() => {
