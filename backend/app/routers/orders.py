@@ -53,6 +53,8 @@ def format_order_response(order: Order) -> OrderOut:
         status=order.status,
         subtotal_paise=order.subtotal_paise,
         tax_paise=order.tax_paise,
+        discount_paise=order.discount_paise or 0,
+        coupon_code=order.coupon_code,
         total_paise=order.total_paise,
         payment_status=order.payment_status,
         payment_method=order.payment_method,
