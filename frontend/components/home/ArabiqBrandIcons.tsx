@@ -2,18 +2,17 @@
 
 import React from "react";
 
-/**
- * Regal Arabiq Arched Dome Emblem & Logo
- */
-export function ArabiqLogo({ className = "h-10 w-auto" }: { className?: string }) {
+export function ArabiqLogo({ className = "h-11 w-auto" }: { className?: string }) {
     return (
         <div className={`flex items-center gap-3 select-none ${className}`}>
-            <img src="/logo.png" alt="Arabieq" className="h-10 w-auto object-contain shrink-0" />
+            <div className="relative rounded-2xl overflow-hidden p-0.5 bg-gradient-to-tr from-[#D4AF37] via-[#F3E5AB] to-[#AA7C11] shadow-lg shadow-[#D4AF37]/25 shrink-0">
+                <img src="/logo_3d.png" alt="Arabieq 3D Logo" className="h-10 w-10 sm:h-11 sm:w-11 object-cover rounded-[14px]" />
+            </div>
             <div className="flex flex-col">
-                <p className="text-sm sm:text-base font-extrabold text-amber-400 uppercase tracking-widest leading-none font-sans">
+                <p className="text-sm sm:text-base font-serif font-black bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C59B27] bg-clip-text text-transparent uppercase tracking-[0.2em] leading-none">
                     Arabieq
                 </p>
-                <p className="text-[10px] text-[#E2D4C0]/70 font-medium tracking-normal mt-0.5 font-sans">
+                <p className="text-[9px] sm:text-[10px] text-[#E2D4C0]/80 font-sans font-bold tracking-widest uppercase mt-1">
                     Restaurant &amp; Cafe &bull; Kadiri
                 </p>
             </div>

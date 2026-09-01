@@ -731,6 +731,166 @@ export default function ArabiqHomePage() {
             </section>
 
             {/* ══════════════════════════════════════════════════════════════
+                OUR KADIRI BRANCHES (Dual Prime Outlets)
+               ══════════════════════════════════════════════════════════════ */}
+            <section id="locations" className="py-20 bg-[#120E0A] border-t border-[#D4AF37]/20 relative">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-2xl mx-auto mb-14">
+                        <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold block mb-1">
+                            Visit Our Kadiri Locations
+                        </span>
+                        <h2 className="font-serif text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
+                            OUR KADIRI BRANCHES
+                        </h2>
+                        <ArabesqueDivider className="my-3" />
+                        <p className="text-xs sm:text-sm text-[#C5B39A] font-light">
+                            Experience authentic Arabian hospitality, live charcoal grills, and fine dining at our two prime Kadiri destinations.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Branch 1: Old Arabieq */}
+                        <div className="p-8 rounded-3xl bg-gradient-to-br from-[#1A140F] via-[#140F0B] to-[#0A0705] border-2 border-[#D4AF37]/40 hover:border-[#D4AF37] transition-all duration-300 shadow-2xl flex flex-col justify-between group">
+                            <div className="space-y-5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-10 h-10 rounded-2xl bg-[#D4AF37]/20 border border-[#D4AF37]/50 flex items-center justify-center font-serif font-black text-[#D4AF37] text-base">
+                                            B1
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] font-mono text-[#D4AF37] uppercase font-bold tracking-wider block">
+                                                BRANCH 1 • RAHMATH TOWER
+                                            </span>
+                                            <h3 className="font-serif text-xl sm:text-2xl font-black text-[#F8F3EB] group-hover:text-[#D4AF37] transition-colors">
+                                                Old Arabieq Restaurant
+                                            </h3>
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                                        Fine Dining
+                                    </span>
+                                </div>
+
+                                <p className="text-xs text-[#E2D4C0] italic">
+                                    &ldquo;Famous for 4-Hour Charcoal Slow-Cooked Juicy Mutton & Chicken Mandi feasts and Family Majlis seating.&rdquo;
+                                </p>
+
+                                <div className="space-y-2.5 text-xs text-[#C5B39A] border-y border-[#D4AF37]/20 py-4">
+                                    <div className="flex items-start gap-2.5">
+                                        <MapPin className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
+                                        <span>2nd Floor, Near More Super Market, Rahmath Tower, Madanapalli Road, Kadiri</span>
+                                    </div>
+                                    <div className="flex items-center gap-2.5">
+                                        <Clock className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                                        <span>12:00 PM – 11:30 PM (Daily)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2.5">
+                                        <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                                        <a href="tel:9876543210" className="hover:text-white font-mono font-bold">+91 98765 43210</a>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {["Signature Mandi", "Dum Biryani", "Live Grills", "Starters", "Soups", "Shakes"].map((f) => (
+                                        <span key={f} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-[#2A1F17] text-[#E5C058] border border-[#D4AF37]/30">
+                                            {f}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-6">
+                                <Link
+                                    href="/order?branch=1&table=T1"
+                                    className="py-3 px-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#C59B27] text-black font-serif font-black text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 shadow-lg hover:scale-102 transition"
+                                >
+                                    <QrCode className="w-4 h-4" />
+                                    <span>Table QR (B1)</span>
+                                </Link>
+
+                                <Link
+                                    href="/delivery?branch=1"
+                                    className="py-3 px-4 rounded-2xl bg-[#2A1F17] border border-[#D4AF37]/40 hover:border-[#D4AF37] text-[#D4AF37] font-bold text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 transition"
+                                >
+                                    <Truck className="w-4 h-4" />
+                                    <span>Free Delivery</span>
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Branch 2: New Arabieq */}
+                        <div className="p-8 rounded-3xl bg-gradient-to-br from-[#1A140F] via-[#140F0B] to-[#0A0705] border-2 border-[#D4AF37]/40 hover:border-[#D4AF37] transition-all duration-300 shadow-2xl flex flex-col justify-between group">
+                            <div className="space-y-5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center font-serif font-black text-emerald-300 text-base">
+                                            B2
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold tracking-wider block">
+                                                BRANCH 2 • GIRLS HIGH SCHOOL
+                                            </span>
+                                            <h3 className="font-serif text-xl sm:text-2xl font-black text-[#F8F3EB] group-hover:text-[#D4AF37] transition-colors">
+                                                New Arabieq &amp; Cafe
+                                            </h3>
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
+                                        <Sparkles className="w-3 h-3" /> All-Day Cafe
+                                    </span>
+                                </div>
+
+                                <p className="text-xs text-[#E2D4C0] italic">
+                                    &ldquo;Complete family dining with Morning Tiffins (7 AM), Handcrafted Cafe Drinks, Crispy Dosas & Arabian Grills.&rdquo;
+                                </p>
+
+                                <div className="space-y-2.5 text-xs text-[#C5B39A] border-y border-[#D4AF37]/20 py-4">
+                                    <div className="flex items-start gap-2.5">
+                                        <MapPin className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
+                                        <span>Opposite to Girls High School, Bypass Road, Kadiri, Andhra Pradesh</span>
+                                    </div>
+                                    <div className="flex items-center gap-2.5">
+                                        <Clock className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                                        <span>7:00 AM – 11:30 PM (Daily - Morning to Late Night)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2.5">
+                                        <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                                        <a href="tel:9876543211" className="hover:text-white font-mono font-bold">+91 98765 43211</a>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {["Morning Breakfast", "Crispy Dosas", "Mandi", "Cafe Drinks", "Biryani", "Full Menu"].map((f) => (
+                                        <span key={f} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-[#2A1F17] text-[#E5C058] border border-[#D4AF37]/30">
+                                            {f}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-6">
+                                <Link
+                                    href="/order?branch=2&table=T1"
+                                    className="py-3 px-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#C59B27] text-black font-serif font-black text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 shadow-lg hover:scale-102 transition"
+                                >
+                                    <QrCode className="w-4 h-4" />
+                                    <span>Table QR (B2)</span>
+                                </Link>
+
+                                <Link
+                                    href="/delivery?branch=2"
+                                    className="py-3 px-4 rounded-2xl bg-[#2A1F17] border border-[#D4AF37]/40 hover:border-[#D4AF37] text-[#D4AF37] font-bold text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 transition"
+                                >
+                                    <Truck className="w-4 h-4" />
+                                    <span>Free Delivery</span>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ══════════════════════════════════════════════════════════════
                 7. "LOVED BY OUR GUESTS" (Social Proof & Reviews)
                ══════════════════════════════════════════════════════════════ */}
             <section className="py-20 bg-[#0D0907] border-t border-[#D4AF37]/20">
