@@ -9,7 +9,7 @@ import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/api";
 import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 import { 
-    Settings, Store, MapPin, Phone, IndianRupee, Clock, Tag, Save, Shield, Sparkles, Plus, Trash2, Percent, CheckCircle2 
+    Settings, Store, MapPin, Phone, IndianRupee, Clock, Tag, Save, Shield, Sparkles, Plus, Trash2, Percent, CheckCircle2, Lock, Key, ShieldCheck 
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -85,6 +85,44 @@ export default function SettingsPage() {
             fetchCoupons();
         } catch (err: any) {
             toast.error(err.message || "Failed to deactivate coupon");
+        }
+    };
+
+    // Password Security State
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!currentPassword) {
+            toast.error("Please enter your current password");
+            return;
+        }
+        if (newPassword.length < 8) {
+            toast.error("New password must be at least 8 characters long");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            toast.error("New passwords do not match");
+            return;
+        }
+
+        setIsChangingPassword(true);
+        try {
+            const res = await api.changePassword({
+                current_password: currentPassword,
+                new_password: newPassword,
+            });
+            toast.success(res.message || "Password updated successfully!");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+        } catch (err: any) {
+            toast.error(err.message || "Failed to update password. Check current password.");
+        } finally {
+            setIsChangingPassword(false);
         }
     };
 
@@ -453,6 +491,96 @@ export default function SettingsPage() {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+
+                            {/* ══════════════════════════════════════════════════════════════
+                                3. ACCOUNT SECURITY & MASTER PASSWORD
+                               ══════════════════════════════════════════════════════════════ */}
+                            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-cream-200">
+                                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-cream-200">
+                                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                                        <ShieldCheck className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-black text-espresso-950">Account Security &amp; Master Credentials</h2>
+                                        <p className="text-xs text-espresso-500">Update your private master login password safely with bcrypt encryption.</p>
+                                    </div>
+                                </div>
+
+                                <form onSubmit={handlePasswordChange} className="max-w-xl space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1.5 flex items-center gap-1.5">
+                                            <Key className="w-3.5 h-3.5 text-espresso-400" />
+                                            <span>Current Password *</span>
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={currentPassword}
+                                            onChange={(e) => setCurrentPassword(e.target.value)}
+                                            placeholder="Enter your existing account password"
+                                            required
+                                            className="w-full px-4 py-2.5 rounded-2xl border border-cream-300 text-sm font-medium focus:outline-none focus:border-indigo-500 bg-cream-50/50"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1.5 flex items-center gap-1.5">
+                                                <Lock className="w-3.5 h-3.5 text-indigo-500" />
+                                                <span>New Password *</span>
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                placeholder="Min. 8 characters"
+                                                required
+                                                minLength={8}
+                                                className="w-full px-4 py-2.5 rounded-2xl border border-cream-300 text-sm font-medium focus:outline-none focus:border-indigo-500 bg-cream-50/50"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1.5 flex items-center gap-1.5">
+                                                <Lock className="w-3.5 h-3.5 text-indigo-500" />
+                                                <span>Confirm New Password *</span>
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                placeholder="Re-type new password"
+                                                required
+                                                minLength={8}
+                                                className="w-full px-4 py-2.5 rounded-2xl border border-cream-300 text-sm font-medium focus:outline-none focus:border-indigo-500 bg-cream-50/50"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex items-start gap-2.5 text-xs text-indigo-900">
+                                        <Shield className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                                        <p className="leading-relaxed">
+                                            <strong>Security Policy:</strong> Passwords must be at least 8 characters long. After changing your password, any active brute-force lockouts are cleared, and all events are logged to the security audit trail.
+                                        </p>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <button
+                                            type="submit"
+                                            disabled={isChangingPassword}
+                                            className="px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider shadow-md transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                        >
+                                            {isChangingPassword ? (
+                                                <span>Updating Password...</span>
+                                            ) : (
+                                                <>
+                                                    <Lock className="w-3.5 h-3.5" />
+                                                    <span>Update Master Password</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
 
                             {/* Create Coupon Modal */}

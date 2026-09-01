@@ -94,6 +94,8 @@ export const api = {
     login: (credentials: { email: string; password: string }) =>
         apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify(credentials) }),
     getMe: () => apiFetch("/api/auth/me"),
+    changePassword: (data: { current_password: string; new_password: string }) =>
+        apiFetch("/api/auth/change-password", { method: "POST", body: JSON.stringify(data) }),
 
     // Categories
     getCategories: (activeOnly = true, outletId?: number) =>

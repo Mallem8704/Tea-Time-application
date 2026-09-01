@@ -1,12 +1,14 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
-from app.schemas import LoginRequest, TokenResponse, UserOut
-from app.auth_utils import verify_password, create_access_token, decode_access_token
+from app.schemas import LoginRequest, TokenResponse, UserOut, ChangePasswordRequest
+from app.auth_utils import verify_password, create_access_token, decode_access_token, get_password_hash
+from app.audit_utils import log_audit
+from app.rate_limiter import auth_limiter
 
 router = APIRouter(prefix="", tags=["Authentication"])
 
@@ -116,17 +118,68 @@ def require_staff_or_owner(
 # ==========================================
 
 @router.post("/login", response_model=TokenResponse)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Authenticate owner or staff user and return JWT access token."""
-    email_clean = request.email.strip().lower()
+def login(request_data: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    """Authenticate owner or staff user with brute-force protection & audit logging."""
+    email_clean = request_data.email.strip().lower()
+
+    # 1. Check brute force lockout
+    auth_limiter.check_pre_login(request, email_clean)
+
+    forwarded = request.headers.get("X-Forwarded-For")
+    client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+    user_agent = request.headers.get("User-Agent", "unknown")
+
     user = db.query(User).filter(User.email == email_clean).first()
 
-    if not user or not verify_password(request.password, user.password_hash):
+    if not user or not verify_password(request_data.password, user.password_hash):
+        auth_limiter.record_failure(request, email_clean)
+        # Log failed attempt
+        try:
+            log_audit(
+                db=db,
+                outlet_id=user.outlet_id if user else 1,
+                user_id=user.id if user else None,
+                action="login_failed",
+                entity_type="auth",
+                entity_id=user.id if user else None,
+                details={
+                    "target_email": email_clean,
+                    "ip": client_ip,
+                    "user_agent": user_agent,
+                    "reason": "invalid_credentials",
+                },
+            )
+            db.commit()
+        except Exception:
+            pass
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # 2. Record successful login
+    auth_limiter.record_success(request, email_clean)
+
+    try:
+        log_audit(
+            db=db,
+            outlet_id=user.outlet_id,
+            user_id=user.id,
+            action="login_success",
+            entity_type="auth",
+            entity_id=user.id,
+            details={
+                "email": user.email,
+                "role": user.role,
+                "ip": client_ip,
+                "user_agent": user_agent,
+            },
+        )
+        db.commit()
+    except Exception:
+        pass
 
     # Create JWT Token with role and outlet claims
     token_claims = {
@@ -149,6 +202,55 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         outlet_id=user.outlet_id,
         user=UserOut.model_validate(user),
     )
+
+
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Securely update account password with complexity validation & audit logging."""
+    if not verify_password(data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password does not match",
+        )
+
+    if data.current_password == data.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password",
+        )
+
+    if len(data.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 8 characters long",
+        )
+
+    # Update password hash
+    current_user.password_hash = get_password_hash(data.new_password)
+
+    log_audit(
+        db=db,
+        outlet_id=current_user.outlet_id,
+        user_id=current_user.id,
+        action="password_changed",
+        entity_type="user",
+        entity_id=current_user.id,
+        details={
+            "user_email": current_user.email,
+            "role": current_user.role,
+        },
+    )
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "Password updated successfully. Please use your new password on next login.",
+    }
 
 
 @router.get("/me", response_model=UserOut)
