@@ -32,6 +32,7 @@ import { ArabiqLogo, ArabesqueDivider, FreeDeliveryEmblem } from "@/components/h
 import { HowItWorksModal } from "@/components/home/HowItWorksModal";
 import { OurStoryModal } from "@/components/home/OurStoryModal";
 import { BranchSelectorModal } from "@/components/home/BranchSelectorModal";
+import { StaffPortalModal } from "@/components/home/StaffPortalModal";
 
 /* ── 5 Authentic Signature Dishes matching Reference ── */
 const SIGNATURE_DISHES = [
@@ -114,6 +115,7 @@ export default function ArabiqHomePage() {
     const [storyOpen, setStoryOpen] = useState(false);
     const [branchModalOpen, setBranchModalOpen] = useState(false);
     const [branchModalMode, setBranchModalMode] = useState<"table" | "delivery" | "all">("all");
+    const [staffModalOpen, setStaffModalOpen] = useState(false);
 
     // Mobile nav drawer
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -165,16 +167,25 @@ export default function ArabiqHomePage() {
                         <a href="#experience" className="hover:text-[#D4AF37] transition py-1">
                             Gallery
                         </a>
-                        <a href="#locations" className="hover:text-[#D4AF37] transition py-1">
+                        <button onClick={() => { setBranchModalMode("all"); setBranchModalOpen(true); }} className="hover:text-[#D4AF37] transition py-1 cursor-pointer uppercase">
                             Locations
-                        </a>
+                        </button>
                         <a href="#contact" className="hover:text-[#D4AF37] transition py-1">
                             Contact
                         </a>
                     </nav>
 
-                    {/* Action Group: Language Toggle + Golden Order CTA */}
+                    {/* Action Group: Staff Portal + Language Toggle + Golden Order CTA */}
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setStaffModalOpen(true)}
+                            title="Staff & Management Portals"
+                            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D4AF37]/30 bg-[#1A140F] hover:bg-[#D4AF37]/15 hover:border-[#D4AF37] text-[#D4AF37] text-[11px] font-bold tracking-wider transition cursor-pointer"
+                        >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>STAFF</span>
+                        </button>
+
                         <LanguageToggle />
 
                         <button
@@ -831,13 +842,23 @@ export default function ArabiqHomePage() {
                                     </a>
                                 </li>
                                 <li>
-                                    <button onClick={openTablePicker} className="hover:text-[#D4AF37] transition cursor-pointer">
-                                        Kadiri Locations
+                                    <button onClick={() => { setBranchModalMode("all"); setBranchModalOpen(true); }} className="hover:text-[#D4AF37] transition cursor-pointer">
+                                        Kadiri Locations (2 Branches)
                                     </button>
                                 </li>
                                 <li>
-                                    <Link href="/admin/login" className="hover:text-[#D4AF37] transition">
-                                        Staff & Admin Portal
+                                    <button onClick={() => setStaffModalOpen(true)} className="hover:text-[#D4AF37] transition cursor-pointer text-left font-bold text-[#E5C058]">
+                                        Staff & Admin Portals 🔐
+                                    </button>
+                                </li>
+                                <li>
+                                    <Link href="/admin/kds" className="hover:text-[#D4AF37] transition text-[10px] opacity-80">
+                                        • Kitchen Display (KDS)
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/captain" className="hover:text-[#D4AF37] transition text-[10px] opacity-80">
+                                        • Captain Order App
                                     </Link>
                                 </li>
                             </ul>
@@ -908,6 +929,7 @@ export default function ArabiqHomePage() {
             <HowItWorksModal isOpen={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
             <OurStoryModal isOpen={storyOpen} onClose={() => setStoryOpen(false)} />
             <BranchSelectorModal isOpen={branchModalOpen} onClose={() => setBranchModalOpen(false)} mode={branchModalMode} />
+            <StaffPortalModal isOpen={staffModalOpen} onClose={() => setStaffModalOpen(false)} />
         </div>
     );
 }
