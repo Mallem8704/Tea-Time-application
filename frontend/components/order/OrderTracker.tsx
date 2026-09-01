@@ -395,13 +395,13 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                                     <span>Paytm</span>
                                 </a>
 
-                                {/* Any UPI App */}
+                                {/* WhatsApp / Other UPI App */}
                                 <a
                                     href={dynamicUpi?.upi_uri || "#"}
-                                    className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+                                    className="p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-extrabold text-xs flex items-center justify-center gap-1.5 border border-emerald-300 shadow-2xs transition"
                                 >
-                                    <Smartphone className="w-3.5 h-3.5" />
-                                    <span>Other UPI</span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                                    <span>WhatsApp / BHIM</span>
                                 </a>
                             </div>
                         </div>
