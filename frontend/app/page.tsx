@@ -1069,9 +1069,19 @@ export default function ArabiqHomePage() {
                         </div>
                     </div>
 
-                    {/* Bottom Copyright */}
+                    {/* Bottom Copyright & Tech Partner Credit */}
                     <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-[#7A6958]">
-                        <p>&copy; {new Date().getFullYear()} Arabiq Restaurant. All Rights Reserved.</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-center sm:text-left">
+                            <p>&copy; {new Date().getFullYear()} Arabiq Restaurant. All Rights Reserved.</p>
+                            <span className="hidden sm:inline text-[#D4AF37]/30">•</span>
+                            <p className="text-[#9E8B76]">
+                                Powered by <span className="text-[#D4AF37] font-bold">@vidyajaya edtech Pvt Ltd.</span>
+                                {" "}•{" "}
+                                <a href="mailto:hello@vidyajaya.in" className="text-[#C5B39A] hover:text-white underline decoration-[#D4AF37]/40 transition">
+                                    hello@vidyajaya.in
+                                </a>
+                            </p>
+                        </div>
                         <div className="flex items-center gap-6">
                             <a href="#" className="hover:text-[#D4AF37] transition">Privacy Policy</a>
                             <a href="#" className="hover:text-[#D4AF37] transition">Terms & Conditions</a>
