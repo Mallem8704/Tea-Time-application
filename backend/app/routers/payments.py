@@ -409,6 +409,7 @@ async def record_order_payment(
 # ==========================================
 
 @router.post("/{order_id}/split-payment")
+@router.post("/{order_id}/split")
 async def split_order_payment(
     order_id: int,
     data: SplitPaymentRequest,

@@ -28,6 +28,7 @@ def get_effective_outlet_id(outlet_id: Optional[int], db: Session) -> int:
 
 
 @router.get("", response_model=List[OutletOut])
+@router.get("/all", response_model=List[OutletOut])
 @router.get("/list", response_model=List[OutletOut])
 def list_outlets(db: Session = Depends(get_db)):
     """List all active restaurant branches / outlets."""

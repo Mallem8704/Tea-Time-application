@@ -34,102 +34,115 @@ app = FastAPI(
 def on_startup():
     """Ensure database schema tables exist, run column migrations, and seed initial store data if database is empty."""
     Base.metadata.create_all(bind=engine)
-    
-    # Run auto-migrations for PostgreSQL tables
+
+    # Run auto-migrations for SQLite & PostgreSQL tables
     from sqlalchemy import text
     with engine.begin() as conn:
-        migrations = [
-            "ALTER TABLE orders ALTER COLUMN table_id DROP NOT NULL;",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type VARCHAR(50) DEFAULT 'dine_in';",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150);",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50);",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50);",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee_paise INTEGER DEFAULT 0;",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(100);",
-            "CREATE UNIQUE INDEX IF NOT EXISTS ix_orders_idempotency_key ON orders(idempotency_key) WHERE idempotency_key IS NOT NULL;",
-            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS opening_hours VARCHAR(100);",
-            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS tagline VARCHAR(255);",
-            "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);",
-            "ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS has_variants BOOLEAN DEFAULT FALSE;",
-            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id INTEGER;",
-            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_name VARCHAR(100);",
-            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS selected_addons_json TEXT;",
-            """CREATE TABLE IF NOT EXISTS menu_item_variants (
-                id SERIAL PRIMARY KEY,
-                item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
-                name VARCHAR(100) NOT NULL,
-                name_te VARCHAR(100),
-                price_paise INTEGER NOT NULL,
-                is_default BOOLEAN DEFAULT FALSE,
-                is_available BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );""",
-            """CREATE TABLE IF NOT EXISTS menu_item_addons (
-                id SERIAL PRIMARY KEY,
-                item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
-                name VARCHAR(100) NOT NULL,
-                name_te VARCHAR(100),
-                price_paise INTEGER NOT NULL,
-                is_available BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );""",
-            "CREATE INDEX IF NOT EXISTS ix_menu_item_variants_item_id ON menu_item_variants(item_id);",
-            "CREATE INDEX IF NOT EXISTS ix_menu_item_addons_item_id ON menu_item_addons(item_id);",
-            """CREATE TABLE IF NOT EXISTS customers (
-                id SERIAL PRIMARY KEY,
-                phone VARCHAR(20) UNIQUE NOT NULL,
-                name VARCHAR(100),
-                email VARCHAR(120),
-                default_address TEXT,
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                last_order_at TIMESTAMP WITHOUT TIME ZONE
-            );""",
-            "CREATE INDEX IF NOT EXISTS ix_customers_phone ON customers(phone);",
-            """CREATE TABLE IF NOT EXISTS customer_addresses (
-                id SERIAL PRIMARY KEY,
-                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-                label VARCHAR(50) DEFAULT 'Home',
-                address_line TEXT NOT NULL,
-                landmark VARCHAR(150),
-                is_default BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );""",
-            "CREATE INDEX IF NOT EXISTS ix_customer_addresses_customer_id ON customer_addresses(customer_id);",
-            """CREATE TABLE IF NOT EXISTS customer_otps (
-                id SERIAL PRIMARY KEY,
-                phone VARCHAR(20) NOT NULL,
-                otp_code VARCHAR(10) NOT NULL,
-                expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-                is_used BOOLEAN DEFAULT FALSE,
-                attempts INTEGER DEFAULT 0,
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );""",
-            "CREATE INDEX IF NOT EXISTS ix_customer_otps_phone ON customer_otps(phone);",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_paise INTEGER DEFAULT 0;",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(50);",
-            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_id INTEGER;",
-            """CREATE TABLE IF NOT EXISTS coupons (
-                id SERIAL PRIMARY KEY,
-                outlet_id INTEGER REFERENCES outlets(id) ON DELETE SET NULL,
-                code VARCHAR(50) UNIQUE NOT NULL,
-                description VARCHAR(255),
-                discount_type VARCHAR(20) DEFAULT 'flat',
-                discount_value INTEGER NOT NULL,
-                min_order_paise INTEGER DEFAULT 0,
-                max_discount_paise INTEGER,
-                usage_limit INTEGER,
-                times_used INTEGER DEFAULT 0,
-                is_active BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );""",
-            "CREATE INDEX IF NOT EXISTS ix_coupons_code ON coupons(code);",
-        ]
-        for sql in migrations:
-            try:
-                conn.execute(text(sql))
-            except Exception as mig_err:
-                print(f"[MIGRATION] Note: {mig_err}")
+        if engine.dialect.name == "sqlite":
+            for table_name, col_name, col_type in [
+                ("menu_items", "has_variants", "BOOLEAN DEFAULT 0"),
+                ("orders", "order_type", "VARCHAR(50) DEFAULT 'dine_in'"),
+                ("orders", "customer_name", "VARCHAR(150)"),
+                ("orders", "customer_phone", "VARCHAR(50)"),
+                ("orders", "delivery_address", "TEXT"),
+                ("orders", "delivery_status", "VARCHAR(50)"),
+                ("orders", "delivery_fee_paise", "INTEGER DEFAULT 0"),
+                ("orders", "idempotency_key", "VARCHAR(100)"),
+                ("orders", "discount_paise", "INTEGER DEFAULT 0"),
+                ("orders", "coupon_code", "VARCHAR(50)"),
+                ("orders", "coupon_id", "INTEGER"),
+                ("outlets", "opening_hours", "VARCHAR(100)"),
+                ("outlets", "tagline", "VARCHAR(255)"),
+                ("outlets", "logo_url", "VARCHAR(500)"),
+                ("order_items", "variant_id", "INTEGER"),
+                ("order_items", "variant_name", "VARCHAR(100)"),
+                ("order_items", "selected_addons_json", "TEXT"),
+            ]:
+                try:
+                    columns = [row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table_name})").fetchall()]
+                    if col_name not in columns:
+                        conn.exec_driver_sql(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type};")
+                except Exception as e:
+                    pass
+        else:
+            migrations = [
+                "ALTER TABLE orders ALTER COLUMN table_id DROP NOT NULL;",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type VARCHAR(50) DEFAULT 'dine_in';",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150);",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50);",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50);",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee_paise INTEGER DEFAULT 0;",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(100);",
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_orders_idempotency_key ON orders(idempotency_key) WHERE idempotency_key IS NOT NULL;",
+                "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS opening_hours VARCHAR(100);",
+                "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS tagline VARCHAR(255);",
+                "ALTER TABLE outlets ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);",
+                "ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS has_variants BOOLEAN DEFAULT FALSE;",
+                "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id INTEGER;",
+                "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_name VARCHAR(100);",
+                "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS selected_addons_json TEXT;",
+                """CREATE TABLE IF NOT EXISTS menu_item_variants (
+                    id SERIAL PRIMARY KEY,
+                    item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+                    name VARCHAR(100) NOT NULL,
+                    name_te VARCHAR(100),
+                    price_paise INTEGER NOT NULL,
+                    is_default BOOLEAN DEFAULT FALSE,
+                    is_available BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );""",
+                """CREATE TABLE IF NOT EXISTS menu_item_addons (
+                    id SERIAL PRIMARY KEY,
+                    item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+                    name VARCHAR(100) NOT NULL,
+                    name_te VARCHAR(100),
+                    price_paise INTEGER NOT NULL,
+                    is_available BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );""",
+                "CREATE INDEX IF NOT EXISTS ix_menu_item_variants_item_id ON menu_item_variants(item_id);",
+                "CREATE INDEX IF NOT EXISTS ix_menu_item_addons_item_id ON menu_item_addons(item_id);",
+                """CREATE TABLE IF NOT EXISTS customers (
+                    id SERIAL PRIMARY KEY,
+                    phone VARCHAR(20) UNIQUE NOT NULL,
+                    name VARCHAR(100),
+                    email VARCHAR(120),
+                    default_address TEXT,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    last_order_at TIMESTAMP WITHOUT TIME ZONE
+                );""",
+                "CREATE INDEX IF NOT EXISTS ix_customers_phone ON customers(phone);",
+                """CREATE TABLE IF NOT EXISTS customer_addresses (
+                    id SERIAL PRIMARY KEY,
+                    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                    label VARCHAR(50) DEFAULT 'Home',
+                    address_line TEXT NOT NULL,
+                    landmark VARCHAR(150),
+                    is_default BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );""",
+                "CREATE INDEX IF NOT EXISTS ix_customer_addresses_customer_id ON customer_addresses(customer_id);",
+                """CREATE TABLE IF NOT EXISTS customer_otps (
+                    id SERIAL PRIMARY KEY,
+                    phone VARCHAR(20) NOT NULL,
+                    otp_code VARCHAR(10) NOT NULL,
+                    expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                    is_used BOOLEAN DEFAULT FALSE,
+                    attempts INTEGER DEFAULT 0,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );""",
+                "CREATE INDEX IF NOT EXISTS ix_customer_otps_phone ON customer_otps(phone);",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_paise INTEGER DEFAULT 0;",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(50);",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_id INTEGER;",
+                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_notes TEXT;",
+            ]
+            for mig in migrations:
+                try:
+                    conn.execute(text(mig))
+                except Exception:
+                    pass
 
     # Seed Default Coupons
     try:

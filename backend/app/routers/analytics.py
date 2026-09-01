@@ -12,6 +12,7 @@ router = APIRouter(prefix="", tags=["Sales & Analytics"])
 
 
 @router.get("/summary")
+@router.get("/today")
 def get_analytics_summary(
     outlet_id: Optional[int] = Query(None, description="Filter by outlet ID"),
     start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),

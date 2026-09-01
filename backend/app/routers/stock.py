@@ -140,6 +140,7 @@ def get_stock_logs(
 
 
 @router.post("/adjust", response_model=MenuItemOut)
+@router.post("/restock", response_model=MenuItemOut)
 def adjust_stock_manual(
     data: StockAdjustmentCreate,
     current_user: User = Depends(require_staff_or_owner),
