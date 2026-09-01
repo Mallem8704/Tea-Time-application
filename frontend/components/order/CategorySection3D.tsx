@@ -194,21 +194,20 @@ export function CategorySection3D({
                 </div>
             </div>
 
-            {/* Items Grid — each cell fixed at 390px height */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Items Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {items.map((item, idx) => {
                     const cartItem = cart.find((i) => i.id === item.id);
                     return (
-                        <div key={item.id} style={{ height: "390px" }}>
-                            <MenuItemCard3D
-                                item={item}
-                                cartQty={cartItem?.qty || 0}
-                                onAdd={() => onAdd(item)}
-                                onRemove={() => onRemove(item.id)}
-                                staggerIndex={idx}
-                                themeColor={isFocusCategory ? theme.color : "terracotta"}
-                            />
-                        </div>
+                        <MenuItemCard3D
+                            key={item.id}
+                            item={item}
+                            cartQty={cartItem?.qty || 0}
+                            onAdd={() => onAdd(item)}
+                            onRemove={() => onRemove(item.id)}
+                            staggerIndex={idx}
+                            themeColor={isFocusCategory ? theme.color : "terracotta"}
+                        />
                     );
                 })}
             </div>

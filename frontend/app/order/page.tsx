@@ -682,25 +682,24 @@ function CustomerOrderContent() {
                         ))}
                     </div>
                 ) : (
-                    /* ═══ SINGLE CATEGORY — 3D Grid ═══ */
+                    /* ═══ SINGLE CATEGORY — Grid ═══ */
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         {filteredItems.map((item, idx) => {
                             const cartItem = cart.find((i) => i.id === item.id);
                             return (
-                                <div key={item.id} style={{ height: "380px" }}>
-                                    <MenuItemCard3D
-                                        item={item}
-                                        cartQty={cartItem?.qty || 0}
-                                        onAdd={() => handleAddToCart(item)}
-                                        onRemove={() => handleRemoveFromCart(item.id)}
-                                        staggerIndex={idx}
-                                        themeColor={
-                                            FOCUS_CATEGORY_IDS.includes(item.category_id)
-                                                ? undefined
-                                                : "terracotta"
-                                        }
-                                    />
-                                </div>
+                                <MenuItemCard3D
+                                    key={item.id}
+                                    item={item}
+                                    cartQty={cartItem?.qty || 0}
+                                    onAdd={() => handleAddToCart(item)}
+                                    onRemove={() => handleRemoveFromCart(item.id)}
+                                    staggerIndex={idx}
+                                    themeColor={
+                                        FOCUS_CATEGORY_IDS.includes(item.category_id)
+                                            ? undefined
+                                            : "terracotta"
+                                    }
+                                />
                             );
                         })}
                     </div>
