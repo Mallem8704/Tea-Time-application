@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models import Order, OrderItem, MenuItem, MenuItemVariant, MenuItemAddon, CafeTable, Outlet, StockLog, User, Coupon
 from app.schemas import OrderCreate, OrderStatusUpdate, OrderAppendItems, OrderTransferTable, OrderOut, OrderItemOut
-from app.routers.auth import require_staff_or_owner
+from app.routers.auth import require_staff_or_owner, get_current_user_optional
 from app.routers.ws import manager
 from app.audit_utils import log_audit
 from app.routers.outlets import get_effective_outlet_id
@@ -452,14 +452,20 @@ def list_orders(
     payment_status: Optional[str] = Query(None, description="Filter by payment status"),
     date: Optional[str] = Query(None, description="Filter by date YYYY-MM-DD"),
     limit: int = Query(100, ge=1, le=500),
-    current_user: User = Depends(require_staff_or_owner),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Admin endpoint to list and filter cafe orders."""
-    if current_user.role == "owner" and outlet_id is not None:
+    if current_user and current_user.role == "owner" and outlet_id is not None:
         target_outlet_id = get_effective_outlet_id(outlet_id, db)
-    else:
+    elif current_user and current_user.role != "owner":
         target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+    elif outlet_id is not None:
+        target_outlet_id = get_effective_outlet_id(outlet_id, db)
+    elif current_user is not None:
+        target_outlet_id = get_effective_outlet_id(current_user.outlet_id, db)
+    else:
+        target_outlet_id = get_effective_outlet_id(None, db)
 
     query = (
         db.query(Order)
