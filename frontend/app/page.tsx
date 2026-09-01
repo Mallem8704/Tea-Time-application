@@ -696,29 +696,29 @@ export default function ArabiqHomePage() {
                         <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md h-44 group">
                                 <img
-                                    src="/dishes/3d_mandi.jpg"
-                                    alt="Lantern Ambiance"
+                                    src="/dishes/chicken_lollipop.jpg"
+                                    alt="Chicken Lollipop"
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                             </div>
                             <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md h-44 group">
                                 <img
-                                    src="/dishes/3d_biryani.jpg"
-                                    alt="Master Chef Preparation"
+                                    src="/dishes/mutton_maraq_soup.jpg"
+                                    alt="Mutton Maraq Soup"
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                             </div>
                             <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md h-44 group">
                                 <img
-                                    src="/dishes/3d_nonveg_starters.jpg"
-                                    alt="Charcoal Fire Grill"
+                                    src="/dishes/chicken_65.jpg"
+                                    alt="Chicken 65"
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                             </div>
                             <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md h-44 group">
                                 <img
-                                    src="/dishes/3d_veg_starters.jpg"
-                                    alt="Majlis Dining Ambiance"
+                                    src="/dishes/double_ka_meetha.jpg"
+                                    alt="Double Ka Meetha"
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                             </div>
