@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
-import { LanguageToggle } from "@/components/LanguageToggle";
 import { ArabiqLogo, ArabesqueDivider, FreeDeliveryEmblem } from "@/components/home/ArabiqBrandIcons";
 import { HowItWorksModal } from "@/components/home/HowItWorksModal";
 import { OurStoryModal } from "@/components/home/OurStoryModal";
@@ -175,7 +174,7 @@ export default function ArabiqHomePage() {
                         </a>
                     </nav>
 
-                    {/* Action Group: Staff Portal + Language Toggle + Golden Order CTA */}
+                    {/* Action Group: Staff Portal + Golden Order CTA */}
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setStaffModalOpen(true)}
@@ -185,8 +184,6 @@ export default function ArabiqHomePage() {
                             <ShieldCheck className="w-3.5 h-3.5" />
                             <span>STAFF</span>
                         </button>
-
-                        <LanguageToggle />
 
                         <button
                             onClick={() => {
