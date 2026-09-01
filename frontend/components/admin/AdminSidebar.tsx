@@ -102,7 +102,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
                         </div>
                         <div className="overflow-hidden">
                             <h4 className="text-xs font-bold text-white truncate">
-                                {user?.name || (isOwner ? "Branch Owner" : "Staff")}
+                                {isOwner ? "Branch Admin" : "Floor Staff"}
                             </h4>
                             <span className="text-[10px] uppercase font-extrabold tracking-wider text-saffron-400">
                                 {user?.role || "Staff"} &bull; B{user?.outlet_id === 56 || user?.outlet_id === 2 ? "2" : "1"}

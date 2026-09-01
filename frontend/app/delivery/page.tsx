@@ -1234,7 +1234,7 @@ function DeliveryOrderContent() {
                                                 required
                                                 value={customerName}
                                                 onChange={(e) => setCustomerName(e.target.value)}
-                                                placeholder="e.g. Sreenivasulu"
+                                                placeholder="e.g. Rahul / Sameer"
                                                 className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-terracotta-200 focus:ring-2 focus:ring-terracotta-500 bg-cream-50/20 text-espresso-900 placeholder:text-espresso-400"
                                             />
                                         </div>

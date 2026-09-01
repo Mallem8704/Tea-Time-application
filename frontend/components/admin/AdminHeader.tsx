@@ -159,7 +159,7 @@ export function AdminHeader({
 
                     {/* Role Pill */}
                     <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-extrabold tracking-wider uppercase border border-cream-300 bg-cream-100 text-espresso-800">
-                        <span>{user?.name ? `${user.name} (${user.role})` : user?.role || "Staff"}</span>
+                        <span>{isOwner ? "Owner Cockpit" : "Staff Portal"}</span>
                     </div>
                 </div>
             </header>
@@ -228,7 +228,7 @@ export function AdminHeader({
                                         {isOwner ? <Shield className="w-4 h-4 text-saffron-400" /> : <User className="w-4 h-4 text-emerald-400" />}
                                     </div>
                                     <div>
-                                        <p className="text-xs font-bold text-white truncate max-w-[120px]">{user?.name || "Staff"}</p>
+                                        <p className="text-xs font-bold text-white truncate max-w-[120px]">{isOwner ? "Branch Admin" : "Floor Staff"}</p>
                                         <p className="text-[10px] text-espresso-400 uppercase">{user?.role || "Staff"}</p>
                                     </div>
                                 </div>

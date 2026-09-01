@@ -86,22 +86,22 @@ def seed_database(clear_existing: bool = True):
 
         # USERS for Branch 1
         db.add_all([
-            User(outlet_id=outlet1.id, name="Sreenivasulu", email="owner@arabieq.com",
+            User(outlet_id=outlet1.id, name="Branch Manager", email="owner@arabieq.com",
                  password_hash=get_password_hash("admin123"), role="owner"),
-            User(outlet_id=outlet1.id, name="Suresh Kumar", email="staff1@arabieq.com",
+            User(outlet_id=outlet1.id, name="Floor Staff", email="staff1@arabieq.com",
                  password_hash=get_password_hash("staff123"), role="staff"),
             # Legacy emails for backward compatibility
-            User(outlet_id=outlet1.id, name="Sreenivasulu", email="owner@teatime.com",
+            User(outlet_id=outlet1.id, name="Branch Manager", email="owner@teatime.com",
                  password_hash=get_password_hash("admin123"), role="owner"),
-            User(outlet_id=outlet1.id, name="Suresh Kumar", email="staff@teatime.com",
+            User(outlet_id=outlet1.id, name="Floor Staff", email="staff@teatime.com",
                  password_hash=get_password_hash("staff123"), role="staff"),
         ])
 
         # USERS for Branch 2
         db.add_all([
-            User(outlet_id=outlet2.id, name="Sreenivasulu", email="owner2@arabieq.com",
+            User(outlet_id=outlet2.id, name="Branch Manager", email="owner2@arabieq.com",
                  password_hash=get_password_hash("admin123"), role="owner"),
-            User(outlet_id=outlet2.id, name="Mohammed Rafiq", email="staff2@arabieq.com",
+            User(outlet_id=outlet2.id, name="Floor Staff", email="staff2@arabieq.com",
                  password_hash=get_password_hash("staff123"), role="staff"),
         ])
         db.flush()

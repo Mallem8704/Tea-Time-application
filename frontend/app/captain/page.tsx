@@ -429,7 +429,7 @@ export default function CaptainWaiterPage() {
                             </span>
                         </div>
                         <p className="text-[11px] text-white/50">
-                            {outlet?.name || "Arabieq"} • {user?.name || "Floor Captain"}
+                            {outlet?.name || "Arabieq"} • Floor Captain
                         </p>
                     </div>
                 </div>
