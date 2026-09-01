@@ -5,50 +5,17 @@ import React from "react";
 /**
  * Regal Arabiq Arched Dome Emblem & Logo
  */
-export function ArabiqLogo({ className = "h-12 w-auto" }: { className?: string }) {
+export function ArabiqLogo({ className = "h-10 w-auto" }: { className?: string }) {
     return (
         <div className={`flex items-center gap-3 select-none ${className}`}>
-            <svg
-                viewBox="0 0 100 100"
-                className="w-10 h-10 shrink-0 fill-none"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                {/* Outer Arch */}
-                <path
-                    d="M 50,5 C 25,5 10,25 10,55 L 10,92 L 90,92 L 90,55 C 90,25 75,5 50,5 Z"
-                    stroke="#D4AF37"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                />
-                {/* Inner Decorative Arch */}
-                <path
-                    d="M 50,15 C 32,15 20,32 20,58 L 20,84 L 80,84 L 80,58 C 80,32 68,15 50,15 Z"
-                    stroke="#E5C058"
-                    strokeWidth="1.8"
-                    strokeDasharray="4 2"
-                />
-                {/* Crescent & Star Point */}
-                <path
-                    d="M 50,26 C 45,26 42,32 45,37 C 48,42 55,40 56,35 C 57,30 54,26 50,26 Z"
-                    fill="#D4AF37"
-                />
-                {/* Islamic Lattice Window Pattern */}
-                <path
-                    d="M 50,44 L 62,56 L 50,68 L 38,56 Z M 50,38 L 50,74 M 32,56 L 68,56"
-                    stroke="#D4AF37"
-                    strokeWidth="1.5"
-                />
-                {/* Base Pedestal */}
-                <line x1="6" y1="92" x2="94" y2="92" stroke="#D4AF37" strokeWidth="4" strokeLinecap="round" />
-            </svg>
-
+            <img src="/logo.png" alt="Arabieq" className="h-10 w-auto object-contain shrink-0" />
             <div className="flex flex-col">
-                <span className="font-serif tracking-[0.25em] text-xl sm:text-2xl font-black bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#AA7C11] bg-clip-text text-transparent uppercase leading-none">
-                    ARABIQ
-                </span>
-                <span className="text-[8px] sm:text-[9px] font-sans font-bold tracking-[0.35em] text-[#C59B27]/90 uppercase mt-1">
-                    ARABIC RESTAURANT
-                </span>
+                <p className="text-sm sm:text-base font-extrabold text-amber-400 uppercase tracking-widest leading-none font-sans">
+                    Arabieq
+                </p>
+                <p className="text-[10px] text-[#E2D4C0]/70 font-medium tracking-normal mt-0.5 font-sans">
+                    Restaurant &amp; Cafe &bull; Kadiri
+                </p>
             </div>
         </div>
     );
