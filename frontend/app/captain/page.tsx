@@ -940,7 +940,7 @@ export default function CaptainWaiterPage() {
 
                     {/* Staged Cart Items Bar at Bottom */}
                     {cartItems.length > 0 && (
-                        <div className="p-3 bg-[#181410] border-t border-white/10 space-y-2">
+                        <div className="p-3 bg-[#181410] border-t border-white/10 space-y-2 pb-safe shrink-0">
                             <div className="flex items-center justify-between text-xs font-bold text-white/70">
                                 <span>Staged for KOT ({cartItems.length})</span>
                                 <span className="font-mono text-amber-400">{formatRupees(cartTotalPaise)}</span>

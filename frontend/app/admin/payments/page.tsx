@@ -183,7 +183,7 @@ export default function AdminPaymentsPage() {
                 />
 
                 {/* Summary KPI Cards */}
-                <div className="p-6 pb-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+                <div className="p-4 sm:p-6 pb-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 shrink-0">
                     {/* Card 1: Total Collections */}
                     <div className="bg-white rounded-3xl p-5 border border-cream-300 shadow-xs flex items-center justify-between">
                         <div>

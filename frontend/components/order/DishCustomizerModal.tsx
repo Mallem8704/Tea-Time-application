@@ -318,7 +318,7 @@ export function DishCustomizerModal({
                 </div>
 
                 {/* Footer Bar: Quantity & Add Button */}
-                <div className="p-4 sm:p-5 border-t border-terracotta-100 bg-white/95 backdrop-blur-md flex items-center justify-between gap-4">
+                <div className="p-4 sm:p-5 border-t border-terracotta-100 bg-white/95 backdrop-blur-md flex items-center justify-between gap-3 sm:gap-4 pb-safe shrink-0">
                     {/* Quantity Stepper */}
                     <div className="flex items-center gap-1.5 bg-cream-100 border border-cream-200 rounded-xl p-1 shrink-0">
                         <button

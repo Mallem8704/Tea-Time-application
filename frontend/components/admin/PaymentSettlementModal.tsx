@@ -204,8 +204,8 @@ export function PaymentSettlementModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-            <div className="bg-[#120e09] border border-amber-400/40 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+            <div className="bg-[#120e09] border border-amber-400/40 rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col text-white">
                 {/* Header */}
                 <div className="p-5 bg-gradient-to-r from-amber-950/80 via-black to-amber-950/80 border-b border-white/10 flex items-center justify-between">
                     <div>

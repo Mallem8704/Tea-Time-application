@@ -185,13 +185,13 @@ export default function KitchenDisplaySystemPage() {
                 />
 
                 {/* Subheader Toolbar */}
-                <div className="p-5 bg-espresso-900 border-b border-espresso-800 flex flex-wrap items-center justify-between gap-4 shrink-0">
+                <div className="p-4 sm:p-5 bg-espresso-900 border-b border-espresso-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-saffron-500/20 border border-saffron-500/30 flex items-center justify-center text-saffron-400 shrink-0">
                             <ChefHat className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black tracking-tight text-white flex items-center gap-2.5">
+                            <h2 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2.5">
                                 <span>Kitchen Display System (KDS)</span>
                                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-saffron-500/20 text-saffron-300 font-extrabold border border-saffron-500/30">
                                     {kdsOrders.length} Active Tickets
@@ -203,9 +203,10 @@ export default function KitchenDisplaySystemPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                         {/* Audio Chime Toggle */}
                         <button
+                            type="button"
                             onClick={() => {
                                 const next = !soundEnabled;
                                 setSoundEnabled(next);
@@ -245,9 +246,9 @@ export default function KitchenDisplaySystemPage() {
                 </div>
 
                 {/* KDS Tickets Grid */}
-                <main className="flex-1 overflow-y-auto p-6 bg-espresso-950">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-espresso-950">
                     {isLoadingOrders ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                             {[1, 2, 3, 4].map((i) => (
                                 <div key={i} className="h-64 rounded-3xl bg-espresso-900/60 border border-espresso-800 animate-pulse p-5 flex flex-col justify-between">
                                     <div className="space-y-3">
@@ -271,7 +272,7 @@ export default function KitchenDisplaySystemPage() {
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                             {kdsOrders.map((order) => {
                                 const elapsed = getElapsedSeconds(order.created_at);
                                 const isOverdue = elapsed > 900; // > 15m

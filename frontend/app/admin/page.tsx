@@ -64,6 +64,7 @@ export default function AdminLiveOrdersKanbanPage() {
     const [isLoadingOrders, setIsLoadingOrders] = useState<boolean>(true);
     const [animatingOrderId, setAnimatingOrderId] = useState<number | null>(null);
     const [orderTypeFilter, setOrderTypeFilter] = useState<"all" | "dine_in" | "delivery">("all");
+    const [mobileColumnFilter, setMobileColumnFilter] = useState<string>("all");
 
     // Auth Route Guard
     useEffect(() => {
@@ -290,9 +291,54 @@ export default function AdminLiveOrdersKanbanPage() {
                         </div>
                     </div>
 
-                    {/* Columns Grid */}
-                    <div className="flex-1 flex md:grid md:grid-cols-5 gap-4 min-w-[1300px] md:min-w-0 pb-2 overflow-x-auto md:overflow-hidden snap-x">
+                    {/* Mobile Column Switcher (Visible on phone screens < md) */}
+                    <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setMobileColumnFilter("all")}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
+                                mobileColumnFilter === "all"
+                                    ? "bg-espresso-950 text-white shadow-xs"
+                                    : "bg-white border border-cream-300 text-espresso-700"
+                            }`}
+                        >
+                            All Stages
+                        </button>
                         {KANBAN_COLUMNS.map((col) => {
+                            const count = orders.filter((o) => {
+                                if (orderTypeFilter === "dine_in" && o.order_type === "delivery") return false;
+                                if (orderTypeFilter === "delivery" && o.order_type !== "delivery") return false;
+                                if (col.key === "ready") return o.status === "ready" || o.status === "out_for_delivery";
+                                if (col.key === "served") return o.status === "served" || o.status === "delivered";
+                                return o.status === col.key;
+                            }).length;
+
+                            return (
+                                <button
+                                    key={col.key}
+                                    type="button"
+                                    onClick={() => setMobileColumnFilter(col.key)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer ${
+                                        mobileColumnFilter === col.key
+                                            ? "bg-espresso-950 text-white shadow-xs"
+                                            : "bg-white border border-cream-300 text-espresso-700"
+                                    }`}
+                                >
+                                    <span className={`w-2 h-2 rounded-full ${col.headerBg}`} />
+                                    <span>{t(col.titleKey as any)}</span>
+                                    <span className="text-[10px] opacity-75 font-mono">({count})</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Columns Grid */}
+                    <div className="flex-1 flex md:grid md:grid-cols-5 gap-4 min-w-full md:min-w-0 pb-2 overflow-x-auto md:overflow-hidden snap-x">
+                        {KANBAN_COLUMNS.map((col) => {
+                            if (mobileColumnFilter !== "all" && mobileColumnFilter !== col.key) {
+                                return null;
+                            }
+
                             const columnOrders = orders.filter((o) => {
                                 if (orderTypeFilter === "dine_in" && o.order_type === "delivery") return false;
                                 if (orderTypeFilter === "delivery" && o.order_type !== "delivery") return false;
@@ -309,7 +355,7 @@ export default function AdminLiveOrdersKanbanPage() {
                             return (
                                 <div
                                     key={col.key}
-                                    className={`rounded-2xl border ${col.color} flex flex-col h-full overflow-hidden shadow-2xs`}
+                                    className={`rounded-2xl border ${col.color} flex flex-col h-full overflow-hidden shadow-2xs min-w-[280px] sm:min-w-[320px] md:min-w-0 snap-start flex-1`}
                                 >
                                     {/* Column Header */}
                                     <div className="p-3.5 border-b border-cream-200 bg-white flex items-center justify-between shrink-0">

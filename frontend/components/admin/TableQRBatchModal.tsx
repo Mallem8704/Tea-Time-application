@@ -23,10 +23,10 @@ export function TableQRBatchModal({ isOpen, onClose, tables }: TableQRBatchModal
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="relative w-full max-w-4xl max-h-[92vh] bg-white rounded-3xl p-6 sm:p-8 flex flex-col shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm">
+            <div className="relative w-full max-w-4xl max-h-[92vh] bg-white rounded-3xl p-4 sm:p-6 sm:p-8 flex flex-col shadow-2xl overflow-hidden">
                 {/* Header (Hidden on print) */}
-                <div className="flex items-center justify-between pb-4 border-b border-cream-200 shrink-0 print:hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-cream-200 shrink-0 print:hidden gap-3">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-amber-600">
                             <Printer className="w-5 h-5" />

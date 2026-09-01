@@ -151,9 +151,9 @@ export function CartDrawer({
             />
 
             {/* Drawer Panel */}
-            <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-300">
+            <div className="relative w-full max-w-full sm:max-w-md bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-300">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-cream-200 flex items-center justify-between bg-gradient-to-r from-cream-50 via-white to-amber-50/40">
+                <div className="px-4 sm:px-6 py-4 border-b border-cream-200 flex items-center justify-between bg-gradient-to-r from-cream-50 via-white to-amber-50/40 shrink-0">
                     <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-terracotta-500 text-white flex items-center justify-center shadow-xs">
                             <ShoppingBag className="w-4 h-4" />
@@ -291,7 +291,7 @@ export function CartDrawer({
 
                 {/* Footer / Summary & Checkout */}
                 {items.length > 0 && (
-                    <div className="p-5 border-t border-cream-200 bg-cream-50/90 space-y-3.5">
+                    <div className="p-4 sm:p-5 border-t border-cream-200 bg-cream-50/90 space-y-3.5 pb-safe shrink-0">
                         {/* Promo Code Input & 1-Tap Coupon Chips */}
                         <div className="p-3 rounded-2xl bg-white border border-cream-300 space-y-2 shadow-2xs">
                             <div className="flex items-center justify-between text-xs font-bold text-espresso-800">

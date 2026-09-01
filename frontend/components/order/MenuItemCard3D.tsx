@@ -201,26 +201,26 @@ export function MenuItemCard3D({
                                 <button
                                     type="button"
                                     onClick={handleRemoveClick}
-                                    className="w-7 h-7 rounded-lg bg-white hover:bg-cream-100 text-espresso-800 flex items-center justify-center font-bold shadow-xs transition active:scale-90 cursor-pointer"
+                                    className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-white hover:bg-cream-100 text-espresso-800 flex items-center justify-center font-bold shadow-xs transition active:scale-90 cursor-pointer"
                                 >
-                                    <Minus className="w-3.5 h-3.5" />
+                                    <Minus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                                 </button>
-                                <span className="w-5 text-center text-sm font-black text-espresso-950 font-mono">
+                                <span className="w-6 sm:w-5 text-center text-sm font-black text-espresso-950 font-mono">
                                     {cartQty}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={handleAddClick}
-                                    className={`w-7 h-7 rounded-lg text-white flex items-center justify-center font-bold shadow-xs transition active:scale-90 cursor-pointer ${stepperBtnAdd[c]}`}
+                                    className={`w-8 h-8 sm:w-7 sm:h-7 rounded-lg text-white flex items-center justify-center font-bold shadow-xs transition active:scale-90 cursor-pointer ${stepperBtnAdd[c]}`}
                                 >
-                                    <Plus className="w-3.5 h-3.5" />
+                                    <Plus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                                 </button>
                             </div>
                         ) : (
                             <button
                                 type="button"
                                 onClick={handleAddClick}
-                                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-xs font-extrabold shadow-sm active:scale-95 transition cursor-pointer ${addBtnColors[c]}`}
+                                className={`inline-flex items-center gap-1.5 px-4 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-white text-xs font-extrabold shadow-sm active:scale-95 transition cursor-pointer min-h-[36px] ${addBtnColors[c]}`}
                             >
                                 <Plus className="w-3.5 h-3.5" />
                                 <span>{t("add_to_cart")}</span>
@@ -233,15 +233,15 @@ export function MenuItemCard3D({
             {/* Dish Details Modal */}
             {showDetails && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-950/60 backdrop-blur-xs animate-in fade-in"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-espresso-950/60 backdrop-blur-xs animate-in fade-in"
                     onClick={() => setShowDetails(false)}
                 >
                     <div
-                        className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-cream-300 animate-in zoom-in-95"
+                        className="bg-white rounded-3xl max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-cream-300 animate-in zoom-in-95"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className={`px-5 py-4 bg-gradient-to-r ${accentGradient[c]} text-white flex items-center justify-between`}>
+                        <div className={`px-5 py-4 bg-gradient-to-r ${accentGradient[c]} text-white flex items-center justify-between sticky top-0 z-10`}>
                             <div>
                                 <h3 className="text-base font-extrabold leading-tight">{displayName}</h3>
                                 <span className="text-sm font-mono font-bold opacity-95">{formatRupees(item.price_paise)}</span>

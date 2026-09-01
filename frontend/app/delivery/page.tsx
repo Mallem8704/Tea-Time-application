@@ -1338,7 +1338,7 @@ function DeliveryOrderContent() {
                         </div>
 
                         {/* Drawer Footer / Submit Button */}
-                        <div className="p-4 sm:p-5 border-t border-terracotta-100 bg-white/95 backdrop-blur-md">
+                        <div className="p-4 sm:p-5 border-t border-terracotta-100 bg-white/95 backdrop-blur-md pb-safe shrink-0">
                             <Button
                                 form="delivery-form"
                                 type="submit"
