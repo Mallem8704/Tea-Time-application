@@ -360,29 +360,52 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                                 )}
                             </span>
                         </div>
-
-                        {order.payment_status !== "paid" && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                {dynamicUpi && (
-                                    <a
-                                        href={dynamicUpi.upi_uri}
-                                        className="px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md transition cursor-pointer"
-                                    >
-                                        <Smartphone className="w-3.5 h-3.5" />
-                                        <span>Pay via UPI (GPay/PhonePe)</span>
-                                    </a>
-                                )}
-
-                                <button
-                                    onClick={() => setShowUpiQr(!showUpiQr)}
-                                    className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 border border-amber-400/40 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-                                >
-                                    <QrCode className="w-3.5 h-3.5 text-amber-700" />
-                                    <span>{showUpiQr ? "Hide QR" : "Show UPI QR"}</span>
-                                </button>
-                            </div>
-                        )}
                     </div>
+
+                    {order.payment_status !== "paid" && (
+                        <div className="pt-2 border-t border-cream-200 space-y-2">
+                            <span className="text-[11px] font-bold text-espresso-700 block">
+                                Choose your UPI App to Pay ({formatRupees(order.total_paise)}):
+                            </span>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                {/* Google Pay */}
+                                <a
+                                    href={dynamicUpi?.upi_uri ? dynamicUpi.upi_uri.replace(/^upi:\/\/pay/, "gpay://upi/pay") : "#"}
+                                    className="p-2.5 rounded-xl bg-white hover:bg-cream-50 text-espresso-950 font-extrabold text-xs flex items-center justify-center gap-1.5 border border-cream-300 shadow-2xs transition"
+                                >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                                    <span>Google Pay</span>
+                                </a>
+
+                                {/* PhonePe */}
+                                <a
+                                    href={dynamicUpi?.upi_uri ? dynamicUpi.upi_uri.replace(/^upi:\/\//, "phonepe://") : "#"}
+                                    className="p-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-950 font-extrabold text-xs flex items-center justify-center gap-1.5 border border-purple-200 shadow-2xs transition"
+                                >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" />
+                                    <span>PhonePe</span>
+                                </a>
+
+                                {/* Paytm */}
+                                <a
+                                    href={dynamicUpi?.upi_uri ? dynamicUpi.upi_uri.replace(/^upi:\/\//, "paytmmp://") : "#"}
+                                    className="p-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-950 font-extrabold text-xs flex items-center justify-center gap-1.5 border border-sky-200 shadow-2xs transition"
+                                >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" />
+                                    <span>Paytm</span>
+                                </a>
+
+                                {/* Any UPI App */}
+                                <a
+                                    href={dynamicUpi?.upi_uri || "#"}
+                                    className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+                                >
+                                    <Smartphone className="w-3.5 h-3.5" />
+                                    <span>Other UPI</span>
+                                </a>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Collapsible Dynamic UPI QR & Copy Section */}
                     {order.payment_status !== "paid" && showUpiQr && dynamicUpi && (
