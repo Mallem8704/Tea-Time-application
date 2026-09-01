@@ -82,7 +82,7 @@ export function CartDrawer({
     const { language, t } = useLanguage();
     const { taxRate, outlet } = useOutlet();
     const [customerNotes, setCustomerNotes] = useState("");
-    const [selectedPayment, setSelectedPayment] = useState<"counter" | "upi">("counter");
+    const [selectedPayment, setSelectedPayment] = useState<"counter" | "upi">("upi");
     const [couponInput, setCouponInput] = useState("");
     const [appliedCoupon, setAppliedCoupon] = useState<{
         code: string;
@@ -402,6 +402,7 @@ export function CartDrawer({
                         </div>
 
                         {/* Payment Preference Selector */}
+                        {/* Payment Preference Selector */}
                         <div>
                             <label className="block text-xs font-bold text-espresso-700 uppercase tracking-wider mb-1.5">
                                 {t("select_payment_method")}
@@ -409,28 +410,32 @@ export function CartDrawer({
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => setSelectedPayment("counter")}
-                                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition cursor-pointer ${
-                                        selectedPayment === "counter"
-                                            ? "border-terracotta-500 bg-terracotta-50 text-terracotta-800 shadow-xs ring-1 ring-terracotta-400"
+                                    onClick={() => setSelectedPayment("upi")}
+                                    className={`p-3 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition cursor-pointer ${
+                                        selectedPayment === "upi"
+                                            ? "border-emerald-500 bg-emerald-50 text-emerald-950 shadow-sm ring-2 ring-emerald-500/30"
                                             : "border-cream-300 bg-white text-espresso-700 hover:bg-cream-100"
                                     }`}
                                 >
-                                    <Banknote className="w-4 h-4" />
-                                    <span>Pay at Table / Counter</span>
+                                    <span className="p-1.5 rounded-xl bg-emerald-100 text-emerald-700">
+                                        <Smartphone className="w-4 h-4" />
+                                    </span>
+                                    <span>⚡ Direct UPI (GPay/PhonePe)</span>
                                 </button>
 
                                 <button
                                     type="button"
-                                    onClick={() => setSelectedPayment("upi")}
-                                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition cursor-pointer ${
-                                        selectedPayment === "upi"
-                                            ? "border-terracotta-500 bg-terracotta-50 text-terracotta-800 shadow-xs ring-1 ring-terracotta-400"
+                                    onClick={() => setSelectedPayment("counter")}
+                                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition cursor-pointer ${
+                                        selectedPayment === "counter"
+                                            ? "border-terracotta-500 bg-terracotta-50 text-terracotta-900 shadow-sm ring-2 ring-terracotta-400/30"
                                             : "border-cream-300 bg-white text-espresso-700 hover:bg-cream-100"
                                     }`}
                                 >
-                                    <Smartphone className="w-4 h-4 text-emerald-600" />
-                                    <span>Direct UPI (GPay/PhonePe)</span>
+                                    <span className="p-1.5 rounded-xl bg-cream-200 text-espresso-800">
+                                        <Banknote className="w-4 h-4" />
+                                    </span>
+                                    <span>🍽️ Pay at Counter Later</span>
                                 </button>
                             </div>
                         </div>
@@ -439,12 +444,18 @@ export function CartDrawer({
                         <Button
                             variant="primary"
                             size="lg"
-                            className="w-full shadow-lg shadow-terracotta-500/25 bg-gradient-to-r from-terracotta-600 via-amber-600 to-terracotta-700 hover:from-terracotta-700 hover:to-amber-700 font-black cursor-pointer"
+                            className={`w-full shadow-lg font-black cursor-pointer ${
+                                selectedPayment === "upi"
+                                    ? "shadow-emerald-600/25 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white"
+                                    : "shadow-terracotta-500/25 bg-gradient-to-r from-terracotta-600 via-amber-600 to-terracotta-700 hover:from-terracotta-700 hover:to-amber-700 text-white"
+                            }`}
                             isLoading={isPlacingOrder}
                             onClick={handleCheckoutSubmit}
                             rightIcon={<ArrowRight className="w-4 h-4" />}
                         >
-                            {`🔥 Send KOT & Place Order (${formatRupees(totalPaise)})`}
+                            {selectedPayment === "upi"
+                                ? `⚡ Pay via UPI & Send to Kitchen (${formatRupees(totalPaise)})`
+                                : `🍽️ Place Order (Pay Later at Counter)`}
                         </Button>
                     </div>
                 )}

@@ -82,7 +82,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
     const [order, setOrder] = useState<OrderDetail>(initialOrder);
     const [callingService, setCallingService] = useState<string | null>(null);
     const [dynamicUpi, setDynamicUpi] = useState<any>(null);
-    const [showUpiQr, setShowUpiQr] = useState(false);
+    const [showUpiQr, setShowUpiQr] = useState(true);
     const [copiedUpi, setCopiedUpi] = useState(false);
     const [isBillRequested, setIsBillRequested] = useState(false);
 
