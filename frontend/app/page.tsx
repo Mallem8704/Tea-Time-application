@@ -1,626 +1,437 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
     QrCode,
-    ChefHat,
-    MapPin,
-    Clock,
-    Phone,
-    ArrowRight,
-    Star,
-    Flame,
-    Coffee,
-    Leaf,
-    Soup,
-    CakeSlice,
-    Wine,
-    GlassWater,
-    Layers,
     UtensilsCrossed,
-    Crown,
-    Bike,
-    Sparkles,
-    Utensils,
-    ShieldCheck,
-    Menu,
-    X,
-    Share2,
-    Globe,
-    MessageCircle,
-    ChevronDown,
     Truck,
-    Quote,
-    CheckCircle2,
-    Smartphone,
+    MapPin,
+    Phone,
+    Mail,
+    Clock,
+    Sparkles,
+    Star,
+    ChefHat,
+    ShieldCheck,
+    ArrowRight,
+    ShoppingBag,
+    Plus,
+    Check,
+    Play,
+    Flame,
+    Navigation,
+    Layers,
+    Menu as MenuIcon,
+    X,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useToast } from "@/context/ToastContext";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { ArabiqLogo, ArabesqueDivider, FreeDeliveryEmblem } from "@/components/home/ArabiqBrandIcons";
+import { HowItWorksModal } from "@/components/home/HowItWorksModal";
+import { OurStoryModal } from "@/components/home/OurStoryModal";
+import { BranchSelectorModal } from "@/components/home/BranchSelectorModal";
 
-function BranchCard({ branch }: { branch: any }) {
-    const [hovered, setHovered] = useState(false);
-    return (
-        <div
-            className={`relative rounded-3xl overflow-hidden border-2 transition-all duration-500 cursor-pointer ${
-                hovered ? "border-amber-400 shadow-2xl -translate-y-2" : "border-white/20 shadow-xl"
-            }`}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-        >
-            <div className={`absolute inset-0 ${branch.gradient}`} />
-            <div className="absolute inset-0 bg-black/50" />
-            <div className="relative z-10 p-8">
-                <div className="flex items-center gap-2 mb-5">
-                    <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${branch.badgeColor}`}>
-                        {branch.badge}
-                    </span>
-                    {branch.isNew && (
-                        <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" /> NEW
-                        </span>
-                    )}
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-black text-white mb-2">{branch.name}</h3>
-                <p className="text-amber-300 text-sm font-bold mb-5">{branch.tagline}</p>
-                <div className="space-y-3 mb-5">
-                    <div className="flex items-start gap-3">
-                        <MapPin className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                        <span className="text-white/80 text-sm">{branch.address}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span className="text-white/80 text-sm">{branch.hours}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span className="text-white/80 text-sm">{branch.phone}</span>
-                    </div>
-                </div>
-                <div className="flex flex-wrap gap-2 mb-6">
-                    {branch.features.map((f: string, i: number) => (
-                        <span
-                            key={i}
-                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-white/90"
-                        >
-                            {f}
-                        </span>
-                    ))}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2.5">
-                    <Link href={`/delivery?branch=${branch.id}`} className="flex-1">
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs transition-all hover:scale-102 shadow-lg cursor-pointer">
-                            <Bike className="w-4 h-4 text-black" /> Free Home Delivery
-                        </button>
-                    </Link>
-                    <Link href={`/order?branch=${branch.id}&table=T1`} className="flex-1">
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs transition-all hover:border-amber-400/50 cursor-pointer">
-                            <QrCode className="w-4 h-4 text-amber-400" /> Dine-in Table QR
-                        </button>
-                    </Link>
-                </div>
-                <Link href={`/admin/login?branch=${branch.id}`}>
-                    <button className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-black/50 hover:bg-black/80 border border-white/10 text-white/80 hover:text-amber-400 font-bold text-[11px] transition-colors cursor-pointer">
-                        <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> Branch {branch.id} Staff Portal{" "}
-                        <ArrowRight className="w-3 h-3 ml-1" />
-                    </button>
-                </Link>
-            </div>
-        </div>
-    );
-}
+/* ── 5 Authentic Signature Dishes matching Reference ── */
+const SIGNATURE_DISHES = [
+    {
+        id: 101,
+        name: "Chicken Mandi",
+        name_te: "చికెన్ మండి",
+        desc: "Slow-cooked chicken with aromatic basmati rice.",
+        price: 349,
+        image: "/dishes/3d_mandi.jpg",
+        bestseller: true,
+        tag: "BESTSELLER",
+    },
+    {
+        id: 102,
+        name: "Mutton Mandi",
+        name_te: "మటన్ మండి",
+        desc: "Tender mutton with fragrant mandi rice.",
+        price: 499,
+        image: "/dishes/3d_mandi.jpg",
+        bestseller: false,
+    },
+    {
+        id: 103,
+        name: "Mixed Grill Platter",
+        name_te: "మిక్స్డ్ గ్రిల్ ప్లాటర్",
+        desc: "A perfect mix of grilled kebabs & chicken.",
+        price: 599,
+        image: "/dishes/3d_nonveg_starters.jpg",
+        bestseller: false,
+    },
+    {
+        id: 104,
+        name: "Hummus",
+        name_te: "హమ్మస్ విత్ పీటా",
+        desc: "Creamy hummus with olive oil & pita bread.",
+        price: 199,
+        image: "/dishes/3d_veg_starters.jpg",
+        bestseller: false,
+    },
+    {
+        id: 105,
+        name: "Kunafa",
+        name_te: "కునాఫా స్వీట్",
+        desc: "Traditional arabic dessert with sweet cheese.",
+        price: 249,
+        image: "/dishes/3d_snacks.jpg",
+        bestseller: false,
+    },
+];
 
-export default function HomePage() {
-    const { language } = useLanguage();
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [scrollY, setScrollY] = useState(0);
-    const [activeBranchTab, setActiveBranchTab] = useState<number>(1);
+/* ── 3 Verified Testimonials matching Reference ── */
+const TESTIMONIALS = [
+    {
+        quote: "The best mandi I've ever had! Authentic taste and amazing service.",
+        author: "Ahmed R.",
+        rating: 5,
+        location: "Kadiri Diners Club",
+    },
+    {
+        quote: "Quick delivery, hot food and premium quality. Highly recommended!",
+        author: "Fatima K.",
+        rating: 5,
+        location: "Home Delivery Guest",
+    },
+    {
+        quote: "The mixed grill platter is absolutely delicious! Will order again.",
+        author: "Zubair M.",
+        rating: 5,
+        location: "Family Majlis Table",
+    },
+];
 
-    useEffect(() => {
-        const h = () => setScrollY(window.scrollY);
-        window.addEventListener("scroll", h, { passive: true });
-        return () => window.removeEventListener("scroll", h);
-    }, []);
+export default function ArabiqHomePage() {
+    const { language, t } = useLanguage();
+    const toast = useToast();
 
-    const branches = [
-        {
-            id: 1,
-            name: "Old Arabieq Restaurant",
-            address: "2nd Floor, Near More Super Market, Rahmath Tower, Madanapalli Road, Kadiri",
-            hours: "12:00 PM – 11:30 PM (Daily)",
-            phone: "+91 98765 43210",
-            tagline: "Authentic Mandi, Biryani & Arabian Grills",
-            badge: "BRANCH 1 • RAHMATH TOWER",
-            badgeColor: "bg-amber-500/20 border-amber-400/50 text-amber-300",
-            orderLink: "/order?branch=1&table=T1",
-            deliveryLink: "/delivery?branch=1",
-            features: ["Signature Mandi", "Dum Biryani", "Live Grills", "Starters", "Soups", "Shakes"],
-            isNew: false,
-            gradient: "bg-gradient-to-br from-amber-900 via-orange-800 to-red-900",
-            highlight: "Famous for 4-Hour Charcoal Slow-Cooked Juicy Mutton & Chicken Mandi feasts.",
-        },
-        {
-            id: 2,
-            name: "New Arabieq Restaurant & Cafe",
-            address: "Opposite to Girls High School, Kadiri, Andhra Pradesh",
-            hours: "7:00 AM – 11:30 PM (Daily)",
-            phone: "+91 98765 43211",
-            tagline: "Full Menu • Breakfast • Cafe • Fine Dining",
-            badge: "BRANCH 2 • GIRLS HIGH SCHOOL",
-            badgeColor: "bg-emerald-500/20 border-emerald-400/50 text-emerald-300",
-            orderLink: "/order?branch=2&table=T1",
-            deliveryLink: "/delivery?branch=2",
-            features: ["Morning Breakfast", "Crispy Dosas", "Mandi", "Cafe Drinks", "Biryani", "Full Menu"],
-            isNew: true,
-            gradient: "bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900",
-            highlight: "Complete family dining with Morning Tiffins (7 AM), Handcrafted Cafe Drinks & Arabian Grills.",
-        },
-    ];
+    // Modals
+    const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+    const [storyOpen, setStoryOpen] = useState(false);
+    const [branchModalOpen, setBranchModalOpen] = useState(false);
+    const [branchModalMode, setBranchModalMode] = useState<"table" | "delivery" | "all">("all");
 
-    const menuCats = [
-        { name: "Tiffin & Breakfast", icon: Coffee },
-        { name: "Dosa Specials", icon: UtensilsCrossed },
-        { name: "Mandi", icon: Crown },
-        { name: "Dum Biryanis", icon: Sparkles },
-        { name: "Arabian Grills", icon: Flame },
-        { name: "Veg Starters", icon: Leaf },
-        { name: "Non-Veg Starters", icon: Utensils },
-        { name: "Soups", icon: Soup },
-        { name: "Indian Breads", icon: Layers },
-        { name: "Fresh Juices", icon: Wine },
-        { name: "Milkshakes", icon: GlassWater },
-        { name: "Snacks & Sweets", icon: CakeSlice },
-    ];
+    // Mobile nav drawer
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-    const navLinks = [
-        { label: "Home", href: "#home" },
-        { label: "Our Branches", href: "#branches" },
-        { label: "Menu", href: "#menu" },
-        { label: "Order Online", href: "#order" },
-        { label: "Reviews", href: "#reviews" },
-        { label: "Contact", href: "#contact" },
-    ];
+    // Added dishes quick animation tracker
+    const [addedDishIds, setAddedDishIds] = useState<number[]>([]);
 
-    const whyUs = [
-        {
-            icon: Star,
-            title: "Authentic Arabian Recipes",
-            desc: "Traditional spices and cooking methods passed down through generations.",
-            color: "text-amber-400",
-            bg: "bg-amber-500/10 border-amber-400/20",
-        },
-        {
-            icon: Flame,
-            title: "Live Fire Grills & Mandi",
-            desc: "Slow-cooked Mandi and live-flame grills for the real taste of Arabia.",
-            color: "text-orange-400",
-            bg: "bg-orange-500/10 border-orange-400/20",
-        },
-        {
-            icon: QrCode,
-            title: "Smart QR Table Ordering",
-            desc: "Scan & order from your seat in English or Telugu. No app needed.",
-            color: "text-cyan-400",
-            bg: "bg-cyan-500/10 border-cyan-400/20",
-        },
-        {
-            icon: Leaf,
-            title: "Veg & Non-Veg Options",
-            desc: "Extensive selections to suit every palate and preference.",
-            color: "text-green-400",
-            bg: "bg-green-500/10 border-green-400/20",
-        },
-        {
-            icon: Coffee,
-            title: "Cafe & Beverages",
-            desc: "Handcrafted milkshakes, fresh juices, and hot cafe drinks.",
-            color: "text-rose-400",
-            bg: "bg-rose-500/10 border-rose-400/20",
-        },
-        {
-            icon: MapPin,
-            title: "Two Convenient Locations",
-            desc: "Both branches centrally located in Kadiri for easy access.",
-            color: "text-purple-400",
-            bg: "bg-purple-500/10 border-purple-400/20",
-        },
-    ];
+    const handleAddDish = (dish: typeof SIGNATURE_DISHES[0]) => {
+        setAddedDishIds((prev) => [...prev, dish.id]);
+        toast.success(`Added ${dish.name} (₹${dish.price}) to Table Order!`);
+        setTimeout(() => {
+            setAddedDishIds((prev) => prev.filter((id) => id !== dish.id));
+        }, 1500);
+    };
 
-    const reviews = [
-        {
-            name: "Syed Abdul Rahman",
-            role: "Local Food Critic • Kadiri",
-            rating: 5,
-            comment: "The Mutton Juicy Mandi at Rahmath Tower branch is unmatched anywhere in Rayalaseema. Authentic Arabian spices and generous portions!",
-            tag: "Mutton Mandi",
-        },
-        {
-            name: "Dr. K. Venkatesh",
-            role: "Regular Dining Guest",
-            rating: 5,
-            comment: "Scanning the QR code at our table made ordering seamless. Food arrived sizzling hot within 15 minutes. Great Telugu language support too!",
-            tag: "Table QR Service",
-        },
-        {
-            name: "Mohammed Farooq",
-            role: "Family Dining Customer",
-            rating: 5,
-            comment: "The new Girls High School branch has the best breakfast and Irani Chai in Kadiri. The Crispy Ghee Karam Dosa is a must-try!",
-            tag: "Breakfast & Chai",
-        },
-    ];
+    const openTablePicker = () => {
+        setBranchModalMode("table");
+        setBranchModalOpen(true);
+    };
 
-    const selectedBranch = branches.find((b) => b.id === activeBranchTab) || branches[0];
+    const openDeliveryPicker = () => {
+        setBranchModalMode("delivery");
+        setBranchModalOpen(true);
+    };
 
     return (
-        <div className="min-h-screen bg-[#0d0a06] text-white overflow-x-hidden pb-16 sm:pb-0">
-            <style jsx global>{`
-                @keyframes floatAnim {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-16px); }
-                }
-                @keyframes shimmer {
-                    0% { background-position: -200% center; }
-                    100% { background-position: 200% center; }
-                }
-                @keyframes scrollX {
-                    0% { transform: translateX(0); }
-                    100% { transform: translateX(-50%); }
-                }
-                @keyframes glowPulse {
-                    0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
-                    50% { box-shadow: 0 0 50px rgba(245, 158, 11, 0.6); }
-                }
-                .anim-float { animation: floatAnim 6s ease-in-out infinite; }
-                .anim-scrollX { animation: scrollX 30s linear infinite; }
-                .anim-glow { animation: glowPulse 2.5s ease-in-out infinite; }
-                .text-shimmer {
-                    background: linear-gradient(90deg, #f59e0b, #fbbf24, #fcd34d, #f59e0b);
-                    background-size: 200% auto;
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    animation: shimmer 3s linear infinite;
-                }
-                .glass {
-                    background: rgba(255, 255, 255, 0.05);
-                    backdrop-filter: blur(20px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-                .hero-bg {
-                    background:
-                        radial-gradient(ellipse at 20% 50%, rgba(245, 158, 11, 0.18) 0%, transparent 60%),
-                        radial-gradient(ellipse at 80% 20%, rgba(239, 68, 68, 0.12) 0%, transparent 60%),
-                        #0d0a06;
-                }
-            `}</style>
-
-            {/* Top Navigation */}
-            <nav
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-                    scrollY > 80
-                        ? "bg-[#0d0a06]/95 backdrop-blur-xl border-b border-white/10 shadow-2xl"
-                        : "bg-transparent"
-                }`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-3">
-                        <img src="/logo.png" alt="Arabieq" className="h-10 w-auto object-contain" />
-                        <div className="hidden sm:block">
-                            <p className="text-xs font-extrabold text-amber-400 uppercase tracking-widest leading-none">
-                                Arabieq
-                            </p>
-                            <p className="text-[10px] text-white/50 font-medium">Restaurant & Cafe · Kadiri</p>
-                        </div>
+        <div className="min-h-screen bg-[#0D0907] text-[#F8F3EB] font-sans selection:bg-[#D4AF37] selection:text-black overflow-x-hidden">
+            {/* ══════════════════════════════════════════════════════════════
+                1. TOP NAVIGATION BAR (Header)
+               ══════════════════════════════════════════════════════════════ */}
+            <header className="fixed top-0 inset-x-0 z-50 bg-[#0D0907]/90 backdrop-blur-md border-b border-[#D4AF37]/20 transition-all">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+                    {/* Brand Logo */}
+                    <Link href="/" className="hover:opacity-95 transition">
+                        <ArabiqLogo />
                     </Link>
-                    <div className="hidden lg:flex items-center gap-8">
-                        {navLinks.map((link) => (
-                            <a
-                                key={link.label}
-                                href={link.href}
-                                className="text-white/70 hover:text-amber-400 text-sm font-semibold transition-colors"
-                            >
-                                {link.label}
-                            </a>
-                        ))}
-                    </div>
+
+                    {/* Desktop Navigation Links */}
+                    <nav className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-[#E2D4C0]">
+                        <Link href="/" className="text-[#D4AF37] hover:text-[#E5C058] transition relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#D4AF37]">
+                            Home
+                        </Link>
+                        <a href="#signature-dishes" className="hover:text-[#D4AF37] transition py-1">
+                            Menu
+                        </a>
+                        <button onClick={() => setStoryOpen(true)} className="hover:text-[#D4AF37] transition py-1 cursor-pointer uppercase">
+                            Our Story
+                        </button>
+                        <a href="#experience" className="hover:text-[#D4AF37] transition py-1">
+                            Gallery
+                        </a>
+                        <a href="#locations" className="hover:text-[#D4AF37] transition py-1">
+                            Locations
+                        </a>
+                        <a href="#contact" className="hover:text-[#D4AF37] transition py-1">
+                            Contact
+                        </a>
+                    </nav>
+
+                    {/* Action Group: Language Toggle + Golden Order CTA */}
                     <div className="flex items-center gap-3">
-                        <Link href="/admin/login">
-                            <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-white/80 hover:border-amber-400/50 hover:text-amber-400 text-sm font-semibold transition-all cursor-pointer">
-                                <ShieldCheck className="w-3.5 h-3.5" /> Staff Login
-                            </button>
-                        </Link>
-                        <Link href="/delivery?branch=2">
-                            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-extrabold transition-all shadow-lg shadow-amber-500/30 anim-glow cursor-pointer">
-                                <Bike className="w-3.5 h-3.5" /> Order Online
-                            </button>
-                        </Link>
+                        <LanguageToggle />
+
                         <button
-                            className="lg:hidden text-white/80 hover:text-white cursor-pointer"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            onClick={() => {
+                                setBranchModalMode("all");
+                                setBranchModalOpen(true);
+                            }}
+                            className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#E5C058] to-[#C59B27] hover:from-[#E5C058] hover:to-[#D4AF37] text-black font-serif font-black text-xs uppercase tracking-wider shadow-lg shadow-[#D4AF37]/20 transition active:scale-95 cursor-pointer"
                         >
-                            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            <span>ORDER NOW</span>
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Mobile Hamburger Button */}
+                        <button
+                            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+                            className="md:hidden p-2 rounded-xl text-[#D4AF37] hover:bg-[#1A140F] transition"
+                        >
+                            {mobileNavOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
                         </button>
                     </div>
                 </div>
-                {mobileMenuOpen && (
-                    <div className="lg:hidden bg-[#0d0a06]/98 border-t border-white/10 px-4 py-6 space-y-4">
-                        {navLinks.map((link) => (
-                            <a
-                                key={link.label}
-                                href={link.href}
-                                className="block text-white/80 hover:text-amber-400 font-semibold py-2 border-b border-white/5"
-                                onClick={() => setMobileMenuOpen(false)}
+
+                {/* Mobile Drawer Menu */}
+                {mobileNavOpen && (
+                    <div className="md:hidden bg-[#120E0A] border-b border-[#D4AF37]/30 px-6 py-6 space-y-4 text-sm font-bold uppercase tracking-wider text-[#E2D4C0]">
+                        <Link href="/" onClick={() => setMobileNavOpen(false)} className="block text-[#D4AF37]">
+                            Home
+                        </Link>
+                        <a href="#signature-dishes" onClick={() => setMobileNavOpen(false)} className="block hover:text-[#D4AF37]">
+                            Menu
+                        </a>
+                        <button
+                            onClick={() => {
+                                setMobileNavOpen(false);
+                                setStoryOpen(true);
+                            }}
+                            className="block text-left uppercase hover:text-[#D4AF37]"
+                        >
+                            Our Story
+                        </button>
+                        <a href="#experience" onClick={() => setMobileNavOpen(false)} className="block hover:text-[#D4AF37]">
+                            Gallery & Ambiance
+                        </a>
+                        <a href="#locations" onClick={() => setMobileNavOpen(false)} className="block hover:text-[#D4AF37]">
+                            Kadiri Locations
+                        </a>
+                        <a href="#contact" onClick={() => setMobileNavOpen(false)} className="block hover:text-[#D4AF37]">
+                            Contact & Hours
+                        </a>
+                        <div className="pt-2">
+                            <button
+                                onClick={() => {
+                                    setMobileNavOpen(false);
+                                    openTablePicker();
+                                }}
+                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#C59B27] text-black font-serif font-black text-xs uppercase tracking-widest text-center"
                             >
-                                {link.label}
-                            </a>
-                        ))}
+                                ORDER NOW 🛍️
+                            </button>
+                        </div>
                     </div>
                 )}
-            </nav>
+            </header>
 
-            {/* HERO SECTION */}
-            <section
-                id="home"
-                className="relative min-h-screen hero-bg flex flex-col items-center justify-center px-4 pt-24 pb-16 overflow-hidden"
-            >
-                {/* Floating Sensory Appetite Badges */}
-                <div className="hidden md:flex absolute top-28 left-8 z-10 glass rounded-2xl p-3 items-center gap-2.5 anim-float border border-amber-400/30">
-                    <span className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
-                        <Flame className="w-4 h-4" />
-                    </span>
-                    <div>
-                        <p className="text-[11px] font-black text-white leading-tight">Charcoal Mandi</p>
-                        <p className="text-[9px] text-amber-300">Slow-Cooked 4 Hours</p>
-                    </div>
-                </div>
+            {/* ══════════════════════════════════════════════════════════════
+                2. HERO SECTION (Dark Arabian Luxury)
+               ══════════════════════════════════════════════════════════════ */}
+            <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-radial from-[#1E1711] via-[#0D0907] to-[#080504]">
+                {/* Background Ambient Glow & Arabesque Lattice */}
+                <div className="absolute top-1/4 -left-40 w-96 h-96 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
 
-                <div
-                    className="hidden md:flex absolute top-36 right-8 z-10 glass rounded-2xl p-3 items-center gap-2.5 anim-float border border-emerald-400/30"
-                    style={{ animationDelay: "2s" }}
-                >
-                    <span className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                        <Sparkles className="w-4 h-4" />
-                    </span>
-                    <div>
-                        <p className="text-[11px] font-black text-white leading-tight">Pure Ghee Rice</p>
-                        <p className="text-[9px] text-emerald-300">Royal Arabian Spices</p>
-                    </div>
-                </div>
-
-                <div
-                    className="hidden lg:flex absolute bottom-32 left-12 z-10 glass rounded-2xl p-3 items-center gap-2.5 anim-float border border-orange-400/30"
-                    style={{ animationDelay: "3s" }}
-                >
-                    <span className="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400">
-                        <Coffee className="w-4 h-4" />
-                    </span>
-                    <div>
-                        <p className="text-[11px] font-black text-white leading-tight">Irani Dum Chai</p>
-                        <p className="text-[9px] text-orange-300">Fresh Brewed Daily</p>
-                    </div>
-                </div>
-
-                <div className="relative z-10 max-w-5xl mx-auto text-center space-y-6">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-amber-400 text-xs font-extrabold tracking-widest uppercase">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                        <span>Delivering Now in Kadiri • 2 Branches Open</span>
-                    </div>
-
-                    <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black leading-none tracking-tight">
-                        <span className="block text-white">Royal Flavors</span>
-                        <span className="block text-shimmer">of Arabia</span>
-                        <span className="block text-white/70 text-2xl sm:text-4xl lg:text-5xl font-bold mt-2">
-                            Right at Your Table & Home
-                        </span>
-                    </h1>
-
-                    <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-                        Scan at your table or order to your doorstep in Kadiri. Savor authentic Charcoal Mandi,
-                        Dum Biryani, Sizzling Grills, and Morning Cafe Tiffins across 2 premium branches.
-                    </p>
-
-                    {/* Dual Action CTA Buttons */}
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                        <Link href="/delivery?branch=2">
-                            <button className="w-full sm:w-auto group flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-base transition-all shadow-2xl shadow-amber-500/40 hover:scale-105 anim-glow cursor-pointer">
-                                <div className="w-8 h-8 rounded-xl bg-black/20 flex items-center justify-center">
-                                    <Bike className="w-5 h-5 text-black" />
-                                </div>
-                                <span>Free Home Delivery (Kadiri)</span>
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform ml-1" />
-                            </button>
-                        </Link>
-                        <Link href="/order?branch=2&table=T1">
-                            <button className="w-full sm:w-auto group flex items-center justify-center gap-3 px-8 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold text-base transition-all hover:scale-105 border border-white/20 hover:border-amber-400/40 cursor-pointer shadow-xl">
-                                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center">
-                                    <QrCode className="w-4 h-4 text-amber-400" />
-                                </div>
-                                <span>Dine-in Table QR</span>
-                                <Utensils className="w-4 h-4 text-white/50 group-hover:text-amber-400 transition-colors ml-1" />
-                            </button>
-                        </Link>
-                    </div>
-
-                    {/* Stat Badges */}
-                    <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 pt-6">
-                        {[
-                            { label: "Authentic Dishes", value: "198+" },
-                            { label: "Dining Tables", value: "20+" },
-                            { label: "Kadiri Branches", value: "2" },
-                            { label: "Happy Feasts Served", value: "5000+" },
-                        ].map((s, i) => (
-                            <div key={i} className="text-center">
-                                <p className="text-2xl sm:text-3xl font-black text-amber-400 font-mono">{s.value}</p>
-                                <p className="text-xs text-white/60 font-medium">{s.label}</p>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+                        {/* Hero Left: Headline & CTAs */}
+                        <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[#D4AF37] text-[10px] font-mono tracking-widest uppercase font-bold">
+                                <Sparkles className="w-3 h-3" />
+                                <span>Authentic Arabian Culinary Masterpiece</span>
                             </div>
-                        ))}
-                    </div>
-                </div>
 
-                <a
-                    href="#branches"
-                    className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 text-white/40 hover:text-amber-400 transition-colors"
-                >
-                    <span className="text-[10px] font-bold tracking-widest uppercase">Explore Branches</span>
-                    <ChevronDown className="w-4 h-4 animate-bounce" />
-                </a>
-            </section>
+                            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight">
+                                <span className="block text-white">AUTHENTIC</span>
+                                <span className="block text-white">ARABIC FLAVOURS.</span>
+                                <span className="block bg-gradient-to-r from-[#F7E7B4] via-[#D4AF37] to-[#B38020] bg-clip-text text-transparent">
+                                    MADE FOR YOU.
+                                </span>
+                            </h1>
 
-            {/* MARQUEE STRIP */}
-            <div className="relative py-4 bg-amber-500/10 border-y border-amber-500/20 overflow-hidden">
-                <div className="flex gap-4 anim-scrollX w-max">
-                    {[...menuCats, ...menuCats].map((cat, i) => {
-                        const Icon = cat.icon;
-                        return (
-                            <div
-                                key={i}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white font-bold text-sm whitespace-nowrap"
-                            >
-                                <Icon className="w-4 h-4 text-amber-400" />
-                                <span>{cat.name}</span>
+                            <p className="text-sm sm:text-base text-[#D4C3AC] max-w-lg leading-relaxed font-light mx-auto lg:mx-0">
+                                From slow-cooked mandi to smoky grills and freshly baked breads – experience the true taste of Arabia.
+                            </p>
+
+                            {/* Dual Primary Action Buttons */}
+                            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2 justify-center lg:justify-start">
+                                {/* Button 1: Order at Table (Scan QR) */}
+                                <button
+                                    onClick={openTablePicker}
+                                    className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-[#141E15]/90 hover:bg-[#1A261B] text-[#86EFAC] border-2 border-[#22C55E]/50 hover:border-[#22C55E] font-serif font-black text-xs uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
+                                >
+                                    <QrCode className="w-5 h-5 text-[#4ADE80] group-hover:rotate-12 transition-transform" />
+                                    <div className="text-left">
+                                        <span className="block text-[11px] leading-none">ORDER AT TABLE</span>
+                                        <span className="text-[9px] font-mono tracking-widest opacity-80">SCAN QR CODE</span>
+                                    </div>
+                                </button>
+
+                                {/* Button 2: Order for Delivery */}
+                                <Link
+                                    href="/delivery?branch=1"
+                                    className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#E5C058] to-[#C59B27] hover:from-[#E5C058] hover:to-[#D4AF37] text-black font-serif font-black text-xs uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl shadow-[#D4AF37]/25 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
+                                >
+                                    <Truck className="w-5 h-5 text-black group-hover:translate-x-1 transition-transform" />
+                                    <div className="text-left">
+                                        <span className="block text-[11px] leading-none">ORDER FOR</span>
+                                        <span className="text-[9px] font-mono tracking-widest text-black/80">FREE DELIVERY</span>
+                                    </div>
+                                </Link>
                             </div>
-                        );
-                    })}
-                </div>
-            </div>
 
-            {/* INTERACTIVE BRANCH FINDER & COMPARISON TABS */}
-            <section id="branches" className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
-                <div className="text-center mb-12">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-amber-400 text-xs font-extrabold tracking-widest uppercase mb-4">
-                        <MapPin className="w-3.5 h-3.5" /> Two Locations, One Royal Standard
-                    </div>
-                    <h2 className="text-4xl sm:text-6xl font-black text-white mb-4">
-                        Our <span className="text-shimmer">Kadiri Branches</span>
-                    </h2>
-                    <p className="text-white/60 text-base sm:text-lg max-w-xl mx-auto">
-                        Choose your nearest Arabieq location for dining in or lightning-fast Kadiri home delivery.
-                    </p>
-
-                    {/* Interactive Tab Toggle */}
-                    <div className="inline-flex p-1.5 rounded-2xl glass border border-white/15 mt-8 max-w-md w-full">
-                        <button
-                            onClick={() => setActiveBranchTab(1)}
-                            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
-                                activeBranchTab === 1
-                                    ? "bg-amber-500 text-black shadow-lg shadow-amber-500/30"
-                                    : "text-white/70 hover:text-white"
-                            }`}
-                        >
-                            Branch 1 (Rahmath Tower)
-                        </button>
-                        <button
-                            onClick={() => setActiveBranchTab(2)}
-                            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
-                                activeBranchTab === 2
-                                    ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
-                                    : "text-white/70 hover:text-white"
-                            }`}
-                        >
-                            Branch 2 (Girls High School)
-                        </button>
-                    </div>
-                </div>
-
-                {/* Interactive Selected Branch Showcase Card */}
-                <div className="relative rounded-3xl overflow-hidden border-2 border-amber-400/40 p-8 sm:p-12 mb-16 shadow-2xl glass">
-                    <div className={`absolute inset-0 ${selectedBranch.gradient} opacity-40`} />
-                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                        <div className="space-y-4">
-                            <span className={`text-xs font-extrabold px-3.5 py-1.5 rounded-full border ${selectedBranch.badgeColor}`}>
-                                {selectedBranch.badge}
-                            </span>
-                            <h3 className="text-3xl sm:text-4xl font-black text-white">{selectedBranch.name}</h3>
-                            <p className="text-amber-300 font-bold text-base">{selectedBranch.tagline}</p>
-                            <p className="text-white/80 text-sm leading-relaxed">{selectedBranch.highlight}</p>
-
-                            <div className="space-y-2.5 pt-2">
-                                <div className="flex items-center gap-3 text-sm text-white/80">
-                                    <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
-                                    <span>{selectedBranch.address}</span>
+                            {/* 4 Value Pillars Bar */}
+                            <div className="pt-6 border-t border-[#D4AF37]/20 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center lg:text-left">
+                                <div className="flex items-center gap-2">
+                                    <Truck className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                                    <span className="text-[10px] font-bold text-[#E2D4C0] uppercase tracking-wider">Free Home Delivery</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-sm text-white/80">
-                                    <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                                    <span>{selectedBranch.hours}</span>
+                                <div className="flex items-center gap-2">
+                                    <Flame className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                                    <span className="text-[10px] font-bold text-[#E2D4C0] uppercase tracking-wider">Freshly Prepared</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-sm text-white/80">
-                                    <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-                                    <span>{selectedBranch.phone}</span>
+                                <div className="flex items-center gap-2">
+                                    <ChefHat className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                                    <span className="text-[10px] font-bold text-[#E2D4C0] uppercase tracking-wider">Authentic Recipes</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                                    <span className="text-[10px] font-bold text-[#E2D4C0] uppercase tracking-wider">Hygienic Kitchen</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-4 bg-black/40 p-6 rounded-2xl border border-white/10">
-                            <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-400">
-                                Featured Specialties & Ordering
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
-                                {selectedBranch.features.map((f, i) => (
-                                    <span
-                                        key={i}
-                                        className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-white flex items-center gap-1.5"
-                                    >
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                        {f}
-                                    </span>
-                                ))}
-                            </div>
+                        {/* Hero Right: Big Mandi Platter + Free Delivery Emblem */}
+                        <div className="lg:col-span-6 relative flex items-center justify-center">
+                            <div className="relative w-full max-w-md lg:max-w-lg">
+                                {/* Golden Mandi Circular Platter Graphic */}
+                                <div className="relative rounded-full p-2 bg-gradient-to-tr from-[#D4AF37] via-[#E5C058] to-[#6E4F0A] shadow-2xl shadow-[#D4AF37]/20 group">
+                                    <div className="relative w-full aspect-square rounded-full overflow-hidden border-4 border-[#120E0A] bg-black">
+                                        <img
+                                            src="/dishes/3d_mandi.jpg"
+                                            alt="Authentic Arabiq Mandi Feast"
+                                            className="w-full h-full object-cover rounded-full hover:scale-105 transition-transform duration-700"
+                                        />
+                                        <div className="absolute inset-0 bg-radial from-transparent via-transparent to-black/40 rounded-full" />
+                                    </div>
+                                </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
-                                <Link href={selectedBranch.deliveryLink}>
-                                    <button className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
-                                        <Bike className="w-4 h-4 text-black" />
-                                        <span>Order Free Delivery</span>
-                                    </button>
-                                </Link>
-                                <Link href={selectedBranch.orderLink}>
-                                    <button className="w-full py-3.5 px-4 rounded-xl glass hover:bg-white/15 text-white font-bold text-xs border border-white/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
-                                        <QrCode className="w-4 h-4 text-amber-400" />
-                                        <span>Dine-in Table Menu</span>
-                                    </button>
-                                </Link>
+                                {/* Floating Arched Stamp Badge */}
+                                <div className="absolute -bottom-4 -right-2 sm:right-2 sm:bottom-2 z-20 hover:scale-105 transition-transform">
+                                    <FreeDeliveryEmblem />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Side-by-Side Dual Branch Cards */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {branches.map((branch) => (
-                        <BranchCard key={branch.id} branch={branch} />
-                    ))}
                 </div>
             </section>
 
-            {/* DIGITAL MENU EXPLORER */}
-            <section id="menu" className="py-20 px-4 sm:px-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/5 to-transparent pointer-events-none" />
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-amber-400 text-xs font-extrabold tracking-widest uppercase mb-4">
-                            <Utensils className="w-3.5 h-3.5" /> 12 Signature Categories
+            {/* ══════════════════════════════════════════════════════════════
+                3. "OUR SIGNATURE DISHES" SECTION (Cream & Sand Luxury)
+               ══════════════════════════════════════════════════════════════ */}
+            <section id="signature-dishes" className="py-20 bg-[#F8F3EB] text-[#1A120B] relative">
+                {/* Subtle Arabesque Pattern Texture */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Header & Subtitle */}
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                        <div>
+                            <h2 className="font-serif text-3xl sm:text-4xl font-black tracking-tight text-[#1A120B] uppercase">
+                                OUR SIGNATURE DISHES
+                            </h2>
+                            <ArabesqueDivider light={true} className="justify-start my-2" />
+                            <p className="text-xs sm:text-sm text-[#6E5B4B] max-w-md leading-relaxed">
+                                Handpicked favorites loved by our guests. Each dish is prepared with passion and authentic Arabian spices.
+                            </p>
                         </div>
-                        <h2 className="text-4xl sm:text-6xl font-black text-white mb-4">
-                            198+ <span className="text-shimmer">Authentic</span> Dishes
-                        </h2>
-                        <p className="text-white/60 text-lg max-w-xl mx-auto">
-                            From royal Mandi feasts to hot breakfast tiffins and cafe beverages.
-                        </p>
+
+                        <Link
+                            href="/order?branch=1"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#120E0A] hover:bg-[#2A1F17] text-[#D4AF37] font-serif font-black text-xs uppercase tracking-wider shadow-md transition self-start md:self-auto cursor-pointer"
+                        >
+                            <span>VIEW FULL MENU</span>
+                            <ArrowRight className="w-4 h-4" />
+                        </Link>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
-                        {menuCats.map((cat, i) => {
-                            const Icon = cat.icon;
+                    {/* 5 Signature Dish Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+                        {SIGNATURE_DISHES.map((dish) => {
+                            const isAdded = addedDishIds.includes(dish.id);
                             return (
                                 <div
-                                    key={i}
-                                    className="group p-5 rounded-2xl glass hover:bg-amber-500/10 hover:border-amber-400/30 border border-white/5 transition-all hover:-translate-y-1 cursor-pointer text-center flex flex-col items-center justify-center"
+                                    key={dish.id}
+                                    className="bg-white rounded-3xl border border-[#E8D8C0] overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
                                 >
-                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-400/20 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-amber-500/20 transition-all">
-                                        <Icon className="w-6 h-6 text-amber-400" />
+                                    <div>
+                                        {/* Dish Image */}
+                                        <div className="relative h-44 bg-[#F2E8DC] overflow-hidden">
+                                            <img
+                                                src={dish.image}
+                                                alt={dish.name}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                            />
+                                            {dish.bestseller && (
+                                                <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37] text-black text-[9px] font-sans font-black tracking-wider uppercase shadow-xs">
+                                                    BESTSELLER
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Dish Details */}
+                                        <div className="p-4">
+                                            <h3 className="font-serif font-bold text-base text-[#1A120B] leading-tight mb-1">
+                                                {language === "te" && dish.name_te ? dish.name_te : dish.name}
+                                            </h3>
+                                            <p className="text-[11px] text-[#7A6958] line-clamp-2 leading-relaxed">
+                                                {dish.desc}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p className="text-white/90 font-bold text-sm group-hover:text-amber-400 transition-colors">
-                                        {cat.name}
-                                    </p>
+
+                                    {/* Price & Add Action */}
+                                    <div className="p-4 pt-2 flex items-center justify-between border-t border-[#F2E8DC]">
+                                        <span className="font-mono text-base font-black text-[#1A120B]">
+                                            ₹{dish.price}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAddDish(dish)}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer ${
+                                                isAdded
+                                                    ? "bg-emerald-600 text-white"
+                                                    : "bg-[#F7F0E4] hover:bg-[#D4AF37] text-[#1A120B] hover:text-black border border-[#D4AF37]/50"
+                                            }`}
+                                        >
+                                            {isAdded ? (
+                                                <>
+                                                    <Check className="w-3.5 h-3.5" />
+                                                    <span>ADDED</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>ADD</span>
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -628,196 +439,475 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* VERIFIED GOOGLE REVIEWS SECTION */}
-            <section id="reviews" className="py-20 px-4 sm:px-6 max-w-7xl mx-auto border-t border-white/5">
-                <div className="text-center mb-16">
-                    <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full glass text-amber-400 text-xs font-extrabold tracking-widest uppercase mb-4">
-                        <Star className="w-3.5 h-3.5 fill-amber-400" /> Rated 4.9 / 5 Stars in Kadiri
-                    </div>
-                    <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
-                        Loved by <span className="text-shimmer">Kadiri Foodies</span>
-                    </h2>
-                    <p className="text-white/60 text-lg max-w-xl mx-auto">
-                        Real experiences from guests who enjoy our Charcoal Mandi and hospitality daily.
-                    </p>
-                </div>
+            {/* ══════════════════════════════════════════════════════════════
+                4. "YOUR TABLE IS YOUR MENU" SECTION (Dark Emerald/Obsidian)
+               ══════════════════════════════════════════════════════════════ */}
+            <section className="py-24 bg-[#0A120D] text-white relative overflow-hidden border-y border-[#D4AF37]/20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                        {/* Left: 4-Step QR Ordering Flow */}
+                        <div className="lg:col-span-5 space-y-6">
+                            <div>
+                                <h2 className="font-serif text-3xl sm:text-4xl font-black text-white leading-tight uppercase">
+                                    YOUR TABLE<br />IS YOUR MENU
+                                </h2>
+                                <ArabesqueDivider className="justify-start my-2" />
+                                <p className="text-xs sm:text-sm text-[#A8BFA8] max-w-sm leading-relaxed font-light">
+                                    Scan the QR code on your table and order in just a few taps. No waiting. No hassle.
+                                </p>
+                            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {reviews.map((r, i) => (
-                        <div
-                            key={i}
-                            className="glass rounded-3xl p-6 border border-white/10 hover:border-amber-400/30 transition-all flex flex-col justify-between"
-                        >
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-1 text-amber-400">
-                                        {[...Array(r.rating)].map((_, idx) => (
-                                            <Star key={idx} className="w-4 h-4 fill-amber-400" />
-                                        ))}
+                            {/* 4 Process Icons in Row */}
+                            <div className="grid grid-cols-4 gap-2 pt-4">
+                                <div className="text-center group">
+                                    <div className="w-12 h-12 rounded-2xl bg-[#142319] border border-[#22C55E]/30 flex items-center justify-center mx-auto mb-2 text-[#4ADE80] group-hover:scale-110 transition-transform">
+                                        <QrCode className="w-5 h-5" />
                                     </div>
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/30">
-                                        {r.tag}
-                                    </span>
+                                    <span className="text-[9px] font-mono text-[#D4AF37] block">01</span>
+                                    <span className="text-[10px] font-bold text-white uppercase leading-tight block">SCAN QR CODE</span>
                                 </div>
-                                <p className="text-white/80 text-sm italic leading-relaxed">&ldquo;{r.comment}&rdquo;</p>
-                            </div>
-                            <div className="pt-4 mt-4 border-t border-white/5">
-                                <h4 className="text-sm font-black text-white">{r.name}</h4>
-                                <p className="text-xs text-white/50">{r.role}</p>
+
+                                <div className="text-center group">
+                                    <div className="w-12 h-12 rounded-2xl bg-[#142319] border border-[#22C55E]/30 flex items-center justify-center mx-auto mb-2 text-[#4ADE80] group-hover:scale-110 transition-transform">
+                                        <UtensilsCrossed className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-[9px] font-mono text-[#D4AF37] block">02</span>
+                                    <span className="text-[10px] font-bold text-white uppercase leading-tight block">CHOOSE YOUR FOOD</span>
+                                </div>
+
+                                <div className="text-center group">
+                                    <div className="w-12 h-12 rounded-2xl bg-[#142319] border border-[#22C55E]/30 flex items-center justify-center mx-auto mb-2 text-[#4ADE80] group-hover:scale-110 transition-transform">
+                                        <ShoppingBag className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-[9px] font-mono text-[#D4AF37] block">03</span>
+                                    <span className="text-[10px] font-bold text-white uppercase leading-tight block">PLACE ORDER</span>
+                                </div>
+
+                                <div className="text-center group">
+                                    <div className="w-12 h-12 rounded-2xl bg-[#142319] border border-[#22C55E]/30 flex items-center justify-center mx-auto mb-2 text-[#4ADE80] group-hover:scale-110 transition-transform">
+                                        <ChefHat className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-[9px] font-mono text-[#D4AF37] block">04</span>
+                                    <span className="text-[10px] font-bold text-white uppercase leading-tight block">ENJOY YOUR MEAL</span>
+                                </div>
                             </div>
                         </div>
-                    ))}
-                </div>
-            </section>
 
-            {/* WHY ARABIEQ */}
-            <section className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
-                <div className="text-center mb-16">
-                    <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
-                        Why <span className="text-shimmer">Arabieq?</span>
-                    </h2>
-                    <p className="text-white/60 text-lg max-w-xl mx-auto">More than just food — a royal Kadiri dining experience.</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {whyUs.map((f, i) => (
-                        <div
-                            key={i}
-                            className={`group p-6 rounded-2xl border ${f.bg} hover:-translate-y-2 transition-all duration-300`}
-                        >
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${f.bg}`}>
-                                <f.icon className={`w-6 h-6 ${f.color}`} />
+                        {/* Center: Realistic Interactive Smartphone Mockup */}
+                        <div className="lg:col-span-4 flex justify-center">
+                            <div className="relative w-72 rounded-[40px] p-3.5 bg-gradient-to-b from-[#333] via-[#1A1A1A] to-[#111] border-4 border-[#D4AF37]/50 shadow-2xl shadow-black/80">
+                                {/* Speaker notch */}
+                                <div className="w-24 h-4 bg-black rounded-b-xl mx-auto mb-2" />
+
+                                {/* Phone Screen Content */}
+                                <div className="bg-[#0D0907] rounded-[28px] p-4 text-white overflow-hidden text-xs space-y-3">
+                                    <div className="flex items-center justify-between border-b border-[#D4AF37]/20 pb-2">
+                                        <div>
+                                            <span className="text-[9px] text-[#A6957E] block">Welcome to</span>
+                                            <span className="font-serif font-black text-sm text-[#D4AF37]">Table 12</span>
+                                        </div>
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    </div>
+
+                                    {/* Mock Search */}
+                                    <div className="p-2 rounded-xl bg-[#1A140F] border border-[#D4AF37]/30 text-[10px] text-[#A6957E] flex items-center gap-1.5">
+                                        <span>🔍</span>
+                                        <span>Search for dishes...</span>
+                                    </div>
+
+                                    {/* Mock Mini Dish Items */}
+                                    <div className="space-y-2">
+                                        <div className="p-2 rounded-xl bg-[#140F0B] border border-[#D4AF37]/20 flex items-center justify-between">
+                                            <div>
+                                                <span className="font-bold block text-[11px]">Chicken Mandi</span>
+                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹349</span>
+                                            </div>
+                                            <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-black font-bold flex items-center justify-center">+</span>
+                                        </div>
+
+                                        <div className="p-2 rounded-xl bg-[#140F0B] border border-[#D4AF37]/20 flex items-center justify-between">
+                                            <div>
+                                                <span className="font-bold block text-[11px]">Hummus with Pita</span>
+                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹199</span>
+                                            </div>
+                                            <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-black font-bold flex items-center justify-center">+</span>
+                                        </div>
+
+                                        <div className="p-2 rounded-xl bg-[#140F0B] border border-[#D4AF37]/20 flex items-center justify-between">
+                                            <div>
+                                                <span className="font-bold block text-[11px]">Mixed Grill Platter</span>
+                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹599</span>
+                                            </div>
+                                            <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-black font-bold flex items-center justify-center">+</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Mock Floating Cart */}
+                                    <Link
+                                        href="/order?branch=1&table=T12"
+                                        className="block p-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#C59B27] text-black text-center font-bold text-[11px] uppercase tracking-wider shadow-md"
+                                    >
+                                        View Cart (3) • ₹847
+                                    </Link>
+                                </div>
                             </div>
-                            <h3 className="text-white font-black text-base mb-2 group-hover:text-amber-400 transition-colors">
-                                {f.title}
-                            </h3>
-                            <p className="text-white/60 text-sm leading-relaxed">{f.desc}</p>
                         </div>
-                    ))}
-                </div>
-            </section>
 
-            {/* CONTACT & MAPS */}
-            <section id="contact" className="py-20 px-4 sm:px-6 border-t border-white/5">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
-                            Visit <span className="text-shimmer">Our Outlets</span>
-                        </h2>
-                        <p className="text-white/60 text-lg">Two prime locations in Kadiri</p>
+                        {/* Right: "No App Required" Scannable Table QR Card */}
+                        <div className="lg:col-span-3">
+                            <div className="bg-[#121E14] border-2 border-[#22C55E]/40 rounded-3xl p-6 text-center space-y-4 shadow-xl">
+                                <div className="w-10 h-10 rounded-2xl bg-[#1A2E1F] text-[#4ADE80] flex items-center justify-center mx-auto">
+                                    <QrCode className="w-6 h-6" />
+                                </div>
+
+                                <div>
+                                    <h4 className="font-serif font-black text-base text-white uppercase">
+                                        NO APP REQUIRED
+                                    </h4>
+                                    <p className="text-[11px] text-[#A8BFA8] mt-1 leading-relaxed">
+                                        Just scan, order and enjoy.<br />It's that simple!
+                                    </p>
+                                </div>
+
+                                {/* Scannable Live QR Image */}
+                                <div className="bg-white p-3 rounded-2xl inline-block shadow-md border-2 border-[#D4AF37]">
+                                    <img
+                                        src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Farabic-restaurant-dineos.vercel.app%2Forder%3Fbranch%3D1%26table%3DT1"
+                                        alt="Scan QR code for table ordering"
+                                        className="w-32 h-32 object-contain"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={() => setHowItWorksOpen(true)}
+                                    className="w-full py-2.5 rounded-xl bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 text-[#D4AF37] border border-[#D4AF37]/40 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer"
+                                >
+                                    <span>SEE HOW IT WORKS</span>
+                                    <Play className="w-3 h-3 fill-current" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {branches.map((branch) => (
-                            <div
-                                key={branch.id}
-                                className="glass rounded-3xl p-8 border border-white/10 hover:border-amber-400/30 transition-all duration-300"
-                            >
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                                        <span className="text-amber-400 font-black text-sm">B{branch.id}</span>
+                </div>
+            </section>
+
+            {/* ══════════════════════════════════════════════════════════════
+                5. "CRAVING ARABIC? WE'LL BRING IT. FOR FREE." (Delivery Banner)
+               ══════════════════════════════════════════════════════════════ */}
+            <section className="py-20 bg-gradient-to-r from-[#120E0A] via-[#1E1712] to-[#120E0A] relative overflow-hidden border-b border-[#D4AF37]/20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                        {/* Left: Arabiq Rider Visual */}
+                        <div className="lg:col-span-5 flex justify-center">
+                            <div className="relative w-full max-w-sm rounded-3xl overflow-hidden border-2 border-[#D4AF37]/30 shadow-2xl">
+                                <img
+                                    src="/dishes/3d_mandi.jpg"
+                                    alt="Arabiq Fast Free Delivery"
+                                    className="w-full h-64 object-cover"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
+                                <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-[#D4AF37] text-black flex items-center justify-center font-black">
+                                        <Truck className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p className="text-amber-400 text-xs font-extrabold uppercase tracking-widest">
-                                            Branch {branch.id}
-                                        </p>
-                                        <h3 className="text-white font-black text-lg">{branch.name}</h3>
+                                        <span className="text-xs font-bold text-white block">Arabiq Express Fleet</span>
+                                        <span className="text-[10px] text-[#D4AF37] font-mono">Kadiri 30–40 Mins Delivery</span>
                                     </div>
                                 </div>
-                                <div className="space-y-3 mb-6">
-                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
-                                        <MapPin className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                                        <span className="text-white/70 text-sm">{branch.address}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                                        <Clock className="w-5 h-5 text-amber-400 shrink-0" />
-                                        <span className="text-white/70 text-sm">{branch.hours}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                                        <Phone className="w-5 h-5 text-amber-400 shrink-0" />
-                                        <span className="text-white/70 text-sm">{branch.phone}</span>
-                                    </div>
-                                </div>
-                                <Link href={branch.orderLink}>
-                                    <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500 border border-amber-400/30 text-amber-400 hover:text-black font-extrabold text-sm transition-all duration-300 cursor-pointer">
-                                        <QrCode className="w-4 h-4" /> Order from Branch {branch.id} <ArrowRight className="w-4 h-4" />
-                                    </button>
-                                </Link>
                             </div>
-                        ))}
+                        </div>
+
+                        {/* Right: Delivery Headline & 4 Badges */}
+                        <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+                            <h2 className="font-serif text-3xl sm:text-4xl font-black text-white leading-tight">
+                                CRAVING ARABIC?<br />
+                                <span className="bg-gradient-to-r from-[#F7E7B4] via-[#D4AF37] to-[#B38020] bg-clip-text text-transparent uppercase">
+                                    WE'LL BRING IT. FOR FREE.
+                                </span>
+                            </h2>
+
+                            {/* 4 Delivery Pillars */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-2">
+                                <div className="p-3 rounded-2xl bg-[#1A140F] border border-[#D4AF37]/20">
+                                    <Truck className="w-5 h-5 text-[#D4AF37] mb-1 mx-auto lg:mx-0" />
+                                    <span className="text-[11px] font-bold text-white block">FREE DELIVERY</span>
+                                </div>
+                                <div className="p-3 rounded-2xl bg-[#1A140F] border border-[#D4AF37]/20">
+                                    <Navigation className="w-5 h-5 text-[#D4AF37] mb-1 mx-auto lg:mx-0" />
+                                    <span className="text-[11px] font-bold text-white block">LIVE TRACKING</span>
+                                </div>
+                                <div className="p-3 rounded-2xl bg-[#1A140F] border border-[#D4AF37]/20">
+                                    <ShieldCheck className="w-5 h-5 text-[#D4AF37] mb-1 mx-auto lg:mx-0" />
+                                    <span className="text-[11px] font-bold text-white block">SAFE & HYGIENIC</span>
+                                </div>
+                                <div className="p-3 rounded-2xl bg-[#1A140F] border border-[#D4AF37]/20">
+                                    <Clock className="w-5 h-5 text-[#D4AF37] mb-1 mx-auto lg:mx-0" />
+                                    <span className="text-[11px] font-bold text-white block">ON TIME GUARANTEE</span>
+                                </div>
+                            </div>
+
+                            <Link
+                                href="/delivery?branch=1"
+                                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#E5C058] to-[#C59B27] hover:from-[#E5C058] hover:to-[#D4AF37] text-black font-serif font-black text-xs uppercase tracking-widest shadow-xl shadow-[#D4AF37]/20 transition active:scale-95 cursor-pointer"
+                            >
+                                <span>ORDER FOR DELIVERY NOW</span>
+                                <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* FOOTER */}
-            <footer className="border-t border-white/10 bg-black/30 px-4 sm:px-6 py-12">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
-                        <Link href="/" className="flex items-center gap-3">
-                            <img src="/logo.png" alt="Arabieq" className="h-10 w-auto object-contain" />
-                            <div>
-                                <p className="text-sm font-black text-amber-400">Arabieq Restaurant & Cafe</p>
-                                <p className="text-xs text-white/40">Two Branches • Kadiri, Andhra Pradesh</p>
+            {/* ══════════════════════════════════════════════════════════════
+                6. "MORE THAN A MEAL. IT'S AN EXPERIENCE." (Story & Gallery)
+               ══════════════════════════════════════════════════════════════ */}
+            <section id="experience" className="py-20 bg-[#F8F3EB] text-[#1A120B] relative">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                        {/* Left: Story Headline & CTA */}
+                        <div className="lg:col-span-5 space-y-5 text-center lg:text-left">
+                            <h2 className="font-serif text-3xl sm:text-4xl font-black tracking-tight text-[#1A120B] uppercase leading-tight">
+                                MORE THAN A MEAL.<br />IT'S AN EXPERIENCE.
+                            </h2>
+                            <ArabesqueDivider light={true} className="justify-start my-2 mx-auto lg:mx-0" />
+                            <p className="text-xs sm:text-sm text-[#6E5B4B] leading-relaxed">
+                                At Arabiq, we bring the rich heritage of Arabian cuisine to your table with love, authenticity and the finest ingredients.
+                            </p>
+
+                            <button
+                                onClick={() => setStoryOpen(true)}
+                                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#120E0A] hover:bg-[#2A1F17] text-[#D4AF37] font-serif font-black text-xs uppercase tracking-wider shadow-md transition cursor-pointer"
+                            >
+                                <span>OUR STORY</span>
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Right: 4-Photo Ambiance Grid */}
+                        <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md h-44 group">
+                                <img
+                                    src="/dishes/3d_mandi.jpg"
+                                    alt="Lantern Ambiance"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
                             </div>
-                        </Link>
-                        <div className="flex items-center gap-4">
-                            {([Share2, Globe, MessageCircle] as React.ElementType[]).map((Icon, i) => (
-                                <button
-                                    key={i}
-                                    className="w-10 h-10 rounded-xl glass hover:bg-amber-500/20 flex items-center justify-center text-white/40 hover:text-amber-400 transition-all cursor-pointer"
+                            <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md h-44 group">
+                                <img
+                                    src="/dishes/3d_biryani.jpg"
+                                    alt="Master Chef Preparation"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                            </div>
+                            <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md h-44 group">
+                                <img
+                                    src="/dishes/3d_nonveg_starters.jpg"
+                                    alt="Charcoal Fire Grill"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                            </div>
+                            <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md h-44 group">
+                                <img
+                                    src="/dishes/3d_veg_starters.jpg"
+                                    alt="Majlis Dining Ambiance"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ══════════════════════════════════════════════════════════════
+                7. "LOVED BY OUR GUESTS" (Social Proof & Reviews)
+               ══════════════════════════════════════════════════════════════ */}
+            <section className="py-20 bg-[#0D0907] border-t border-[#D4AF37]/20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                        {/* Left: Overall Rating */}
+                        <div className="lg:col-span-4 text-center lg:text-left space-y-2">
+                            <h3 className="font-serif text-2xl font-black text-[#F8F3EB] uppercase">
+                                LOVED BY<br />OUR GUESTS
+                            </h3>
+                            <ArabesqueDivider className="justify-start my-2 mx-auto lg:mx-0" />
+                            <div className="flex items-baseline justify-center lg:justify-start gap-2">
+                                <span className="text-4xl font-serif font-black text-[#D4AF37]">4.8</span>
+                                <span className="text-xl text-[#A6957E]">/ 5</span>
+                            </div>
+                            <div className="flex items-center justify-center lg:justify-start gap-1 text-[#D4AF37]">
+                                {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className="w-4 h-4 fill-current" />
+                                ))}
+                            </div>
+                            <span className="text-xs text-[#A6957E] block font-mono">2,400+ Happy Diners in Kadiri</span>
+                        </div>
+
+                        {/* Right: 3 Testimonial Cards */}
+                        <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {TESTIMONIALS.map((t, idx) => (
+                                <div
+                                    key={idx}
+                                    className="p-5 rounded-3xl bg-[#140F0B] border border-[#D4AF37]/20 flex flex-col justify-between hover:border-[#D4AF37]/60 transition"
                                 >
-                                    <Icon className="w-4 h-4" />
-                                </button>
+                                    <p className="text-xs text-[#E2D4C0] italic leading-relaxed mb-4">
+                                        &ldquo;{t.quote}&rdquo;
+                                    </p>
+                                    <div className="pt-3 border-t border-[#D4AF37]/15 flex items-center justify-between">
+                                        <div>
+                                            <h4 className="font-serif font-bold text-xs text-[#F8F3EB]">{t.author}</h4>
+                                            <span className="text-[10px] text-[#A6957E] block">{t.location}</span>
+                                        </div>
+                                        <div className="flex text-[#D4AF37]">
+                                            {[...Array(t.rating)].map((_, i) => (
+                                                <Star key={i} className="w-3 h-3 fill-current" />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-white/5">
-                        <p className="text-white/30 text-sm">
-                            &copy; {new Date().getFullYear()} Arabieq Restaurant & Cafe — All rights reserved.
-                        </p>
-                        <div className="flex items-center gap-4">
-                            <Link href="/admin/login">
-                                <span className="text-white/30 hover:text-amber-400 text-xs font-medium transition-colors flex items-center gap-1">
-                                    <ShieldCheck className="w-3 h-3" /> Staff Portal
-                                </span>
-                            </Link>
-                            <Link href="/captain">
-                                <span className="text-white/30 hover:text-amber-400 text-xs font-medium transition-colors flex items-center gap-1">
-                                    <Smartphone className="w-3 h-3" /> Captain POS
-                                </span>
-                            </Link>
-                            <Link href="/admin/kds">
-                                <span className="text-white/30 hover:text-amber-400 text-xs font-medium transition-colors flex items-center gap-1">
-                                    <ChefHat className="w-3 h-3" /> Kitchen KDS
-                                </span>
-                            </Link>
+                </div>
+            </section>
+
+            {/* ══════════════════════════════════════════════════════════════
+                8. COMPREHENSIVE LUXURY FOOTER
+               ══════════════════════════════════════════════════════════════ */}
+            <footer id="contact" className="bg-[#080504] border-t border-[#D4AF37]/30 pt-16 pb-12 text-xs text-[#A6957E]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-[#D4AF37]/15">
+                        {/* Col 1: Brand & Bio */}
+                        <div className="lg:col-span-1 space-y-4">
+                            <ArabiqLogo />
+                            <p className="text-[11px] leading-relaxed text-[#C5B39A]">
+                                Experience the authentic taste of Arabia with our signature dishes, warm hospitality and unmatched flavours.
+                            </p>
+                        </div>
+
+                        {/* Col 2: ORDER */}
+                        <div className="space-y-3">
+                            <h4 className="font-serif font-bold text-sm text-[#F8F3EB] uppercase tracking-wider">
+                                ORDER
+                            </h4>
+                            <ul className="space-y-2 text-[11px]">
+                                <li>
+                                    <button onClick={openTablePicker} className="hover:text-[#D4AF37] transition cursor-pointer">
+                                        Order at Table (QR)
+                                    </button>
+                                </li>
+                                <li>
+                                    <Link href="/delivery?branch=1" className="hover:text-[#D4AF37] transition">
+                                        Order for Delivery
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/order?branch=1" className="hover:text-[#D4AF37] transition">
+                                        View Full Menu
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/delivery?branch=1" className="hover:text-[#D4AF37] transition">
+                                        Offers & Deals
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Col 3: RESTAURANT */}
+                        <div id="locations" className="space-y-3">
+                            <h4 className="font-serif font-bold text-sm text-[#F8F3EB] uppercase tracking-wider">
+                                RESTAURANT
+                            </h4>
+                            <ul className="space-y-2 text-[11px]">
+                                <li>
+                                    <button onClick={() => setStoryOpen(true)} className="hover:text-[#D4AF37] transition cursor-pointer">
+                                        Our Story
+                                    </button>
+                                </li>
+                                <li>
+                                    <a href="#experience" className="hover:text-[#D4AF37] transition">
+                                        Gallery & Ambiance
+                                    </a>
+                                </li>
+                                <li>
+                                    <button onClick={openTablePicker} className="hover:text-[#D4AF37] transition cursor-pointer">
+                                        Kadiri Locations
+                                    </button>
+                                </li>
+                                <li>
+                                    <Link href="/admin/login" className="hover:text-[#D4AF37] transition">
+                                        Staff & Admin Portal
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Col 4: LOCATION */}
+                        <div className="space-y-3">
+                            <h4 className="font-serif font-bold text-sm text-[#F8F3EB] uppercase tracking-wider">
+                                LOCATION
+                            </h4>
+                            <div className="space-y-2 text-[11px] text-[#C5B39A]">
+                                <p className="flex items-start gap-2">
+                                    <MapPin className="w-3.5 h-3.5 text-[#D4AF37] shrink-0 mt-0.5" />
+                                    <span>Main Bazaar Road & Bypass Road, Kadiri, AP</span>
+                                </p>
+                                <p className="flex items-center gap-2">
+                                    <Phone className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                                    <a href="tel:8328413356" className="hover:text-white font-mono">+91 8328413356</a>
+                                </p>
+                                <p className="flex items-center gap-2">
+                                    <Mail className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                                    <a href="mailto:hello@arabiq.com" className="hover:text-white">hello@arabiq.com</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Col 5: OPENING HOURS & QR BADGE */}
+                        <div className="space-y-3">
+                            <h4 className="font-serif font-bold text-sm text-[#F8F3EB] uppercase tracking-wider">
+                                OPENING HOURS
+                            </h4>
+                            <div className="text-[11px] space-y-1 text-[#C5B39A]">
+                                <p>Mon – Fri : 11:00 AM – 11:00 PM</p>
+                                <p>Sat – Sun : 10:00 AM – 12:00 AM</p>
+                            </div>
+
+                            {/* Table QR Footer Card */}
+                            <button
+                                onClick={openTablePicker}
+                                className="w-full p-3 rounded-2xl bg-[#140F0B] border border-[#D4AF37]/40 hover:border-[#D4AF37] flex items-center justify-between gap-2 transition group cursor-pointer text-left"
+                            >
+                                <div className="bg-white p-1 rounded-lg shrink-0">
+                                    <QrCode className="w-6 h-6 text-black" />
+                                </div>
+                                <div className="flex-1">
+                                    <span className="text-[10px] font-mono text-[#D4AF37] font-bold block">SCAN TO ORDER</span>
+                                    <span className="text-xs font-bold text-white block">AT YOUR TABLE</span>
+                                </div>
+                                <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37] group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Bottom Copyright */}
+                    <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-[#7A6958]">
+                        <p>&copy; {new Date().getFullYear()} Arabiq Restaurant. All Rights Reserved.</p>
+                        <div className="flex items-center gap-6">
+                            <a href="#" className="hover:text-[#D4AF37] transition">Privacy Policy</a>
+                            <a href="#" className="hover:text-[#D4AF37] transition">Terms & Conditions</a>
                         </div>
                     </div>
                 </div>
             </footer>
 
-            {/* FLOATING MOBILE GLASS DOCK (PERSISTENT CONVERSION ANCHOR) */}
-            <div className="fixed bottom-3 inset-x-3 z-50 sm:hidden bg-[#0d0a06]/92 backdrop-blur-xl border border-amber-400/40 rounded-2xl p-2.5 shadow-2xl flex items-center justify-between gap-2 shadow-amber-500/10">
-                <div className="flex items-center gap-2 pl-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                    <div className="leading-tight">
-                        <p className="text-[11px] font-black text-white">Kadiri Open</p>
-                        <p className="text-[9px] text-amber-300">25–35 min Delivery</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Link href="/delivery?branch=2">
-                        <button className="px-3.5 py-2 rounded-xl bg-amber-500 text-black font-black text-xs shadow-md flex items-center gap-1.5 cursor-pointer">
-                            <Bike className="w-3.5 h-3.5 text-black" />
-                            <span>Delivery</span>
-                        </button>
-                    </Link>
-                    <Link href="/order?branch=2&table=T1">
-                        <button className="px-3 py-2 rounded-xl bg-white/15 border border-white/25 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer">
-                            <QrCode className="w-3.5 h-3.5 text-amber-400" />
-                            <span>Dine-In</span>
-                        </button>
-                    </Link>
-                </div>
-            </div>
+            {/* ══════════════════════════════════════════════════════════════
+                INTERACTIVE MODALS
+               ══════════════════════════════════════════════════════════════ */}
+            <HowItWorksModal isOpen={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
+            <OurStoryModal isOpen={storyOpen} onClose={() => setStoryOpen(false)} />
+            <BranchSelectorModal isOpen={branchModalOpen} onClose={() => setBranchModalOpen(false)} mode={branchModalMode} />
         </div>
     );
 }
