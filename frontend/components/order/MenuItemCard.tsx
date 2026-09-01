@@ -6,6 +6,7 @@ import { VegBadge, SpecialBadge, StockBadge } from "@/components/ui/Badge";
 import { formatRupees } from "@/lib/formatters";
 import { useLanguage } from "@/context/LanguageContext";
 import { api } from "@/lib/api";
+import { getDishImage } from "@/lib/dishImages";
 
 export interface MenuItemData {
     id: number;
@@ -49,17 +50,11 @@ export function MenuItemCard({ item, cartQty, onAdd, onRemove }: MenuItemCardPro
             <div>
                 {/* Image / Banner Area */}
                 <div className="h-40 bg-linear-to-br from-cream-100 to-cream-200 relative flex items-center justify-center overflow-hidden">
-                    {item.image_url ? (
-                        <img
-                            src={api.getImageUrl(item.image_url)}
-                            alt={displayName}
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="flex flex-col items-center justify-center text-terracotta-400/80">
-                            <ChefHat className="w-12 h-12 stroke-[1.5]" />
-                        </div>
-                    )}
+                    <img
+                        src={getDishImage(item)}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                    />
 
                     {/* Badges Overlay */}
                     <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 z-10">

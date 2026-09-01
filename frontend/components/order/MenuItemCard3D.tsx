@@ -6,6 +6,7 @@ import { VegBadge, SpecialBadge } from "@/components/ui/Badge";
 import { formatRupees } from "@/lib/formatters";
 import { useLanguage } from "@/context/LanguageContext";
 import { api } from "@/lib/api";
+import { getDishImage } from "@/lib/dishImages";
 import type { MenuItemData } from "@/components/order/MenuItemCard";
 
 interface MenuItemCard3DProps {
@@ -90,15 +91,8 @@ export function MenuItemCard3D({
 
     const c = themeColor in addBtnColors ? themeColor : "terracotta";
 
-    // Resolve dish image
-    let rawImageUrl = item.image_url;
-    if (!rawImageUrl || imageError) {
-        rawImageUrl = CATEGORY_DEFAULT_IMAGES[item.category_id] || "/dishes/3d_biryani.jpg";
-    }
-
-    const finalImageSrc = rawImageUrl.startsWith("/dishes/") || rawImageUrl.startsWith("/static/")
-        ? rawImageUrl
-        : api.getImageUrl(rawImageUrl);
+    // Resolve distinct dish image
+    const finalImageSrc = imageError ? "/dishes/3d_biryani.jpg" : getDishImage(item);
 
     const handleAddClick = (e: React.MouseEvent) => {
         e.stopPropagation();
