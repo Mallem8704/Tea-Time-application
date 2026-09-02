@@ -159,7 +159,7 @@ def send_otp(req: CustomerSendOTPReq, db: Session = Depends(get_db)):
         "status": "success",
         "message": f"OTP successfully sent to +91 {phone}",
         "phone": phone,
-        "debug_otp": otp_code,
+        "debug_otp": otp_code if os.getenv("ENVIRONMENT", "development") != "production" else None,
     }
 
 
@@ -174,7 +174,7 @@ def verify_otp(req: CustomerVerifyOTPReq, db: Session = Depends(get_db)):
         CustomerOTP.expires_at >= now
     ).order_by(CustomerOTP.id.desc()).first()
 
-    is_demo = req.otp_code == "123456"
+    is_demo = req.otp_code == "123456" and os.getenv("ENVIRONMENT", "development") != "production"
     if not is_demo and (not otp_entry or otp_entry.otp_code != req.otp_code):
         if otp_entry:
             otp_entry.attempts += 1

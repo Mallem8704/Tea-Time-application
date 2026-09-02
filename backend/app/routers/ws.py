@@ -60,12 +60,15 @@ class ConnectionManager:
             if outlet_id in self.admin_connections:
                 targets = list(self.admin_connections[outlet_id])
 
-        for ws in targets:
+        async def send_safe(ws):
             try:
                 await ws.send_text(message)
             except Exception as e:
                 logger.warning(f"[WS] Failed sending to admin socket: {e}")
                 await self.disconnect_admin(ws, outlet_id)
+
+        if targets:
+            await asyncio.gather(*(send_safe(ws) for ws in targets), return_exceptions=True)
 
     async def broadcast_to_order(self, order_id: int, event_type: str, data: Any, outlet_id: int = 1):
         """Broadcast live status update to customer tracking connections and admin boards."""

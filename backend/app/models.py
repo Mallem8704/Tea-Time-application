@@ -157,7 +157,7 @@ class Order(Base):
     idempotency_key = Column(String(100), unique=True, index=True, nullable=True)  # Prevents duplicate checkout retries
     order_type = Column(String(20), default="dine_in", index=True)  # 'dine_in', 'delivery', 'takeaway'
     customer_name = Column(String(100), nullable=True)
-    customer_phone = Column(String(20), nullable=True)
+    customer_phone = Column(String(20), index=True, nullable=True)
     delivery_address = Column(Text, nullable=True)
     delivery_status = Column(String(30), default="pending")  # 'pending', 'out_for_delivery', 'delivered'
     delivery_fee_paise = Column(Integer, default=0)  # Free delivery = 0
@@ -209,7 +209,7 @@ class Payment(Base):
     txn_id = Column(String(100), nullable=True)
     amount_paise = Column(Integer, nullable=False)
     status = Column(String(20), default="completed")  # 'pending', 'completed', 'failed', 'refunded'
-    paid_at = Column(DateTime, default=datetime.datetime.utcnow)
+    paid_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
     notes = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -226,7 +226,7 @@ class StockLog(Base):
     reason = Column(String(50), nullable=False)  # 'sale', 'restock', 'wastage', 'adjustment'
     staff_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     notes = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
 
     item = relationship("MenuItem", back_populates="stock_logs")
 
@@ -251,10 +251,10 @@ class AuditLog(Base):
     outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     action = Column(String(100), nullable=False)  # e.g., 'price_change', 'stock_adjustment', 'cancel_order'
-    entity_type = Column(String(50), nullable=False)  # e.g., 'menu_item', 'order', 'table'
+    entity_type = Column(String(50), index=True, nullable=False)  # e.g., 'menu_item', 'order', 'table'
     entity_id = Column(Integer, nullable=True)
     details_json = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
 
     user = relationship("User", back_populates="audit_logs")
 
@@ -330,7 +330,7 @@ class TableReservation(Base):
     customer_phone = Column(String(20), index=True, nullable=False)
     customer_email = Column(String(100), nullable=True)
     party_size = Column(Integer, nullable=False, default=2)
-    reservation_date = Column(String(20), nullable=False)  # YYYY-MM-DD
+    reservation_date = Column(String(20), index=True, nullable=False)  # YYYY-MM-DD
     reservation_time = Column(String(20), nullable=False)  # HH:MM e.g. "19:30"
     seating_preference = Column(String(50), default="standard")  # 'majlis', 'family_ac', 'terrace', 'standard'
     occasion = Column(String(50), nullable=True)  # 'birthday', 'anniversary', 'family', 'business', 'casual'

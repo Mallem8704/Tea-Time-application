@@ -759,6 +759,19 @@ export default function AdminMenuManagementPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Item Portion Sizes & Addons Modal */}
+                {showVariantsModal && selectedVariantItem && (
+                    <ItemVariantsModal
+                        isOpen={showVariantsModal}
+                        onClose={() => {
+                            setShowVariantsModal(false);
+                            setSelectedVariantItem(null);
+                        }}
+                        item={selectedVariantItem}
+                        onItemUpdated={fetchData}
+                    />
+                )}
             </div>
         </div>
     );

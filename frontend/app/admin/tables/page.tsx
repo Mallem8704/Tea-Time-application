@@ -234,6 +234,15 @@ export default function AdminTablesPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="secondary"
+                            size="md"
+                            leftIcon={<QrCode className="w-4 h-4" />}
+                            onClick={() => setIsQRBatchModalOpen(true)}
+                        >
+                            Batch Print QR Standees
+                        </Button>
+
                         <a
                             href={outlet?.id === 2 ? "/Arabieq_Branch2_Table_QR_Stands.pdf" : "/Arabieq_Branch1_Table_QR_Stands.pdf"}
                             target="_blank"

@@ -389,7 +389,7 @@ export default function AdminPaymentsPage() {
                                 <tbody className="divide-y divide-cream-100">
                                     {filteredPayments.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="text-center py-10 text-espresso-400">
+                                            <td colSpan={8} className="text-center py-10 text-espresso-400">
                                                 No payment transactions match filters.
                                             </td>
                                         </tr>

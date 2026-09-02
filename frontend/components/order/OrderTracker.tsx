@@ -421,7 +421,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                             </div>
                             <div className="space-y-1">
                                 <p className="text-xs font-black text-espresso-950">
-                                    Scan & Pay <span className="text-emerald-700 font-mono font-black">₹{dynamicUpi.amount_rs.toFixed(2)}</span>
+                                    Scan & Pay <span className="text-emerald-700 font-mono font-black">₹{Number(dynamicUpi?.amount_rs || (order.total_paise / 100)).toFixed(2)}</span>
                                 </p>
                                 <div className="flex items-center justify-center gap-2">
                                     <span className="text-[11px] font-mono font-bold text-espresso-800 bg-cream-100 px-2 py-0.5 rounded-lg border border-cream-300">

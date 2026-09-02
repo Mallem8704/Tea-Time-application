@@ -20,6 +20,8 @@ import {
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { useOutlet } from "@/context/OutletContext";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 import { api } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
@@ -27,6 +29,14 @@ import { useAdminSocket } from "@/hooks/useSockets";
 import { soundManager } from "@/lib/sound";
 
 export default function AdminReservationsPage() {
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated) {
+            router.push("/admin/login");
+        }
+    }, [isAuthenticated, authLoading, router]);
     const { outlet } = useOutlet();
     const [selectedBranchId, setSelectedBranchId] = useState<number>(outlet?.id || 1);
     const toast = useToast();

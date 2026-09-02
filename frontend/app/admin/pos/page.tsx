@@ -155,6 +155,7 @@ export default function CashierPOSTerminalPage() {
     // Keyboard Shortcuts Listener (F2, F4, F5, F8, F9, F10, F11, F12)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "F8") { e.preventDefault(); /* Focus discount or clear */ }
             if (e.key === "F7") {
                 e.preventDefault();
                 setIsRecentBillsOpen(true);
@@ -694,6 +695,30 @@ export default function CashierPOSTerminalPage() {
                     setOrderType("dine_in");
                 }}
             />
+
+            {/* RECENT BILLS & REPRINT MODAL [F7] */}
+            {isRecentBillsOpen && (
+                <POSRecentBillsModal
+                    isOpen={isRecentBillsOpen}
+                    onClose={() => {
+                        setIsRecentBillsOpen(false);
+                        loadPOSData();
+                    }}
+                    outlet={outlet}
+                />
+            )}
+
+            {/* CASH DRAWER FLOAT & SHIFT HANDOVER MODAL */}
+            {isShiftModalOpen && (
+                <POSShiftModal
+                    isOpen={isShiftModalOpen}
+                    onClose={() => {
+                        setIsShiftModalOpen(false);
+                        loadPOSData();
+                    }}
+                    outlet={outlet}
+                />
+            )}
 
             {/* PETTY CASH MODAL */}
             <PettyCashModal

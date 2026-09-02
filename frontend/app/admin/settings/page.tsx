@@ -6,6 +6,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { useOutlet } from "@/context/OutletContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 import { 
@@ -14,7 +15,14 @@ import {
 
 export default function SettingsPage() {
     const { outlet, refreshOutlet, isLoading: outletLoading } = useOutlet();
-    const { isOwner } = useAuth();
+    const { isAuthenticated, isLoading: authLoading, isOwner } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated) {
+            router.push("/admin/login");
+        }
+    }, [isAuthenticated, authLoading, router]);
     const toast = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
