@@ -63,8 +63,8 @@ export const dictionary = {
 
         // Cart & Checkout
         your_cart: "Your Cart",
-        cart_empty: "Your cart is empty. Add delicious chai and snacks to get started!",
-        item_notes_placeholder: "Any special request? (e.g. Less sugar, extra hot)",
+        cart_empty: "Your cart is empty. Add delicious dishes from our restaurant menu to get started!",
+        item_notes_placeholder: "Any special request? (e.g. Less spicy, extra sauce)",
         subtotal: "Subtotal",
         tax_gst: "GST (5%)",
         total: "Grand Total",
@@ -76,10 +76,10 @@ export const dictionary = {
         order_number: "Order Number",
         live_status: "Live Preparation Status",
         order_timeline_placed: "Order received by kitchen",
-        order_timeline_accepted: "Order accepted by counter",
-        order_timeline_preparing: "Fresh brews & snacks are being prepared",
+        order_timeline_accepted: "Order accepted by restaurant",
+        order_timeline_preparing: "Fresh gourmet dishes are being prepared in the kitchen",
         order_timeline_ready: "Your order is ready to serve",
-        order_timeline_served: "Enjoy your fresh tea & snacks!",
+        order_timeline_served: "Enjoy your delicious meal!",
         payment_status_pending: "Payment Pending (Pay at Counter)",
         payment_status_paid: "Paid Online",
 
@@ -156,8 +156,8 @@ export const dictionary = {
 
         // Cart & Checkout
         your_cart: "మీ కార్ట్",
-        cart_empty: "మీ కార్ట్ ఖాళీగా ఉంది. వేడి చాయ్ మరియు స్నాక్స్ ఎంచుకోండి!",
-        item_notes_placeholder: "ఏదైనా సూచనలు? (ఉదా: తక్కువ చక్కెర, వేడిగా)",
+        cart_empty: "మీ కార్ట్ ఖాళీగా ఉంది. రెస్టారెంట్ రుచికరమైన వంటకాలను ఎంచుకోండి!",
+        item_notes_placeholder: "ఏదైనా సూచనలు? (ఉదా: తక్కువ కారం, అదనపు సాస్)",
         subtotal: "ఉపమొత్తం",
         tax_gst: "జీఎస్టీ పన్ను (5%)",
         total: "మొత్తం చెల్లింపు",
@@ -169,10 +169,10 @@ export const dictionary = {
         order_number: "ఆర్డర్ సంఖ్య",
         live_status: "ఆర్డర్ ప్రస్తుత స్థితి",
         order_timeline_placed: "కిచెన్‌కు ఆర్డర్ చేరింది",
-        order_timeline_accepted: "కౌంటర్ స్వీకరించింది",
-        order_timeline_preparing: "మీ కోసం తాజా చాయ్ & స్నాక్స్ తయారవుతున్నాయి",
+        order_timeline_accepted: "రెస్టారెంట్ స్వీకరించింది",
+        order_timeline_preparing: "మీ కోసం తాజా రెస్టారెంట్ వంటకాలు తయారవుతున్నాయి",
         order_timeline_ready: "మీ ఆర్డర్ రెడీగా ఉంది",
-        order_timeline_served: "వేడి చాయ్ ఆనందించండి!",
+        order_timeline_served: "మీ రుచికరమైన భోజనాన్ని ఆనందించండి!",
         payment_status_pending: "చెల్లింపు బాకీ (కౌంటర్‌లో ఇవ్వండి)",
         payment_status_paid: "ఆన్‌లైన్ చెల్లింపు పూర్తయింది",
 

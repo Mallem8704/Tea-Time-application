@@ -19,7 +19,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         setMounted(true);
-        const savedLang = safeStorage.getItem("teatime_lang") as Language;
+        const savedLang = (safeStorage.getItem("arabieq_lang") || safeStorage.getItem("teatime_lang")) as Language;
         if (savedLang && (savedLang === "en" || savedLang === "te")) {
             setLanguageState(savedLang);
         }
@@ -27,7 +27,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     const setLanguage = (lang: Language) => {
         setLanguageState(lang);
-        safeStorage.setItem("teatime_lang", lang);
+        safeStorage.setItem("arabieq_lang", lang);
     };
 
     const toggleLanguage = () => {

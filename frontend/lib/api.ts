@@ -46,7 +46,7 @@ export async function apiFetch<T = any>(endpoint: string, options: FetchOptions 
             defaultHeaders["Authorization"] = `Bearer ${custToken}`;
         }
     } else {
-        const token = safeStorage.getItem("teatime_token");
+        const token = safeStorage.getItem("arabieq_token") || safeStorage.getItem("teatime_token");
         if (token) {
             defaultHeaders["Authorization"] = `Bearer ${token}`;
         }

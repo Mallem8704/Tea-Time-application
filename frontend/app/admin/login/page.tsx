@@ -105,10 +105,10 @@ function AdminLoginContent() {
                         ))}
                         <p className="text-center text-white/30 text-xs pt-2">
                             <button
-                                onClick={() => { setSelectedBranch(1); setEmail("owner@teatime.com"); setPassword("admin123"); }}
+                                onClick={() => { setSelectedBranch(1); setEmail("owner@arabieq.com"); setPassword("admin123"); }}
                                 className="hover:text-white/60 underline transition-colors"
                             >
-                                Use legacy credentials (owner@teatime.com)
+                                Use Admin credentials (owner@arabieq.com)
                             </button>
                         </p>
                     </div>

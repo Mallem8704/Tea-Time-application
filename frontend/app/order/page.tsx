@@ -109,7 +109,7 @@ function CustomerOrderContent() {
 
     // 1. Initialize Table from URL or Storage with instant reflection and fuzzy matching
     useEffect(() => {
-        const savedTable = safeStorage.getItem("teatime_table", "session");
+        const savedTable = safeStorage.getItem("arabieq_table", "session") || safeStorage.getItem("teatime_table", "session");
         const targetLabel = (tableParam || savedTable || "T1").toUpperCase();
         setTableLabel(targetLabel);
 
@@ -130,14 +130,14 @@ function CustomerOrderContent() {
                     if (matched) {
                         setTableLabel(matched.label);
                         setTableId(matched.id);
-                        safeStorage.setItem("teatime_table", matched.label, "session");
+                        safeStorage.setItem("arabieq_table", matched.label, "session");
                     } else {
                         const numericId = parseInt(targetLabel.replace(/\D/g, ""), 10);
                         const matchNum = !isNaN(numericId) ? tables.find((t: any) => t.id === numericId) : null;
                         if (matchNum) {
                             setTableLabel(matchNum.label);
                             setTableId(matchNum.id);
-                            safeStorage.setItem("teatime_table", matchNum.label, "session");
+                            safeStorage.setItem("arabieq_table", matchNum.label, "session");
                         } else {
                             setTableId(tables[0].id);
                         }
@@ -147,7 +147,7 @@ function CustomerOrderContent() {
             .catch(() => {});
 
         // Check if there is an existing active order in session
-        const savedOrderId = safeStorage.getItem("teatime_active_order_id", "session");
+        const savedOrderId = safeStorage.getItem("arabieq_active_order_id", "session") || safeStorage.getItem("teatime_active_order_id", "session");
         if (savedOrderId) {
             api.getOrder(Number(savedOrderId))
                 .then((ord) => {
@@ -424,7 +424,7 @@ function CustomerOrderContent() {
             setCart([]);
             setIsCartOpen(false);
             setActiveOrder(createdOrder);
-            safeStorage.setItem("teatime_active_order_id", String(createdOrder.id), "session");
+            safeStorage.setItem("arabieq_active_order_id", String(createdOrder.id), "session");
 
             toast.success(
                 language === "en"
@@ -443,7 +443,7 @@ function CustomerOrderContent() {
     const handleSelectTable = (tbl: any) => {
         setTableLabel(tbl.label);
         setTableId(tbl.id);
-        safeStorage.setItem("teatime_table", tbl.label, "session");
+        safeStorage.setItem("arabieq_table", tbl.label, "session");
         setShowTablePicker(false);
         toast.info(`Switched to Table ${tbl.label}`);
     };
@@ -469,6 +469,7 @@ function CustomerOrderContent() {
                     initialOrder={activeOrder}
                     onOrderMore={() => {
                         setActiveOrder(null);
+                        safeStorage.removeItem("arabieq_active_order_id", "session");
                         safeStorage.removeItem("teatime_active_order_id", "session");
                     }}
                 />

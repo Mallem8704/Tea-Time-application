@@ -24,11 +24,11 @@ class Outlet(Base):
     currency = Column(String(10), default="INR")
     tax_rate_percent = Column(Integer, default=5)  # e.g., 5% GST
     opening_hours = Column(String(100), nullable=True)  # e.g., "6:00 AM – 11:00 PM"
-    tagline = Column(String(255), nullable=True)  # e.g., "Authentic Irani Chai & Fresh Bakes"
+    tagline = Column(String(255), nullable=True)  # e.g., "Authentic Arabian Cuisine & Mandi"
     logo_url = Column(String(500), nullable=True)  # e.g., "/uploads/logo.png"
     gstin = Column(String(30), nullable=True)  # GST Identification Number
     fssai_license_number = Column(String(30), nullable=True)  # FSSAI License Number
-    upi_vpa = Column(String(100), nullable=True)  # e.g. "teatime@upi"
+    upi_vpa = Column(String(100), nullable=True)  # e.g. "arabieq@upi"
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relationships

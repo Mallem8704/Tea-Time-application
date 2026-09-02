@@ -33,6 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     const logout = useCallback(() => {
+        safeStorage.removeItem("arabieq_token");
+        safeStorage.removeItem("arabieq_user");
         safeStorage.removeItem("teatime_token");
         safeStorage.removeItem("teatime_user");
         setUser(null);
@@ -41,14 +43,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [router]);
 
     useEffect(() => {
-        const storedToken = safeStorage.getItem("teatime_token");
-        const storedUser = safeStorage.getItem("teatime_user");
+        const storedToken = safeStorage.getItem("arabieq_token") || safeStorage.getItem("teatime_token");
+        const storedUser = safeStorage.getItem("arabieq_user") || safeStorage.getItem("teatime_user");
 
         if (storedToken && storedUser) {
             try {
                 setToken(storedToken);
                 setUser(JSON.parse(storedUser));
             } catch {
+                safeStorage.removeItem("arabieq_user");
                 safeStorage.removeItem("teatime_user");
             }
         }
@@ -67,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             outlet_id: freshUser.outlet_id,
                         };
                         setUser(updated);
-                        safeStorage.setItem("teatime_user", JSON.stringify(updated));
+                        safeStorage.setItem("arabieq_user", JSON.stringify(updated));
                     }
                 })
                 .catch(() => {});
@@ -88,8 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(authToken);
         setUser(authUser);
 
-        safeStorage.setItem("teatime_token", authToken);
-        safeStorage.setItem("teatime_user", JSON.stringify(authUser));
+        safeStorage.setItem("arabieq_token", authToken);
+        safeStorage.setItem("arabieq_user", JSON.stringify(authUser));
 
         router.push("/admin");
     };
@@ -97,8 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const updateAuthSession = (authToken: string, authUser: AuthUser) => {
         setToken(authToken);
         setUser(authUser);
-        safeStorage.setItem("teatime_token", authToken);
-        safeStorage.setItem("teatime_user", JSON.stringify(authUser));
+        safeStorage.setItem("arabieq_token", authToken);
+        safeStorage.setItem("arabieq_user", JSON.stringify(authUser));
     };
 
     const isAuthenticated = !!user && !!token;

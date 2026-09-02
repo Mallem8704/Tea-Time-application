@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "teatime_super_secret_jwt_key_change_in_production_2026")
-if os.getenv("ENVIRONMENT") == "production" and SECRET_KEY == "teatime_super_secret_jwt_key_change_in_production_2026":
+SECRET_KEY = os.getenv("SECRET_KEY", "arabieq_restaurant_super_secret_jwt_key_2026")
+if os.getenv("ENVIRONMENT") == "production" and SECRET_KEY == "arabieq_restaurant_super_secret_jwt_key_2026":
     import warnings
     warnings.warn("CRITICAL: Running in production with default SECRET_KEY! Set a strong SECRET_KEY environment variable.", RuntimeWarning)
 

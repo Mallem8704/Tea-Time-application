@@ -135,7 +135,7 @@ export function useAdminSocket(
             let url = `${getWsBase()}?client_type=admin&outlet_id=${outletId}`;
             // Attach JWT token for authenticated admin connections
             if (typeof window !== "undefined") {
-                const token = localStorage.getItem("teatime_token");
+                const token = localStorage.getItem("arabieq_token") || localStorage.getItem("teatime_token");
                 if (token) url += `&token=${encodeURIComponent(token)}`;
             }
             const ws = new WebSocket(url);
