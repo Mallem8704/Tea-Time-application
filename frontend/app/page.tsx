@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     QrCode,
@@ -17,6 +17,8 @@ import {
     ArrowRight,
     ShoppingBag,
     Plus,
+    Minus,
+    Trash2,
     Check,
     Play,
     Flame,
@@ -27,11 +29,13 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
+import { safeStorage } from "@/lib/safeStorage";
 import { ArabiqLogo, ArabesqueDivider, FreeDeliveryEmblem } from "@/components/home/ArabiqBrandIcons";
 import { HowItWorksModal } from "@/components/home/HowItWorksModal";
 import { OurStoryModal } from "@/components/home/OurStoryModal";
 import { BranchSelectorModal } from "@/components/home/BranchSelectorModal";
 import { StaffPortalModal } from "@/components/home/StaffPortalModal";
+import { HomeCartDrawer, HomeCartItem } from "@/components/home/HomeCartDrawer";
 
 /* ── 5 Authentic Signature Dishes matching Reference ── */
 const SIGNATURE_DISHES = [
@@ -119,16 +123,119 @@ export default function ArabiqHomePage() {
     // Mobile nav drawer
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-    // Added dishes quick animation tracker
+    // Interactive Cart State
+    const [cart, setCart] = useState<HomeCartItem[]>([]);
+    const [isCartOpen, setIsCartOpen] = useState(false);
     const [addedDishIds, setAddedDishIds] = useState<number[]>([]);
+
+    // Restore saved cart from session storage on mount
+    useEffect(() => {
+        try {
+            const saved = safeStorage.getItem("arabieq_cart", "session");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    setCart(
+                        parsed.map((it: any) => ({
+                            id: it.id,
+                            name: it.name,
+                            name_te: it.name_te,
+                            price: Math.round((it.price_paise || 0) / 100) || it.price || 0,
+                            price_paise: it.price_paise || (it.price ? it.price * 100 : 0),
+                            image: it.image || "/dishes/3d_mandi.jpg",
+                            qty: it.qty || 1,
+                        }))
+                    );
+                }
+            }
+        } catch (e) {}
+    }, []);
+
+    const syncCart = (newCart: HomeCartItem[]) => {
+        setCart(newCart);
+        if (newCart.length > 0) {
+            const serializable = newCart.map((it) => ({
+                id: it.id,
+                cartKey: `item_${it.id}`,
+                name: it.name,
+                name_te: it.name_te,
+                price_paise: it.price_paise,
+                qty: it.qty,
+                image: it.image,
+            }));
+            safeStorage.setItem("arabieq_cart", JSON.stringify(serializable), "session");
+        } else {
+            safeStorage.removeItem("arabieq_cart", "session");
+        }
+    };
 
     const handleAddDish = (dish: typeof SIGNATURE_DISHES[0]) => {
         setAddedDishIds((prev) => [...prev, dish.id]);
-        toast.success(`Added ${dish.name} (₹${dish.price}) to Table Order!`);
+        
+        const existing = cart.find((i) => i.id === dish.id);
+        let updated: HomeCartItem[];
+        if (existing) {
+            updated = cart.map((i) => (i.id === dish.id ? { ...i, qty: i.qty + 1 } : i));
+        } else {
+            updated = [
+                ...cart,
+                {
+                    id: dish.id,
+                    name: dish.name,
+                    name_te: dish.name_te,
+                    price: dish.price,
+                    price_paise: dish.price * 100,
+                    image: dish.image,
+                    qty: 1,
+                },
+            ];
+        }
+        syncCart(updated);
+        toast.success(`Added ${dish.name} (₹${dish.price}) to Cart!`);
+
         setTimeout(() => {
             setAddedDishIds((prev) => prev.filter((id) => id !== dish.id));
         }, 1500);
     };
+
+    const handleDecrementDish = (dishId: number) => {
+        const existing = cart.find((i) => i.id === dishId);
+        if (!existing) return;
+        if (existing.qty <= 1) {
+            syncCart(cart.filter((i) => i.id !== dishId));
+            toast.info("Item removed from Cart");
+        } else {
+            syncCart(cart.map((i) => (i.id === dishId ? { ...i, qty: i.qty - 1 } : i)));
+        }
+    };
+
+    const handleUpdateQty = (dishId: number, delta: number) => {
+        if (delta > 0) {
+            const dish = SIGNATURE_DISHES.find((d) => d.id === dishId);
+            if (dish) handleAddDish(dish);
+            else {
+                syncCart(cart.map((i) => (i.id === dishId ? { ...i, qty: i.qty + 1 } : i)));
+            }
+        } else {
+            handleDecrementDish(dishId);
+        }
+    };
+
+    const handleRemoveItem = (dishId: number) => {
+        syncCart(cart.filter((i) => i.id !== dishId));
+        toast.info("Item removed from Cart");
+    };
+
+    const handleClearCart = () => {
+        syncCart([]);
+        setIsCartOpen(false);
+        toast.info("Cart cleared");
+    };
+
+    const cartCount = cart.reduce((sum, it) => sum + it.qty, 0);
+    const cartSubtotal = cart.reduce((sum, it) => sum + it.price * it.qty, 0);
+    const cartTax = Math.round(cartSubtotal * 0.05);
+    const cartTotal = cartSubtotal + cartTax;
 
     const openTablePicker = () => {
         setBranchModalMode("table");
@@ -174,8 +281,23 @@ export default function ArabiqHomePage() {
                         </a>
                     </nav>
 
-                    {/* Action Group: Staff Portal + Golden Order CTA */}
+                    {/* Action Group: Cart + Staff Portal + Golden Order CTA */}
                     <div className="flex items-center gap-3">
+                        {/* Cart Button with Live Counter Badge */}
+                        <button
+                            onClick={() => setIsCartOpen(true)}
+                            title="View Cart"
+                            className="relative inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-[#D4AF37] bg-[#1A140F] hover:bg-[#D4AF37]/20 text-[#D4AF37] text-xs font-black tracking-wider transition cursor-pointer shadow-md shadow-[#D4AF37]/10"
+                        >
+                            <ShoppingBag className="w-4 h-4 text-[#D4AF37]" />
+                            <span className="hidden sm:inline font-bold">CART</span>
+                            {cartCount > 0 && (
+                                <span className="w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center animate-pulse">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </button>
+
                         <button
                             onClick={() => setStaffModalOpen(true)}
                             title="Staff & Management Portals"
@@ -187,12 +309,16 @@ export default function ArabiqHomePage() {
 
                         <button
                             onClick={() => {
-                                setBranchModalMode("all");
-                                setBranchModalOpen(true);
+                                if (cartCount > 0) {
+                                    setIsCartOpen(true);
+                                } else {
+                                    setBranchModalMode("all");
+                                    setBranchModalOpen(true);
+                                }
                             }}
                             className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#E5C058] to-[#C59B27] hover:from-[#E5C058] hover:to-[#D4AF37] text-black font-serif font-black text-xs uppercase tracking-wider shadow-lg shadow-[#D4AF37]/20 transition active:scale-95 cursor-pointer"
                         >
-                            <span>ORDER NOW</span>
+                            <span>{cartCount > 0 ? `CHECKOUT (₹${cartTotal})` : "ORDER NOW"}</span>
                             <ShoppingBag className="w-3.5 h-3.5" />
                         </button>
 
@@ -381,10 +507,14 @@ export default function ArabiqHomePage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
                         {SIGNATURE_DISHES.map((dish) => {
                             const isAdded = addedDishIds.includes(dish.id);
+                            const itemInCart = cart.find((i) => i.id === dish.id);
+
                             return (
                                 <div
                                     key={dish.id}
-                                    className="bg-white rounded-3xl border border-[#E8D8C0] overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+                                    className={`bg-white rounded-3xl border overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group ${
+                                        itemInCart ? "border-[#D4AF37] ring-2 ring-[#D4AF37]/30" : "border-[#E8D8C0]"
+                                    }`}
                                 >
                                     <div>
                                         {/* Dish Image */}
@@ -397,6 +527,11 @@ export default function ArabiqHomePage() {
                                             {dish.bestseller && (
                                                 <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37] text-black text-[9px] font-sans font-black tracking-wider uppercase shadow-xs">
                                                     BESTSELLER
+                                                </span>
+                                            )}
+                                            {itemInCart && (
+                                                <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-[#1A120B] text-[#D4AF37] text-[10px] font-mono font-black border border-[#D4AF37]/60 shadow-md">
+                                                    {itemInCart.qty} in cart
                                                 </span>
                                             )}
                                         </div>
@@ -418,27 +553,51 @@ export default function ArabiqHomePage() {
                                             ₹{dish.price}
                                         </span>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAddDish(dish)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer ${
-                                                isAdded
-                                                    ? "bg-emerald-600 text-white"
-                                                    : "bg-[#F7F0E4] hover:bg-[#D4AF37] text-[#1A120B] hover:text-black border border-[#D4AF37]/50"
-                                            }`}
-                                        >
-                                            {isAdded ? (
-                                                <>
-                                                    <Check className="w-3.5 h-3.5" />
-                                                    <span>ADDED</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span>ADD</span>
+                                        {itemInCart ? (
+                                            <div className="flex items-center gap-1.5 bg-[#1A120B] text-white rounded-xl px-2 py-1 shadow-sm border border-[#D4AF37]">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDecrementDish(dish.id)}
+                                                    className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-[#D4AF37] flex items-center justify-center font-black transition cursor-pointer"
+                                                    title="Decrease"
+                                                >
+                                                    <Minus className="w-3.5 h-3.5" />
+                                                </button>
+                                                <span className="font-mono font-black text-xs px-1.5 text-white min-w-[16px] text-center">
+                                                    {itemInCart.qty}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAddDish(dish)}
+                                                    className="w-6 h-6 rounded-lg bg-[#D4AF37] hover:bg-[#E5C058] text-black flex items-center justify-center font-black transition cursor-pointer"
+                                                    title="Increase"
+                                                >
                                                     <Plus className="w-3.5 h-3.5" />
-                                                </>
-                                            )}
-                                        </button>
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAddDish(dish)}
+                                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                                                    isAdded
+                                                        ? "bg-emerald-600 text-white"
+                                                        : "bg-[#F7F0E4] hover:bg-[#D4AF37] text-[#1A120B] hover:text-black border border-[#D4AF37]/50"
+                                                }`}
+                                            >
+                                                {isAdded ? (
+                                                    <>
+                                                        <Check className="w-3.5 h-3.5" />
+                                                        <span>ADDED</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span>ADD</span>
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                    </>
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -1091,8 +1250,54 @@ export default function ArabiqHomePage() {
             </footer>
 
             {/* ══════════════════════════════════════════════════════════════
+                FLOATING BOTTOM CART BAR (Visible whenever cart has items)
+               ══════════════════════════════════════════════════════════════ */}
+            {cartCount > 0 && (
+                <div className="fixed bottom-6 inset-x-0 z-40 max-w-lg mx-auto px-4 animate-in slide-in-from-bottom-5 duration-300">
+                    <div className="w-full bg-gradient-to-r from-[#1A120B] via-[#24180E] to-[#1A120B] border-2 border-[#D4AF37] text-white rounded-2xl p-3.5 px-4 shadow-2xl shadow-[#D4AF37]/25 flex items-center justify-between gap-3 backdrop-blur-md">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B89020] flex items-center justify-center text-black shadow-md">
+                                    <ShoppingBag className="w-5 h-5 text-black" />
+                                </div>
+                                <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#1A120B] shadow-sm">
+                                    {cartCount}
+                                </span>
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-bold text-[#E5C058] tracking-wider uppercase">
+                                    Your Order Cart
+                                </div>
+                                <div className="text-sm font-extrabold text-white flex items-center gap-1.5">
+                                    <span>{cartCount} {cartCount === 1 ? "Item" : "Items"}</span>
+                                    <span className="text-[#D4AF37]">•</span>
+                                    <span className="font-mono text-[#D4AF37] font-black">₹{cartTotal}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setIsCartOpen(true)}
+                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#E5C058] to-[#C59B27] hover:from-[#E5C058] hover:to-[#D4AF37] text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-[#D4AF37]/30 transition-all active:scale-95 cursor-pointer shrink-0"
+                        >
+                            <span>VIEW CART</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════════════
                 INTERACTIVE MODALS
                ══════════════════════════════════════════════════════════════ */}
+            <HomeCartDrawer
+                isOpen={isCartOpen}
+                onClose={() => setIsCartOpen(false)}
+                cart={cart}
+                onUpdateQty={handleUpdateQty}
+                onRemoveItem={handleRemoveItem}
+                onClearCart={handleClearCart}
+            />
             <HowItWorksModal isOpen={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
             <OurStoryModal isOpen={storyOpen} onClose={() => setStoryOpen(false)} />
             <BranchSelectorModal isOpen={branchModalOpen} onClose={() => setBranchModalOpen(false)} mode={branchModalMode} />

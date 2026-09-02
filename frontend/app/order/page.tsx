@@ -107,6 +107,19 @@ function CustomerOrderContent() {
     // Active Tracking Order
     const [activeOrder, setActiveOrder] = useState<OrderDetail | null>(null);
 
+    // Restore items passed from Home Screen
+    useEffect(() => {
+        try {
+            const savedCart = safeStorage.getItem("arabieq_cart", "session");
+            if (savedCart) {
+                const parsed = JSON.parse(savedCart);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    setCart((prev) => (prev.length === 0 ? parsed : prev));
+                }
+            }
+        } catch (e) {}
+    }, []);
+
     // 1. Initialize Table from URL or Storage with instant reflection and fuzzy matching
     useEffect(() => {
         const savedTable = safeStorage.getItem("arabieq_table", "session") || safeStorage.getItem("teatime_table", "session");
