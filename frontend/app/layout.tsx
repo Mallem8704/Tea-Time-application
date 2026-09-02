@@ -152,7 +152,7 @@ const restaurantStructuredData = {
         `${SITE_URL}/logo.png`
       ],
       "url": SITE_URL,
-      "telephone": "+91 98765 43210",
+      "telephone": ["+91 99591 59515", "+91 95150 51545"],
       "priceRange": "₹₹ (₹100 - ₹800)",
       "servesCuisine": [
         "Arabian",
@@ -186,6 +186,7 @@ const restaurantStructuredData = {
           "@type": "PostalAddress",
           "name": "Branch 1: Old Arabieq (Heritage Mandi & Chai)",
           "streetAddress": "2nd Floor, Near More Super Market, Rahmath Tower, Madanapalli Road, Near Clock Tower",
+          "telephone": "+91 99591 59515",
           "addressLocality": "Kadiri",
           "addressRegion": "Andhra Pradesh",
           "postalCode": "515591",
@@ -195,6 +196,7 @@ const restaurantStructuredData = {
           "@type": "PostalAddress",
           "name": "Branch 2: New Arabieq (Luxury Family AC & Majlis)",
           "streetAddress": "Bypass Road, Opposite Girls High School, Main Road",
+          "telephone": "+91 95150 51545",
           "addressLocality": "Kadiri",
           "addressRegion": "Andhra Pradesh",
           "postalCode": "515591",

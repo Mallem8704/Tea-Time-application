@@ -961,7 +961,7 @@ export default function ArabiqHomePage() {
                                     </div>
                                     <div className="flex items-center gap-2.5">
                                         <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                                        <a href="tel:9876543210" className="hover:text-white font-mono font-bold">+91 98765 43210</a>
+                                        <a href="tel:9959159515" className="hover:text-white font-mono font-bold">+91 99591 59515</a>
                                     </div>
                                 </div>
 
@@ -1030,7 +1030,7 @@ export default function ArabiqHomePage() {
                                     </div>
                                     <div className="flex items-center gap-2.5">
                                         <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                                        <a href="tel:9876543211" className="hover:text-white font-mono font-bold">+91 98765 43211</a>
+                                        <a href="tel:9515051545" className="hover:text-white font-mono font-bold">+91 95150 51545</a>
                                     </div>
                                 </div>
 
@@ -1344,7 +1344,11 @@ export default function ArabiqHomePage() {
                                 </p>
                                 <p className="flex items-center gap-2">
                                     <Phone className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                                    <a href="tel:8328413356" className="hover:text-white font-mono">+91 8328413356</a>
+                                    <span>
+                                        <a href="tel:9959159515" className="hover:text-white font-mono font-bold">+91 99591 59515</a>
+                                        <span className="text-white/40 mx-1.5">•</span>
+                                        <a href="tel:9515051545" className="hover:text-white font-mono font-bold">+91 95150 51545</a>
+                                    </span>
                                 </p>
                                 <p className="flex items-center gap-2">
                                     <Mail className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />

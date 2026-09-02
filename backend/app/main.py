@@ -180,9 +180,17 @@ def on_startup():
             if not db.query(Coupon).filter(Coupon.code == c_data["code"]).first():
                 db.add(Coupon(**c_data))
         db.commit()
+
+        # Sync accurate branch phone numbers
+        outlets = db.query(Outlet).order_by(Outlet.id.asc()).all()
+        if len(outlets) >= 1:
+            outlets[0].phone = "+91 99591 59515"
+        if len(outlets) >= 2:
+            outlets[1].phone = "+91 95150 51545"
+        db.commit()
         db.close()
     except Exception as c_err:
-        print(f"[COUPON-SEED] Note: {c_err}")
+        print(f"[COUPON-OUTLET-SEED] Note: {c_err}")
 
     try:
         from app.seed import auto_seed_if_empty
@@ -376,6 +384,12 @@ origins = [
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    "https://arabeiqrestaurant.com",
+    "https://www.arabeiqrestaurant.com",
+    "http://arabeiqrestaurant.com",
+    "http://www.arabeiqrestaurant.com",
+    "https://arabieqrestaurant.com",
+    "https://www.arabieqrestaurant.com",
     "https://arabic-restaurant-dineos.vercel.app",
     "https://tea-time-application.vercel.app",
     *frontend_origins,
@@ -384,7 +398,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https://(arabic-restaurant|tea-time)[a-zA-Z0-9_-]*\.vercel\.app",
+    allow_origin_regex=r"https?://.*(arabeiq|arabieq|arabic-restaurant|tea-time|vercel\.app).*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
