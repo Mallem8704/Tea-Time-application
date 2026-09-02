@@ -38,6 +38,7 @@ export default function AdminReservationsPage() {
         }
     }, [isAuthenticated, authLoading, router]);
     const { outlet } = useOutlet();
+    const { isOwner } = useAuth();
     const [selectedBranchId, setSelectedBranchId] = useState<number>(outlet?.id || 1);
     const toast = useToast();
 
@@ -47,12 +48,16 @@ export default function AdminReservationsPage() {
     const [filterDate, setFilterDate] = useState<string>("");
     const [searchQuery, setSearchQuery] = useState<string>("");
 
-    // Keep selected branch synced if outlet changes
+    // RBAC: Staff locked to assigned branch, owner can switch
     useEffect(() => {
         if (outlet?.id) {
-            setSelectedBranchId(outlet.id);
+            if (!isOwner) {
+                setSelectedBranchId(outlet.id);
+            } else {
+                setSelectedBranchId(outlet.id);
+            }
         }
-    }, [outlet?.id]);
+    }, [outlet?.id, isOwner]);
 
     const fetchReservations = async () => {
         setIsLoading(true);
@@ -137,29 +142,39 @@ export default function AdminReservationsPage() {
                             </p>
                         </div>
 
-                        {/* Dual Branch Toggle */}
-                        <div className="grid grid-cols-2 gap-1.5 bg-white p-1.5 rounded-2xl border border-terracotta-200 shadow-xs w-full sm:w-auto">
-                            <button
-                                onClick={() => setSelectedBranchId(1)}
-                                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                                    selectedBranchId === 1
-                                        ? "bg-terracotta-600 text-white shadow-xs"
-                                        : "text-espresso-700 hover:bg-cream-100"
-                                }`}
-                            >
-                                <span>🏛️ Branch 1 (Old Arabieq)</span>
-                            </button>
-                            <button
-                                onClick={() => setSelectedBranchId(2)}
-                                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                                    selectedBranchId === 2
-                                        ? "bg-terracotta-600 text-white shadow-xs"
-                                        : "text-espresso-700 hover:bg-cream-100"
-                                }`}
-                            >
-                                <span>🌟 Branch 2 (New Arabieq)</span>
-                            </button>
-                        </div>
+                        {/* Dual Branch Toggle — Owner only, Staff sees assigned badge */}
+                        {isOwner ? (
+                            <div className="grid grid-cols-2 gap-1.5 bg-white p-1.5 rounded-2xl border border-terracotta-200 shadow-xs w-full sm:w-auto">
+                                <button
+                                    onClick={() => setSelectedBranchId(1)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                                        selectedBranchId === 1
+                                            ? "bg-terracotta-600 text-white shadow-xs"
+                                            : "text-espresso-700 hover:bg-cream-100"
+                                    }`}
+                                >
+                                    <span>🏛️ Branch 1 (Old Arabieq)</span>
+                                </button>
+                                <button
+                                    onClick={() => setSelectedBranchId(2)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                                        selectedBranchId === 2
+                                            ? "bg-terracotta-600 text-white shadow-xs"
+                                            : "text-espresso-700 hover:bg-cream-100"
+                                    }`}
+                                >
+                                    <span>🌟 Branch 2 (New Arabieq)</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-terracotta-50 border border-terracotta-200 shadow-xs">
+                                <span className="w-2 h-2 rounded-full bg-terracotta-500 animate-pulse" />
+                                <span className="text-xs font-black text-espresso-900">
+                                    {outlet?.name || (selectedBranchId === 1 ? "🏛️ Branch 1 (Old Arabieq)" : "🌟 Branch 2 (New Arabieq)")}
+                                </span>
+                                <span className="text-[9px] font-bold text-espresso-500 uppercase tracking-wider">Assigned</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Stats Metrics Cards */}

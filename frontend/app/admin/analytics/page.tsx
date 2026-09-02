@@ -51,7 +51,7 @@ export default function AdminAnalyticsDashboardPage() {
     const { outlet } = useOutlet();
 
     // Filters
-    const [selectedBranchId, setSelectedBranchId] = useState<number>(0); // 0 = All Branches, 1 = Branch 1, 2 = Branch 2
+    const [selectedBranchId, setSelectedBranchId] = useState<number>(isOwner ? 0 : (outlet?.id || 1)); // Staff locked to their branch
     const [timePreset, setTimePreset] = useState<"today" | "yesterday" | "7d" | "30d" | "month">("7d");
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [showEODModal, setShowEODModal] = useState<boolean>(false);
@@ -82,6 +82,13 @@ export default function AdminAnalyticsDashboardPage() {
             router.push("/admin/login");
         }
     }, [isAuthenticated, authLoading, router]);
+
+    // RBAC: Lock staff to their assigned branch
+    useEffect(() => {
+        if (!isOwner && outlet?.id) {
+            setSelectedBranchId(outlet.id);
+        }
+    }, [isOwner, outlet?.id]);
 
     const fetchAnalytics = useCallback(async () => {
         setIsLoading(true);
@@ -220,42 +227,52 @@ export default function AdminAnalyticsDashboardPage() {
                                 </span>
                             </div>
 
-                            {/* Branch Selection Pills */}
-                            <div className="flex flex-wrap items-center gap-1.5">
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedBranchId(0)}
-                                    className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-                                        selectedBranchId === 0
-                                            ? "bg-[#D4AF37] text-black shadow-md"
-                                            : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
-                                    }`}
-                                >
-                                    🏢 All Branches Unified
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedBranchId(1)}
-                                    className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-                                        selectedBranchId === 1
-                                            ? "bg-amber-500 text-black shadow-md"
-                                            : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
-                                    }`}
-                                >
-                                    🏛️ Branch 1 (Old Arabieq)
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedBranchId(2)}
-                                    className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-                                        selectedBranchId === 2
-                                            ? "bg-amber-500 text-black shadow-md"
-                                            : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
-                                    }`}
-                                >
-                                    🌟 Branch 2 (New Arabieq &amp; Cafe)
-                                </button>
-                            </div>
+                            {/* Branch Selection Pills — Owner Only */}
+                            {isOwner ? (
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedBranchId(0)}
+                                        className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                                            selectedBranchId === 0
+                                                ? "bg-[#D4AF37] text-black shadow-md"
+                                                : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+                                        }`}
+                                    >
+                                        🏢 All Branches Unified
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedBranchId(1)}
+                                        className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                                            selectedBranchId === 1
+                                                ? "bg-amber-500 text-black shadow-md"
+                                                : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+                                        }`}
+                                    >
+                                        🏛️ Branch 1 (Old Arabieq)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedBranchId(2)}
+                                        className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                                            selectedBranchId === 2
+                                                ? "bg-amber-500 text-black shadow-md"
+                                                : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+                                        }`}
+                                    >
+                                        🌟 Branch 2 (New Arabieq &amp; Cafe)
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+                                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                    <span className="text-xs font-bold text-white/80">
+                                        {outlet?.name || (selectedBranchId === 1 ? "Branch 1 (Old Arabieq)" : "Branch 2 (New Arabieq)")}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider">Assigned Branch</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Date Presets & Actions */}
