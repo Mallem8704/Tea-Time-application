@@ -170,6 +170,8 @@ export const api = {
         customer_name?: string;
         customer_phone?: string;
         delivery_address?: string;
+        discount_paise?: number;
+        coupon_code?: string;
         items: Array<{ item_id: number; variant_id?: number; addon_ids?: number[]; qty: number; notes?: string }>;
         customer_notes?: string;
         payment_method?: string;

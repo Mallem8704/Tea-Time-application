@@ -32,6 +32,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
 
     const navLinks = [
         { href: "/admin", labelKey: "live_orders", icon: LayoutDashboard, exact: true },
+        { href: "/admin/pos", labelKey: "cashier_pos", icon: CreditCard },
         { href: "/captain", labelKey: "captain_pos", icon: Smartphone },
         { href: "/admin/kds", labelKey: "kds_view", icon: ChefHat },
         { href: "/admin/menu", labelKey: "menu_management", icon: Utensils },
