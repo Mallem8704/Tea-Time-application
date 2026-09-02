@@ -27,6 +27,18 @@ def get_effective_outlet_id(outlet_id: Optional[int], db: Session) -> int:
     return all_outlets[0].id
 
 
+@router.get("/sync-phones")
+def sync_outlet_phones(db: Session = Depends(get_db)):
+    """Sync official branch phone numbers."""
+    outlets = db.query(Outlet).order_by(Outlet.id.asc()).all()
+    if len(outlets) >= 1:
+        outlets[0].phone = "+91 99591 59515"
+    if len(outlets) >= 2:
+        outlets[1].phone = "+91 95150 51545"
+    db.commit()
+    return [{"id": o.id, "name": o.name, "phone": o.phone} for o in outlets]
+
+
 @router.get("", response_model=List[OutletOut])
 @router.get("/all", response_model=List[OutletOut])
 @router.get("/list", response_model=List[OutletOut])
