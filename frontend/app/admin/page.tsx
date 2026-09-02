@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
     Clock,
@@ -28,6 +29,7 @@ import {
     Printer,
     MessageCircle,
     Star,
+    Calendar,
 } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -61,6 +63,7 @@ export default function AdminLiveOrdersKanbanPage() {
 
     const [orders, setOrders] = useState<any[]>([]);
     const [pendingServiceCalls, setPendingServiceCalls] = useState<any[]>([]);
+    const [todayReservationsCount, setTodayReservationsCount] = useState<number>(0);
     const [isLoadingOrders, setIsLoadingOrders] = useState<boolean>(true);
     const [animatingOrderId, setAnimatingOrderId] = useState<number | null>(null);
     const [orderTypeFilter, setOrderTypeFilter] = useState<"all" | "dine_in" | "delivery">("all");
@@ -73,13 +76,15 @@ export default function AdminLiveOrdersKanbanPage() {
         }
     }, [isAuthenticated, authLoading, router]);
 
-    // Fetch Initial Orders & Service Calls
+    // Fetch Initial Orders, Service Calls & Reservations
     const fetchOrders = useCallback(async () => {
         setIsLoadingOrders(true);
         try {
-            const [ordersResult, callsResult] = await Promise.allSettled([
+            const todayStr = new Date().toISOString().split("T")[0];
+            const [ordersResult, callsResult, reservationsResult] = await Promise.allSettled([
                 api.getOrders({ outlet_id: outlet?.id }),
                 api.getServiceCalls("pending", outlet?.id),
+                api.getReservations({ outlet_id: outlet?.id, date: todayStr }),
             ]);
 
             if (ordersResult.status === "fulfilled" && Array.isArray(ordersResult.value)) {
@@ -87,6 +92,11 @@ export default function AdminLiveOrdersKanbanPage() {
             }
             if (callsResult.status === "fulfilled" && Array.isArray(callsResult.value)) {
                 setPendingServiceCalls(callsResult.value);
+            }
+            if (reservationsResult.status === "fulfilled" && Array.isArray(reservationsResult.value)) {
+                setTodayReservationsCount(
+                    reservationsResult.value.filter((r) => r.status === "confirmed" || r.status === "seated").length
+                );
             }
         } catch {
             // Silently handle any unexpected errors
@@ -115,6 +125,10 @@ export default function AdminLiveOrdersKanbanPage() {
                 toast.success(`New Table Order #${event.data.order_number} at Table ${event.data.table_label}!`);
             }
             setTimeout(() => setAnimatingOrderId(null), 4000);
+        } else if (event.event === "new_reservation" && event.data) {
+            soundManager.playNewOrderChime();
+            setTodayReservationsCount((prev) => prev + 1);
+            toast.success(`👑 New Table Pre-Booking #${event.data.reservation_number}: ${event.data.customer_name} (${event.data.party_size} Guests)!`);
         } else if ((event.event === "order_status_updated" || event.event === "order_updated") && event.data) {
             setOrders((prev) =>
                 prev.map((o) => (o.id === event.data.id ? { ...o, status: event.data.status, payment_status: event.data.payment_status || o.payment_status } : o))
@@ -279,6 +293,14 @@ export default function AdminLiveOrdersKanbanPage() {
                                     Delivery ({deliveryCount})
                                 </button>
                             </div>
+
+                            <Link
+                                href="/admin/reservations"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-saffron-500/20 to-amber-500/20 border border-saffron-400/60 hover:border-saffron-500 text-espresso-900 text-xs font-bold transition shadow-2xs cursor-pointer"
+                            >
+                                <Calendar className="w-3.5 h-3.5 text-saffron-600" />
+                                <span>Pre-Bookings ({todayReservationsCount})</span>
+                            </Link>
 
                             <Button
                                 variant="outline"

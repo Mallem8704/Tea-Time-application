@@ -23,10 +23,12 @@ import { useOutlet } from "@/context/OutletContext";
 import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 import { api } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
+import { useAdminSocket } from "@/hooks/useSockets";
+import { soundManager } from "@/lib/sound";
 
 export default function AdminReservationsPage() {
     const { outlet } = useOutlet();
-    const { wsConnected, pendingServiceCalls, handleAttendServiceCall } = useAdminLiveState();
+    const [selectedBranchId, setSelectedBranchId] = useState<number>(outlet?.id || 1);
     const toast = useToast();
 
     const [reservations, setReservations] = useState<any[]>([]);
@@ -35,11 +37,18 @@ export default function AdminReservationsPage() {
     const [filterDate, setFilterDate] = useState<string>("");
     const [searchQuery, setSearchQuery] = useState<string>("");
 
+    // Keep selected branch synced if outlet changes
+    useEffect(() => {
+        if (outlet?.id) {
+            setSelectedBranchId(outlet.id);
+        }
+    }, [outlet?.id]);
+
     const fetchReservations = async () => {
         setIsLoading(true);
         try {
             const data = await api.getReservations({
-                outlet_id: outlet?.id || 1,
+                outlet_id: selectedBranchId,
                 date: filterDate || undefined,
                 status: filterStatus === "all" ? undefined : filterStatus,
             });
@@ -53,7 +62,20 @@ export default function AdminReservationsPage() {
 
     useEffect(() => {
         fetchReservations();
-    }, [outlet?.id, filterStatus, filterDate]);
+    }, [selectedBranchId, filterStatus, filterDate]);
+
+    // Live WebSocket connection scoped to the currently selected branch
+    const { isConnected: wsConnected } = useAdminSocket(selectedBranchId, (event) => {
+        if (event.event === "new_reservation" && event.data) {
+            soundManager.playNewOrderChime();
+            setReservations((prev) => [event.data, ...prev.filter((r) => r.id !== event.data.id)]);
+            toast.success(`👑 New Table Pre-Booking: ${event.data.reservation_number} for ${event.data.customer_name} (${event.data.party_size} Guests)!`);
+        } else if (event.event === "reservation_status_updated" && event.data) {
+            setReservations((prev) =>
+                prev.map((r) => (r.id === event.data.id ? { ...r, status: event.data.status, table_id: event.data.table_id, table_label: event.data.table_label } : r))
+            );
+        }
+    });
 
     const handleUpdateStatus = async (id: number, newStatus: string) => {
         try {
@@ -75,6 +97,11 @@ export default function AdminReservationsPage() {
         );
     });
 
+    const todayDate = new Date().toISOString().split("T")[0];
+    const todayCount = reservations.filter((r) => r.reservation_date === todayDate).length;
+    const confirmedCount = reservations.filter((r) => r.status === "confirmed").length;
+    const seatedCount = reservations.filter((r) => r.status === "seated").length;
+
     return (
         <div className="flex min-h-screen bg-cream-50 font-sans text-espresso-950">
             <AdminSidebar />
@@ -82,34 +109,80 @@ export default function AdminReservationsPage() {
             <div className="flex-1 flex flex-col min-w-0">
                 <AdminHeader
                     wsConnected={wsConnected}
-                    pendingServiceCalls={pendingServiceCalls}
-                    onAttendServiceCall={handleAttendServiceCall}
+                    pendingServiceCalls={[]}
+                    onAttendServiceCall={() => {}}
                 />
 
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
-                    {/* Header */}
+                    {/* Branch Switcher & Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <div className="flex items-center gap-2">
                                 <h1 className="text-2xl font-serif font-black text-espresso-950">
                                     Table Pre-Bookings & VIP Reservations
                                 </h1>
-                                <span className="px-2.5 py-0.5 rounded-full bg-saffron-100 text-saffron-900 border border-saffron-300 text-xs font-bold font-mono">
-                                    {outlet?.name || "Master Branch"}
-                                </span>
                             </div>
                             <p className="text-xs text-espresso-600 mt-1">
-                                View and manage advance table reservations placed by customers away from the restaurant.
+                                Complete data isolation between Branch 1 & Branch 2 table pre-bookings.
                             </p>
                         </div>
 
-                        <button
-                            onClick={fetchReservations}
-                            className="px-4 py-2 rounded-xl bg-white border border-terracotta-200 hover:bg-cream-100 text-espresso-900 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs self-start cursor-pointer"
-                        >
-                            <RefreshCw className="w-3.5 h-3.5 text-terracotta-600" />
-                            <span>Refresh</span>
-                        </button>
+                        {/* Dual Branch Toggle */}
+                        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-terracotta-200 shadow-xs">
+                            <button
+                                onClick={() => setSelectedBranchId(1)}
+                                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                                    selectedBranchId === 1
+                                        ? "bg-terracotta-600 text-white shadow-xs"
+                                        : "text-espresso-700 hover:bg-cream-100"
+                                }`}
+                            >
+                                <span>🏛️ Branch 1 (Old Arabieq)</span>
+                            </button>
+                            <button
+                                onClick={() => setSelectedBranchId(2)}
+                                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                                    selectedBranchId === 2
+                                        ? "bg-terracotta-600 text-white shadow-xs"
+                                        : "text-espresso-700 hover:bg-cream-100"
+                                }`}
+                            >
+                                <span>🌟 Branch 2 (New Arabieq)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Stats Metrics Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="bg-white rounded-2xl p-4 border border-terracotta-100 shadow-xs flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-espresso-500">Today's Reservations</span>
+                                <div className="text-2xl font-mono font-black text-espresso-900 mt-1">{todayCount}</div>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-saffron-100 text-saffron-800 flex items-center justify-center font-bold">
+                                <Calendar className="w-5 h-5" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl p-4 border border-terracotta-100 shadow-xs flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-espresso-500">Confirmed (Awaiting Guests)</span>
+                                <div className="text-2xl font-mono font-black text-emerald-700 mt-1">{confirmedCount}</div>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                                <CheckCircle2 className="w-5 h-5" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl p-4 border border-terracotta-100 shadow-xs flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-espresso-500">Currently Seated</span>
+                                <div className="text-2xl font-mono font-black text-blue-700 mt-1">{seatedCount}</div>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
+                                <Utensils className="w-5 h-5" />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Filter Bar */}
