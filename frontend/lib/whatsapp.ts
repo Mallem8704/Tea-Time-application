@@ -21,7 +21,7 @@ export function getCustomerWhatsAppInvoiceLink(order: PrintOrderData, outlet?: P
         itemLines += `${idx + 1}. *${it.item_name}* (x${it.qty}) ${it.variant_name ? `[${it.variant_name}]` : ""} - ₹${itemTotal}\n`;
     });
 
-    const trackingUrl = `https://arabic-restaurant-dineos.vercel.app/delivery`;
+    const trackingUrl = `https://arabeiqrestaurant.com/delivery`;
 
     const message = 
 `👑 *${outletName.toUpperCase()}* 👑
@@ -41,7 +41,7 @@ ${(order.discount_paise || 0) > 0 ? `🎉 *Discount (${order.coupon_code || "PRO
 📍 *Track Your Live Order Online:*
 ${trackingUrl}
 
-Thank you for choosing *${outletName}*! For any queries, call us at ${outlet?.phone || "+91 98765 43210"}.`;
+Thank you for choosing *${outletName}*! For any queries, call us at ${outlet?.phone || "+91 99591 59515"}.`;
 
     const cleanPhone = (order.customer_phone || "").replace(/\D/g, "");
     const targetPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
@@ -60,10 +60,11 @@ export function dispatchCustomerWhatsApp(order: PrintOrderData, outlet?: PrintOu
 }
 
 /**
- * Generate a WhatsApp deep-link to send store owner the Daily EOD Z-Report Summary.
+ * Generate a WhatsApp deep-link to send store owner the daily End-of-Day (EOD) Z-Report & revenue summary.
  */
-export function getEODWhatsAppSummaryLink(report: any, ownerPhone: string = "9876543210"): string {
-    const outletName = (report.outlet?.name || "Arabieq Restaurant").toUpperCase();
+export function getEODWhatsAppSummaryLink(report: any, ownerPhone: string = "9959159515"): string {
+    const outletName = report.outlet?.name || "Arabieq Restaurant & Cafe";
+    const dateStr = report.report_date || new Date().toISOString().split("T")[0];
     const s = report.sales_summary || {};
     const pm = report.payment_methods || {};
     const oc = report.order_channels || {};
@@ -75,8 +76,9 @@ export function getEODWhatsAppSummaryLink(report: any, ownerPhone: string = "987
     });
 
     const msg = 
-`👑 *${outletName} - DAILY EOD Z-REPORT* 👑
-📅 *Date:* ${report.report_date}
+`👑 *${outletName.toUpperCase()}* 👑
+📊 *DAILY EOD SALES & Z-REPORT*
+📅 *Date:* ${dateStr}
 🕒 *Generated:* ${new Date(report.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
 --------------------------------
 📊 *SALES OVERVIEW:*
@@ -104,7 +106,7 @@ _Generated automatically via Arabieq DineOS_`;
 }
 
 export function dispatchEODWhatsApp(report: any, ownerPhone?: string) {
-    const link = getEODWhatsAppSummaryLink(report, ownerPhone || report.outlet?.phone || "9876543210");
+    const link = getEODWhatsAppSummaryLink(report, ownerPhone || report.outlet?.phone || "9959159515");
     if (typeof window !== "undefined") {
         window.open(link, "_blank");
     }

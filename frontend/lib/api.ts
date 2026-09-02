@@ -243,18 +243,24 @@ export const api = {
         apiFetch(`/api/reservations/${id}/status`, { method: "PATCH", body: JSON.stringify(data) }),
 
     // Analytics
-    getAnalyticsSummary: (params?: { outlet_id?: number; start_date?: string; end_date?: string }) =>
+    getAnalyticsSummary: (params?: { outlet_id?: number; start_date?: string; end_date?: string; days?: number }) =>
         apiFetch("/api/analytics/summary", { params }),
     getRevenueTrend: (days = 7, outletId?: number) =>
         apiFetch("/api/analytics/revenue-over-time", { params: { days, outlet_id: outletId } }),
-    getTopItems: (limit = 10, outletId?: number) =>
-        apiFetch("/api/analytics/top-items", { params: { limit, outlet_id: outletId } }),
-    getHourlyDistribution: (outletId?: number) =>
-        apiFetch("/api/analytics/hourly-distribution", { params: outletId ? { outlet_id: outletId } : undefined }),
-    getCategoryBreakdown: (outletId?: number) =>
-        apiFetch("/api/analytics/category-breakdown", { params: outletId ? { outlet_id: outletId } : undefined }),
-    getTableTurnover: (outletId?: number) =>
-        apiFetch("/api/analytics/table-turnover", { params: outletId ? { outlet_id: outletId } : undefined }),
+    getChannelsBreakdown: (days = 7, outletId?: number) =>
+        apiFetch("/api/analytics/channels", { params: { days, outlet_id: outletId } }),
+    getPaymentMethodsBreakdown: (days = 7, outletId?: number) =>
+        apiFetch("/api/analytics/payment-methods", { params: { days, outlet_id: outletId } }),
+    getTopItems: (limit = 10, outletId?: number, days = 30) =>
+        apiFetch("/api/analytics/top-items", { params: { limit, outlet_id: outletId, days } }),
+    getHourlyDistribution: (outletId?: number, days = 30) =>
+        apiFetch("/api/analytics/hourly-distribution", { params: { outlet_id: outletId, days } }),
+    getCategoryBreakdown: (outletId?: number, days = 30) =>
+        apiFetch("/api/analytics/category-breakdown", { params: { outlet_id: outletId, days } }),
+    getTableTurnover: (outletId?: number, days = 7) =>
+        apiFetch("/api/analytics/table-turnover", { params: { outlet_id: outletId, days } }),
+    getBranchComparison: (days = 30) =>
+        apiFetch("/api/analytics/branch-comparison", { params: { days } }),
     getEODReport: (date?: string, outletId?: number) =>
         apiFetch("/api/analytics/eod-report", { params: { date, outlet_id: outletId } }),
 
