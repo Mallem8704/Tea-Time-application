@@ -38,6 +38,8 @@ import {
     LogIn,
     RotateCcw,
     Bookmark,
+    QrCode,
+    Smartphone,
 } from "lucide-react";
 import { useCustomer } from "@/context/CustomerContext";
 import { useOffline } from "@/context/OfflineContext";
@@ -61,6 +63,7 @@ import {
     MenuItemAddonData,
 } from "@/components/order/DishCustomizerModal";
 import { MenuGridSkeleton } from "@/components/order/MenuGridSkeleton";
+import { UpiPaymentModal } from "@/components/order/UpiPaymentModal";
 
 interface MenuItemData extends CustomizerItemData {
     category_id: number;
@@ -126,6 +129,8 @@ function DeliveryOrderContent() {
     const { customer, isCustomerLoggedIn, loginCustomer, logoutCustomer, pastOrders } = useCustomer();
     const { isOnline, enqueueOrder } = useOffline();
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showUpiModal, setShowUpiModal] = useState(false);
+    const [pendingUpiOrder, setPendingUpiOrder] = useState<any>(null);
 
     // Auto-fill from logged-in customer profile
     useEffect(() => {
@@ -501,6 +506,11 @@ function DeliveryOrderContent() {
             setCart([]);
             setIsCartOpen(false);
             setActiveOrder(createdOrder);
+
+            if (paymentMethod === "upi") {
+                setPendingUpiOrder(createdOrder);
+                setShowUpiModal(true);
+            }
         } catch (err: any) {
             toast.error(err.message || "Failed to place delivery order. Please try again.");
         } finally {
@@ -595,6 +605,39 @@ function DeliveryOrderContent() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* UPI Payment Action Banner if payment pending and method is upi */}
+                        {activeOrder.payment_status === "pending" && activeOrder.payment_method === "upi" && (
+                            <div className="p-4 rounded-2xl bg-gradient-to-r from-saffron-500/20 via-amber-500/15 to-saffron-500/20 border-2 border-saffron-400 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-saffron-400 text-espresso-950 flex items-center justify-center font-black shrink-0 shadow-md">
+                                        <Smartphone className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-extrabold text-white flex items-center gap-2">
+                                            <span>UPI Payment Option</span>
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-saffron-400 text-espresso-950 font-black">
+                                                PENDING
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-cream-200/80 mt-0.5">
+                                            Pay <strong className="text-saffron-300">{formatRupees(activeOrder.total_paise)}</strong> instantly via GPay, PhonePe, PayTM, or QR code
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        setPendingUpiOrder(activeOrder);
+                                        setShowUpiModal(true);
+                                    }}
+                                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-saffron-400 to-amber-500 hover:from-saffron-300 hover:to-amber-400 text-espresso-950 font-black text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                                >
+                                    <QrCode className="w-4 h-4" />
+                                    <span>OPEN UPI PAYMENT OPTION</span>
+                                </button>
+                            </div>
+                        )}
 
                         {/* 4 Step Timeline */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
@@ -736,6 +779,30 @@ function DeliveryOrderContent() {
                         </div>
                     </div>
                 </main>
+
+                {/* Dynamic UPI Payment Modal */}
+                {showUpiModal && pendingUpiOrder && (
+                    <UpiPaymentModal
+                        isOpen={showUpiModal}
+                        onClose={() => setShowUpiModal(false)}
+                        orderId={pendingUpiOrder.id}
+                        orderNumber={pendingUpiOrder.order_number}
+                        totalPaise={pendingUpiOrder.total_paise}
+                        customerPhone={customerPhone}
+                        onPaymentSuccess={(updated) => {
+                            setActiveOrder((prev: any) =>
+                                prev ? { ...prev, payment_status: "paid" } : prev
+                            );
+                        }}
+                        onSwitchToCash={() => {
+                            setShowUpiModal(false);
+                            setActiveOrder((prev: any) =>
+                                prev ? { ...prev, payment_method: "cash" } : prev
+                            );
+                            toast.info("Switched to Cash on Delivery (COD)");
+                        }}
+                    />
+                )}
             </div>
         );
     }
@@ -1353,6 +1420,30 @@ function DeliveryOrderContent() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Dynamic UPI Payment Modal */}
+            {showUpiModal && pendingUpiOrder && (
+                <UpiPaymentModal
+                    isOpen={showUpiModal}
+                    onClose={() => setShowUpiModal(false)}
+                    orderId={pendingUpiOrder.id}
+                    orderNumber={pendingUpiOrder.order_number}
+                    totalPaise={pendingUpiOrder.total_paise}
+                    customerPhone={customerPhone}
+                    onPaymentSuccess={(updated) => {
+                        setActiveOrder((prev: any) =>
+                            prev ? { ...prev, payment_status: "paid" } : prev
+                        );
+                    }}
+                    onSwitchToCash={() => {
+                        setShowUpiModal(false);
+                        setActiveOrder((prev: any) =>
+                            prev ? { ...prev, payment_method: "cash" } : prev
+                        );
+                        toast.info("Switched to Cash on Delivery (COD)");
+                    }}
+                />
             )}
         </div>
     );
