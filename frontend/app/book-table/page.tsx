@@ -72,8 +72,25 @@ function BookTableContent() {
     const toast = useToast();
     const { customer } = useCustomer();
 
+    const [outlets, setOutlets] = useState<any[]>([]);
     const [selectedBranch, setSelectedBranch] = useState<number>(branchParam === "2" ? 2 : 1);
     const [partySize, setPartySize] = useState<number>(4);
+
+    // Auto-fetch real outlet DB records
+    useEffect(() => {
+        api.getOutlets()
+            .then((data: any[]) => {
+                if (Array.isArray(data) && data.length > 0) {
+                    setOutlets(data);
+                    if (branchParam === "2" && data.length > 1) {
+                        setSelectedBranch(data[1].id);
+                    } else {
+                        setSelectedBranch(data[0].id);
+                    }
+                }
+            })
+            .catch(() => {});
+    }, [branchParam]);
     
     // Default today's date in YYYY-MM-DD
     const todayStr = new Date().toISOString().split("T")[0];
@@ -279,7 +296,22 @@ function BookTableContent() {
                                 <span>1. Select Arabieq Kadiri Branch</span>
                             </label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {BRANCHES.map((b) => (
+                                {[
+                                    {
+                                        id: outlets[0]?.id || 1,
+                                        name: outlets[0]?.name || "Branch 1: Old Arabieq",
+                                        tagline: outlets[0]?.address || "Near Clock Tower, Main Road, Kadiri",
+                                        highlights: "Authentic Irani Chai, Osmania Biscuits & Classic Arabian Mandi",
+                                        badge: "Heritage Hub",
+                                    },
+                                    {
+                                        id: outlets[1]?.id || (outlets[0]?.id ? outlets[0].id : 2),
+                                        name: outlets[1]?.name || "Branch 2: New Arabieq",
+                                        tagline: outlets[1]?.address || "Bypass Road, Kadiri",
+                                        highlights: "Luxury Family AC Hall, Floor Majlis & Charcoal Barbecue",
+                                        badge: "Luxury Dining",
+                                    },
+                                ].map((b) => (
                                     <button
                                         type="button"
                                         key={b.id}
