@@ -233,7 +233,7 @@ export default function AdminTablesPage() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                         <Button
                             variant="secondary"
                             size="md"
@@ -574,7 +574,7 @@ export default function AdminTablesPage() {
                 {/* PRINTABLE QR STAND CARD MODAL */}
                 {selectedTableForQr && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-950/70 backdrop-blur-xs animate-in fade-in">
-                        <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-cream-300 overflow-hidden flex flex-col">
+                        <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] shadow-2xl border border-cream-300 overflow-hidden flex flex-col">
                             {/* Modal Header */}
                             <div className="p-4 bg-cream-50 border-b border-cream-200 flex items-center justify-between no-print">
                                 <div>

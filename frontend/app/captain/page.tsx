@@ -476,7 +476,7 @@ export default function CaptainWaiterPage() {
 
             {/* PENDING SERVICE CALLS ALERT BANNER */}
             {serviceCalls.length > 0 && (
-                <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-900 border-b border-blue-400/30 px-4 py-2.5 flex items-center justify-between shadow-lg animate-pulse">
+                <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-900 border-b border-blue-400/30 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-lg animate-pulse">
                     <div className="flex items-center gap-2">
                         <Bell className="w-4 h-4 text-blue-300 fill-blue-300 shrink-0" />
                         <span className="text-xs font-black text-white">

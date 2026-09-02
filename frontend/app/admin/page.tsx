@@ -258,7 +258,7 @@ export default function AdminLiveOrdersKanbanPage() {
                         </div>
 
                         {/* Order Type Filter Tabs */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                             <div className="flex items-center bg-white p-1 rounded-xl border border-cream-300 shadow-2xs">
                                 <button
                                     onClick={() => setOrderTypeFilter("all")}
@@ -381,7 +381,7 @@ export default function AdminLiveOrdersKanbanPage() {
                                 >
                                     {/* Column Header */}
                                     <div className="p-3.5 border-b border-cream-200 bg-white flex items-center justify-between shrink-0">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                                             <span className={`w-2.5 h-2.5 rounded-full ${col.headerBg}`} />
                                             <h3 className="text-xs font-extrabold uppercase tracking-wider text-espresso-900">
                                                 {t(col.titleKey as any)}
@@ -525,7 +525,7 @@ export default function AdminLiveOrdersKanbanPage() {
                                                         )}
 
                                                         {/* Thermal POS & WhatsApp Dispatch Strip */}
-                                                        <div className="flex items-center gap-1.5 py-1 px-1.5 rounded-xl bg-cream-50/80 border border-cream-200 text-[10px]">
+                                                        <div className="flex flex-wrap items-center gap-1 py-1 px-1.5 rounded-xl bg-cream-50/80 border border-cream-200 text-[10px]">
                                                             <button
                                                                 onClick={() => printKOT(order, outlet)}
                                                                 className="px-2 py-1 rounded-md bg-white border border-cream-300 hover:bg-cream-100 text-espresso-800 font-bold flex items-center gap-1 transition cursor-pointer"

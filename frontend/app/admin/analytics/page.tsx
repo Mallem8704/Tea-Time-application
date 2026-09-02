@@ -261,7 +261,7 @@ export default function AdminAnalyticsDashboardPage() {
                         {/* Date Presets & Actions */}
                         <div className="flex flex-wrap items-center gap-2">
                             {/* Date Presets */}
-                            <div className="flex rounded-xl bg-black/50 p-1 border border-white/10 text-xs">
+                            <div className="flex rounded-xl bg-black/50 p-1 border border-white/10 text-xs overflow-x-auto no-scrollbar max-w-full">
                                 {[
                                     { id: "today", label: "Today" },
                                     { id: "yesterday", label: "Yesterday" },

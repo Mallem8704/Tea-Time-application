@@ -578,7 +578,7 @@ export default function ArabiqHomePage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleDecrementDish(dish.id)}
-                                                    className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-[#D4AF37] flex items-center justify-center font-black transition cursor-pointer"
+                                                    className="w-7 h-7 sm:w-6 sm:h-6 rounded-lg bg-white/10 hover:bg-white/20 text-[#D4AF37] flex items-center justify-center font-black transition cursor-pointer active:scale-90"
                                                     title="Decrease"
                                                 >
                                                     <Minus className="w-3.5 h-3.5" />
@@ -589,7 +589,7 @@ export default function ArabiqHomePage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleAddDish(dish)}
-                                                    className="w-6 h-6 rounded-lg bg-[#D4AF37] hover:bg-[#E5C058] text-black flex items-center justify-center font-black transition cursor-pointer"
+                                                    className="w-7 h-7 sm:w-6 sm:h-6 rounded-lg bg-[#D4AF37] hover:bg-[#E5C058] text-black flex items-center justify-center font-black transition cursor-pointer active:scale-90"
                                                     title="Increase"
                                                 >
                                                     <Plus className="w-3.5 h-3.5" />
@@ -645,7 +645,7 @@ export default function ArabiqHomePage() {
                             </div>
 
                             {/* 4 Process Icons in Row */}
-                            <div className="grid grid-cols-4 gap-2 pt-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
                                 <div className="text-center group">
                                     <div className="w-12 h-12 rounded-2xl bg-[#142319] border border-[#22C55E]/30 flex items-center justify-center mx-auto mb-2 text-[#4ADE80] group-hover:scale-110 transition-transform">
                                         <QrCode className="w-5 h-5" />

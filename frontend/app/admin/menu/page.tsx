@@ -370,8 +370,8 @@ export default function AdminMenuManagementPage() {
 
                 {/* Items Table */}
                 <main className="flex-1 overflow-y-auto p-6 bg-cream-100">
-                    <div className="bg-white rounded-2xl border border-cream-300 shadow-xs overflow-hidden">
-                        <table className="w-full text-left text-xs border-collapse">
+                    <div className="bg-white rounded-2xl border border-cream-300 shadow-xs overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse min-w-[750px]">
                             <thead>
                                 <tr className="border-b border-cream-200 bg-cream-50/80 text-espresso-600 font-extrabold uppercase tracking-wider text-[11px]">
                                     <th className="py-3.5 px-4">Item Details</th>
@@ -614,7 +614,7 @@ export default function AdminMenuManagementPage() {
                                 </div>
 
                                 {/* Stock & Dietary Checks */}
-                                <div className="p-3 bg-cream-50 rounded-2xl border border-cream-200 grid grid-cols-3 gap-3">
+                                <div className="p-3 bg-cream-50 rounded-2xl border border-cream-200 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                                     <label className="flex items-center gap-2 font-bold text-espresso-800 cursor-pointer">
                                         <input
                                             type="checkbox"

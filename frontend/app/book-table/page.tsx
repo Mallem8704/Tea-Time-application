@@ -184,7 +184,7 @@ function BookTableContent() {
                         <LanguageToggle />
                         <Link
                             href="/"
-                            className="px-4 py-2 rounded-full border border-[#D4AF37]/30 text-xs font-bold text-[#D4AF37] hover:bg-[#D4AF37]/15 transition"
+                            className="hidden sm:inline-flex px-4 py-2 rounded-full border border-[#D4AF37]/30 text-xs font-bold text-[#D4AF37] hover:bg-[#D4AF37]/15 transition"
                         >
                             Back to Home
                         </Link>
@@ -289,7 +289,7 @@ function BookTableContent() {
                     /* ══════════════════════════════════════════════════════════
                        PRE-BOOKING FORM
                        ══════════════════════════════════════════════════════════ */
-                    <form onSubmit={handleSubmit} className="space-y-8 bg-[#140F0B] p-6 sm:p-10 rounded-3xl border border-[#D4AF37]/30 shadow-xl">
+                    <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 bg-[#140F0B] p-4 sm:p-10 rounded-3xl border border-[#D4AF37]/30 shadow-xl">
                         
                         {/* STEP 1: SELECT BRANCH */}
                         <div className="space-y-3">

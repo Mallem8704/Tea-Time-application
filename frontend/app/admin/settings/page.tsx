@@ -594,7 +594,7 @@ export default function SettingsPage() {
                             {/* Create Coupon Modal */}
                             {showNewCouponModal && (
                                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-                                    <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-cream-200">
+                                    <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-3xl p-6 shadow-2xl border border-cream-200">
                                         <h3 className="text-lg font-black text-espresso-950 mb-4 flex items-center gap-2">
                                             <Sparkles className="w-5 h-5 text-amber-500" />
                                             <span>Create New Promo Coupon</span>

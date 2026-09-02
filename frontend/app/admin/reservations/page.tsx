@@ -138,7 +138,7 @@ export default function AdminReservationsPage() {
                         </div>
 
                         {/* Dual Branch Toggle */}
-                        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-terracotta-200 shadow-xs">
+                        <div className="grid grid-cols-2 gap-1.5 bg-white p-1.5 rounded-2xl border border-terracotta-200 shadow-xs w-full sm:w-auto">
                             <button
                                 onClick={() => setSelectedBranchId(1)}
                                 className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${

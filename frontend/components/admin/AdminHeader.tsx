@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Radio,
+    Smartphone,
+    Calendar,
     Bell,
     Building2,
     ChevronDown,
@@ -56,9 +58,12 @@ export function AdminHeader({
 
     const navLinks = [
         { href: "/admin", labelKey: "live_orders", icon: LayoutDashboard, exact: true },
+        { href: "/admin/pos", labelKey: "cashier_pos", icon: CreditCard },
+        { href: "/captain", labelKey: "captain_pos", icon: Smartphone },
         { href: "/admin/kds", labelKey: "kds_view", icon: ChefHat },
         { href: "/admin/menu", labelKey: "menu_management", icon: Utensils },
         { href: "/admin/tables", labelKey: "tables_qr", icon: QrCode },
+        { href: "/admin/reservations", labelKey: "table_reservations", icon: Calendar },
         { href: "/admin/stock", labelKey: "inventory_stock", icon: Package },
         { href: "/admin/payments", labelKey: "payments_cashier", icon: CreditCard },
         { href: "/admin/analytics", labelKey: "sales_analytics", icon: BarChart3 },
@@ -114,7 +119,7 @@ export function AdminHeader({
 
                         {/* Admin Branch Switcher Dropdown */}
                         {isOwner && branchDropdownOpen && allOutlets.length > 1 && (
-                            <div className="absolute top-full left-0 mt-1.5 w-72 bg-white rounded-2xl border border-cream-200 shadow-xl p-2 z-50 animate-in fade-in">
+                            <div className="absolute top-full left-0 mt-1.5 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-cream-200 shadow-xl p-2 z-50 animate-in fade-in">
                                 <p className="text-[10px] font-black uppercase tracking-wider text-espresso-400 px-2 py-1 flex items-center justify-between">
                                     <span>Switch Active Branch</span>
                                     <Shield className="w-3 h-3 text-amber-500" />
@@ -218,7 +223,7 @@ export function AdminHeader({
                             </div>
 
                             {/* Nav Items */}
-                            <nav className="space-y-1">
+                            <nav className="space-y-1 overflow-y-auto max-h-[calc(100vh-180px)] pr-1">
                                 {navLinks.map((item) => {
                                     const active = isActive(item.href, item.exact);
                                     const Icon = item.icon;

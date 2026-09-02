@@ -194,7 +194,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                                 return (
                                     <div key={step.key} className="relative z-10 flex flex-col items-center">
                                         <div
-                                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                                                 isCurrent
                                                     ? "bg-terracotta-500 text-white ring-4 ring-terracotta-100 shadow-md scale-110"
                                                     : isPassed
@@ -205,7 +205,7 @@ export function OrderTracker({ initialOrder, onOrderMore }: OrderTrackerProps) {
                                             <StepIcon className={`w-4 h-4 ${isCurrent && step.key === "preparing" ? "animate-spin" : ""}`} />
                                         </div>
                                         <span
-                                            className={`text-[11px] font-bold mt-2 text-center max-w-[64px] leading-tight ${
+                                            className={`text-[9px] sm:text-[11px] font-bold mt-1.5 sm:mt-2 text-center max-w-[50px] sm:max-w-[64px] leading-tight ${
                                                 isCurrent
                                                     ? "text-terracotta-600"
                                                     : isPassed

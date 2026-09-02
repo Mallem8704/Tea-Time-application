@@ -550,7 +550,7 @@ function CustomerOrderContent() {
             {/* Menu Content */}
             <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 w-full space-y-4">
                 {/* Free Delivery Callout Banner */}
-                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400/40 flex items-center justify-between gap-3 text-xs">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-2.5">
                         <span className="w-8 h-8 rounded-xl bg-amber-500 text-black flex items-center justify-center shrink-0 shadow-xs">
                             <Truck className="w-4 h-4" />

@@ -222,7 +222,7 @@ export function POSRecentBillsModal({ isOpen, onClose, outlet }: POSRecentBillsM
                             </div>
 
                             {/* Status Filter Tabs */}
-                            <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 text-[11px]">
+                            <div className="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/5 text-[11px] overflow-x-auto no-scrollbar">
                                 {[
                                     { id: "all", label: "All Bills" },
                                     { id: "paid", label: "Settled (Paid)" },

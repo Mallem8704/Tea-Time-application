@@ -575,7 +575,7 @@ function DeliveryOrderContent() {
 
                 <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
                     {/* Live Tracker Status Card */}
-                    <div className="bg-gradient-to-br from-espresso-950 via-espresso-900 to-terracotta-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-espresso-950 via-espresso-900 to-terracotta-950 text-white rounded-3xl p-4 sm:p-8 shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-44 h-44 rounded-full bg-saffron-500/10 blur-2xl pointer-events-none" />
 
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
@@ -827,7 +827,7 @@ function DeliveryOrderContent() {
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h1 className="text-base sm:text-lg font-serif font-black text-espresso-950 leading-none">
+                                <h1 className="text-sm sm:text-lg font-serif font-black text-espresso-950 leading-tight">
                                     Arabieq Online Food Delivery
                                 </h1>
                                 <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">

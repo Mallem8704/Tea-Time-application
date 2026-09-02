@@ -159,7 +159,7 @@ export default function AdminStockManagementPage() {
 
                 {/* LOW STOCK ALERT BANNER */}
                 {lowStockItems.length > 0 && (
-                    <div className="p-4 bg-saffron-100 border-b border-saffron-300 flex items-center justify-between gap-4 px-6">
+                    <div className="p-4 bg-saffron-100 border-b border-saffron-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6">
                         <div className="flex items-center gap-3">
                             <AlertTriangle className="w-5 h-5 text-saffron-700 shrink-0" />
                             <div>
@@ -192,7 +192,7 @@ export default function AdminStockManagementPage() {
                 <main className="flex-1 overflow-y-auto p-6 bg-cream-100 grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left 2 Cols: Stock Levels Table */}
                     <div className="lg:col-span-2 space-y-4">
-                        <div className="bg-white rounded-3xl border border-cream-300 shadow-xs overflow-hidden">
+                        <div className="bg-white rounded-3xl border border-cream-300 shadow-xs overflow-x-auto">
                             <div className="p-4 border-b border-cream-200 bg-cream-50/70 flex items-center justify-between">
                                 <h3 className="font-extrabold text-espresso-950 text-sm">
                                     Item Stock Levels ({stockItems.length})
@@ -200,7 +200,7 @@ export default function AdminStockManagementPage() {
                                 <span className="text-xs text-espresso-500 font-medium">Automatic deduction on sales</span>
                             </div>
 
-                            <table className="w-full text-left text-xs border-collapse">
+                            <table className="w-full text-left text-xs border-collapse min-w-[600px]">
                                 <thead>
                                     <tr className="border-b border-cream-200 bg-cream-50/40 text-espresso-600 font-extrabold uppercase tracking-wider text-[11px]">
                                         <th className="py-3 px-4">Item Name</th>
