@@ -28,6 +28,7 @@ import { useToast } from "@/context/ToastContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { soundManager } from "@/lib/sound";
 import { ArabiqLogo, ArabesqueDivider } from "@/components/home/ArabiqBrandIcons";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 const BRANCHES = [
     {
@@ -180,6 +181,7 @@ function BookTableContent() {
                         <ArabiqLogo />
                     </Link>
                     <div className="flex items-center gap-3">
+                        <LanguageToggle />
                         <Link
                             href="/"
                             className="px-4 py-2 rounded-full border border-[#D4AF37]/30 text-xs font-bold text-[#D4AF37] hover:bg-[#D4AF37]/15 transition"

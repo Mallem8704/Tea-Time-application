@@ -52,6 +52,7 @@ import { safeStorage } from "@/lib/safeStorage";
 import { useOutlet } from "@/context/OutletContext";
 import { formatRupees, formatRelativeTime } from "@/lib/formatters";
 import { Button } from "@/components/ui/Button";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { VegBadge, SpecialBadge } from "@/components/ui/Badge";
 import { soundManager } from "@/lib/sound";
 import { useOrderSocket } from "@/hooks/useSockets";
@@ -840,6 +841,7 @@ function DeliveryOrderContent() {
                         </div>
                     </div>
 
+                    <LanguageToggle />
                     {/* Floating Cart Button */}
                     <div className="flex items-center gap-2">
                         {isCustomerLoggedIn ? (

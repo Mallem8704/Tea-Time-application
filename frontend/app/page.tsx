@@ -29,6 +29,7 @@ import {
     Calendar,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { useToast } from "@/context/ToastContext";
 import { safeStorage } from "@/lib/safeStorage";
 import { ArabiqLogo, ArabesqueDivider, FreeDeliveryEmblem } from "@/components/home/ArabiqBrandIcons";
