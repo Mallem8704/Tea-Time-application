@@ -233,14 +233,27 @@ export default function AdminTablesPage() {
                         </p>
                     </div>
 
-                    <Button
-                        variant="primary"
-                        size="md"
-                        leftIcon={<Plus className="w-4 h-4" />}
-                        onClick={() => setShowAddModal(true)}
-                    >
-                        Add New Table
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={outlet?.id === 2 ? "/Arabieq_Branch2_Table_QR_Stands.pdf" : "/Arabieq_Branch1_Table_QR_Stands.pdf"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-espresso-900 font-bold text-xs border border-cream-300 transition-all shadow-2xs"
+                        >
+                            <Printer className="w-3.5 h-3.5 text-espresso-700" />
+                            Download QR Standees (PDF)
+                        </a>
+
+                        <Button
+                            variant="primary"
+                            size="md"
+                            leftIcon={<Plus className="w-4 h-4" />}
+                            onClick={() => setShowAddModal(true)}
+                        >
+                            Add New Table
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Table Grid */}
