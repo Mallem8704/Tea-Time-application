@@ -30,6 +30,7 @@ import { formatRupees } from "@/lib/formatters";
 import { api } from "@/lib/api";
 import { useAdminLiveState } from "@/hooks/useAdminLiveState";
 import { useOutlet } from "@/context/OutletContext";
+import { ItemVariantsModal } from "@/components/admin/ItemVariantsModal";
 
 export default function AdminMenuManagementPage() {
     const { isAuthenticated, isOwner, isLoading: authLoading } = useAuth();
@@ -51,6 +52,8 @@ export default function AdminMenuManagementPage() {
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [showPriceModal, setShowPriceModal] = useState(false);
     const [priceItem, setPriceItem] = useState<any | null>(null);
+    const [showVariantsModal, setShowVariantsModal] = useState<boolean>(false);
+    const [selectedVariantItem, setSelectedVariantItem] = useState<any | null>(null);
     const [newPriceRupees, setNewPriceRupees] = useState<string>("");
 
     // Form States
@@ -476,7 +479,19 @@ export default function AdminMenuManagementPage() {
 
                                             {/* Actions */}
                                             <td className="py-3.5 px-4 text-right">
-                                                <div className="inline-flex items-center gap-1">
+                                                <div className="inline-flex items-center gap-1.5">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedVariantItem(item);
+                                                            setShowVariantsModal(true);
+                                                        }}
+                                                        className="px-2.5 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 border border-amber-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                                                        title="Manage Portion Sizes & Addons"
+                                                    >
+                                                        <Layers className="w-3.5 h-3.5 text-amber-700" />
+                                                        <span>Portions ({item.variants?.length || 0})</span>
+                                                    </button>
+
                                                     <button
                                                         onClick={() => handleOpenEditItem(item)}
                                                         className="p-1.5 rounded-lg text-espresso-500 hover:text-espresso-950 hover:bg-cream-100 transition cursor-pointer"

@@ -130,6 +130,18 @@ export const api = {
         apiFetch(`/api/menu/${id}/stock`, { method: "PATCH", body: JSON.stringify({ change_qty, reason, notes }) }),
     deleteMenuItem: (id: number) =>
         apiFetch(`/api/menu/${id}`, { method: "DELETE" }),
+    addMenuItemVariant: (itemId: number, data: { name: string; name_te?: string; price_paise: number; is_default?: boolean; is_available?: boolean }) =>
+        apiFetch(`/api/menu/${itemId}/variants`, { method: "POST", body: JSON.stringify(data) }),
+    updateMenuItemVariant: (variantId: number, data: { name?: string; name_te?: string; price_paise?: number; is_default?: boolean; is_available?: boolean }) =>
+        apiFetch(`/api/menu/variants/${variantId}`, { method: "PUT", body: JSON.stringify(data) }),
+    deleteMenuItemVariant: (variantId: number) =>
+        apiFetch(`/api/menu/variants/${variantId}`, { method: "DELETE" }),
+    addMenuItemAddon: (itemId: number, data: { name: string; name_te?: string; price_paise: number; is_available?: boolean }) =>
+        apiFetch(`/api/menu/${itemId}/addons`, { method: "POST", body: JSON.stringify(data) }),
+    updateMenuItemAddon: (addonId: number, data: { name?: string; name_te?: string; price_paise?: number; is_available?: boolean }) =>
+        apiFetch(`/api/menu/addons/${addonId}`, { method: "PUT", body: JSON.stringify(data) }),
+    deleteMenuItemAddon: (addonId: number) =>
+        apiFetch(`/api/menu/addons/${addonId}`, { method: "DELETE" }),
     uploadImage: (formData: FormData) =>
         apiFetch("/api/menu/upload-image", { method: "POST", body: formData }),
     getImageUrl: (path?: string | null) => {

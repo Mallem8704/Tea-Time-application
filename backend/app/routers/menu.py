@@ -468,3 +468,192 @@ def delete_menu_item(
     )
     db.commit()
     return {"message": f"Menu item '{item_name}' successfully deleted"}
+
+
+# ==========================================
+# VARIANT & ADDON MANAGEMENT (OWNER ONLY)
+# ==========================================
+
+from app.schemas import (
+    MenuItemVariantCreate,
+    MenuItemVariantUpdate,
+    MenuItemVariantOut,
+    MenuItemAddonBase,
+    MenuItemAddonUpdate,
+    MenuItemAddonOut,
+)
+
+
+@router.post("/{item_id}/variants", response_model=MenuItemVariantOut, status_code=status.HTTP_201_CREATED)
+def add_menu_item_variant(
+    item_id: int,
+    data: MenuItemVariantCreate,
+    current_user: User = Depends(require_owner),
+    db: Session = Depends(get_db),
+):
+    """Add a new portion size variant (e.g. Single, Full, Family Pack) to a dish."""
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.outlet_id == current_user.outlet_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Menu item not found")
+
+    item.has_variants = True
+
+    # If this is default, un-default others
+    if data.is_default:
+        db.query(MenuItemVariant).filter(MenuItemVariant.item_id == item_id).update({"is_default": False})
+
+    variant = MenuItemVariant(
+        item_id=item_id,
+        name=data.name.strip(),
+        name_te=data.name_te.strip() if data.name_te else None,
+        price_paise=data.price_paise,
+        is_default=data.is_default,
+        is_available=data.is_available,
+    )
+    db.add(variant)
+    db.commit()
+    db.refresh(variant)
+
+    log_audit(
+        db=db,
+        outlet_id=current_user.outlet_id,
+        user_id=current_user.id,
+        action="add_item_variant",
+        entity_type="menu_item",
+        entity_id=item_id,
+        details={"item_name": item.name, "variant": variant.name, "price_rs": variant.price_paise / 100},
+    )
+    return variant
+
+
+@router.put("/variants/{variant_id}", response_model=MenuItemVariantOut)
+def update_menu_item_variant(
+    variant_id: int,
+    data: MenuItemVariantUpdate,
+    current_user: User = Depends(require_owner),
+    db: Session = Depends(get_db),
+):
+    """Update portion variant name, price, or availability."""
+    variant = db.query(MenuItemVariant).filter(MenuItemVariant.id == variant_id).first()
+    if not variant:
+        raise HTTPException(status_code=404, detail="Variant not found")
+
+    if data.name is not None:
+        variant.name = data.name.strip()
+    if data.name_te is not None:
+        variant.name_te = data.name_te.strip() if data.name_te else None
+    if data.price_paise is not None:
+        variant.price_paise = data.price_paise
+    if data.is_available is not None:
+        variant.is_available = data.is_available
+    if data.is_default is not None:
+        if data.is_default:
+            db.query(MenuItemVariant).filter(MenuItemVariant.item_id == variant.item_id).update({"is_default": False})
+        variant.is_default = data.is_default
+
+    db.commit()
+    db.refresh(variant)
+    return variant
+
+
+@router.delete("/variants/{variant_id}")
+def delete_menu_item_variant(
+    variant_id: int,
+    current_user: User = Depends(require_owner),
+    db: Session = Depends(get_db),
+):
+    """Delete a portion size variant."""
+    variant = db.query(MenuItemVariant).filter(MenuItemVariant.id == variant_id).first()
+    if not variant:
+        raise HTTPException(status_code=404, detail="Variant not found")
+
+    item_id = variant.item_id
+    db.delete(variant)
+    db.commit()
+
+    # If no variants left, toggle has_variants to False
+    remaining = db.query(MenuItemVariant).filter(MenuItemVariant.item_id == item_id).count()
+    if remaining == 0:
+        item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
+        if item:
+            item.has_variants = False
+            db.commit()
+
+    return {"message": "Variant deleted successfully"}
+
+
+@router.post("/{item_id}/addons", response_model=MenuItemAddonOut, status_code=status.HTTP_201_CREATED)
+def add_menu_item_addon(
+    item_id: int,
+    data: MenuItemAddonBase,
+    current_user: User = Depends(require_owner),
+    db: Session = Depends(get_db),
+):
+    """Add a custom add-on (e.g. Extra Mayo, Extra Raita, Rumali Roti) to a dish."""
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.outlet_id == current_user.outlet_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Menu item not found")
+
+    addon = MenuItemAddon(
+        item_id=item_id,
+        name=data.name.strip(),
+        name_te=data.name_te.strip() if data.name_te else None,
+        price_paise=data.price_paise,
+        is_available=data.is_available,
+    )
+    db.add(addon)
+    db.commit()
+    db.refresh(addon)
+
+    log_audit(
+        db=db,
+        outlet_id=current_user.outlet_id,
+        user_id=current_user.id,
+        action="add_item_addon",
+        entity_type="menu_item",
+        entity_id=item_id,
+        details={"item_name": item.name, "addon": addon.name, "price_rs": addon.price_paise / 100},
+    )
+    return addon
+
+
+@router.put("/addons/{addon_id}", response_model=MenuItemAddonOut)
+def update_menu_item_addon(
+    addon_id: int,
+    data: MenuItemAddonUpdate,
+    current_user: User = Depends(require_owner),
+    db: Session = Depends(get_db),
+):
+    """Update custom addon name, price, or availability."""
+    addon = db.query(MenuItemAddon).filter(MenuItemAddon.id == addon_id).first()
+    if not addon:
+        raise HTTPException(status_code=404, detail="Addon not found")
+
+    if data.name is not None:
+        addon.name = data.name.strip()
+    if data.name_te is not None:
+        addon.name_te = data.name_te.strip() if data.name_te else None
+    if data.price_paise is not None:
+        addon.price_paise = data.price_paise
+    if data.is_available is not None:
+        addon.is_available = data.is_available
+
+    db.commit()
+    db.refresh(addon)
+    return addon
+
+
+@router.delete("/addons/{addon_id}")
+def delete_menu_item_addon(
+    addon_id: int,
+    current_user: User = Depends(require_owner),
+    db: Session = Depends(get_db),
+):
+    """Delete a custom addon."""
+    addon = db.query(MenuItemAddon).filter(MenuItemAddon.id == addon_id).first()
+    if not addon:
+        raise HTTPException(status_code=404, detail="Addon not found")
+
+    db.delete(addon)
+    db.commit()
+    return {"message": "Addon deleted successfully"}

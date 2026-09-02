@@ -164,6 +164,21 @@ class MenuItemVariantCreate(MenuItemVariantBase):
     pass
 
 
+
+class MenuItemVariantUpdate(BaseModel):
+    name: Optional[str] = None
+    name_te: Optional[str] = None
+    price_paise: Optional[int] = Field(None, gt=0)
+    is_default: Optional[bool] = None
+    is_available: Optional[bool] = None
+
+
+class MenuItemAddonUpdate(BaseModel):
+    name: Optional[str] = None
+    name_te: Optional[str] = None
+    price_paise: Optional[int] = Field(None, ge=0)
+    is_available: Optional[bool] = None
+
 class MenuItemVariantOut(MenuItemVariantBase):
     model_config = ConfigDict(from_attributes=True)
 
