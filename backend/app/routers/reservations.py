@@ -41,15 +41,13 @@ async def create_table_reservation(
     while db.query(TableReservation).filter(TableReservation.reservation_number == res_num).first():
         res_num = generate_reservation_number()
 
-    # Find suitable available table if matching party size
+    # Find suitable available table for this outlet
     matched_table = (
         db.query(CafeTable)
         .filter(
             CafeTable.outlet_id == data.outlet_id,
-            CafeTable.capacity >= data.party_size,
-            CafeTable.is_active == True,
+            CafeTable.status == "free",
         )
-        .order_by(CafeTable.capacity.asc())
         .first()
     )
 
