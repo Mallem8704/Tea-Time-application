@@ -1,13 +1,13 @@
 import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arabieq.in";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://arabieqrestaurant.com";
 
     return {
         rules: [
             {
                 userAgent: "*",
-                allow: ["/", "/order", "/delivery"],
+                allow: ["/", "/order", "/delivery", "/book-table"],
                 disallow: [
                     "/admin",
                     "/admin/*",
