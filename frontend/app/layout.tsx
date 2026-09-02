@@ -15,7 +15,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://arabieqrestaurant.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://arabeiqrestaurant.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
