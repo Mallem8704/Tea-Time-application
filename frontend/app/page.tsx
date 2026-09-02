@@ -69,7 +69,7 @@ const SIGNATURE_DISHES = [
         name_te: "హమ్మస్ విత్ పీటా",
         desc: "Creamy hummus with olive oil & pita bread.",
         price: 199,
-        image: "/dishes/3d_veg_starters.jpg",
+        image: "/dishes/hummus.jpg",
         bestseller: false,
     },
     {
@@ -78,7 +78,7 @@ const SIGNATURE_DISHES = [
         name_te: "కునాఫా స్వీట్",
         desc: "Traditional arabic dessert with sweet cheese.",
         price: 249,
-        image: "/dishes/3d_snacks.jpg",
+        image: "/dishes/kunafa.jpg",
         bestseller: false,
     },
 ];
