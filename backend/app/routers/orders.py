@@ -727,3 +727,109 @@ async def transfer_order_table(
     )
 
     return resp
+
+
+class OrderPaymentMethodUpdate(BaseModel):
+    payment_method: str  # 'cash', 'upi', 'card', 'cod'
+    notes: Optional[str] = None
+
+
+class OrderVoidRequest(BaseModel):
+    reason: str
+    staff_notes: Optional[str] = None
+
+
+@router.patch("/{order_id}/change-payment-method", response_model=OrderOut)
+async def change_order_payment_method(
+    order_id: int,
+    data: OrderPaymentMethodUpdate,
+    current_user: User = Depends(require_staff_or_owner),
+    db: Session = Depends(get_db),
+):
+    """Cashier POS endpoint: Change payment tender method on a settled/completed bill."""
+    order = (
+        db.query(Order)
+        .options(joinedload(Order.items), joinedload(Order.table), joinedload(Order.payments))
+        .filter(Order.id == order_id)
+        .first()
+    )
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    prev_method = order.payment_method
+    order.payment_method = data.payment_method.lower()
+    order.updated_at = datetime.datetime.utcnow()
+
+    # Update existing payment record if any
+    for p in order.payments:
+        p.method = data.payment_method.lower()
+        if data.notes:
+            p.notes = (p.notes or "") + " | " + data.notes
+
+    log_audit(
+        db=db,
+        outlet_id=order.outlet_id,
+        user_id=current_user.id,
+        action="change_payment_method",
+        entity_type="order",
+        entity_id=order.id,
+        details={"from": prev_method, "to": data.payment_method, "order_number": order.order_number},
+    )
+    db.commit()
+    db.refresh(order)
+
+    resp = format_order_response(order)
+    await manager.broadcast_to_admin(
+        outlet_id=order.outlet_id,
+        event_type="payment_updated",
+        data=resp.model_dump(mode="json"),
+    )
+    return resp
+
+
+@router.patch("/{order_id}/void", response_model=OrderOut)
+async def void_order(
+    order_id: int,
+    data: OrderVoidRequest,
+    current_user: User = Depends(require_staff_or_owner),
+    db: Session = Depends(get_db),
+):
+    """Cashier & Manager endpoint: Void/cancel an order with mandatory audit reason."""
+    order = (
+        db.query(Order)
+        .options(joinedload(Order.items), joinedload(Order.table))
+        .filter(Order.id == order_id)
+        .first()
+    )
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    order.status = "cancelled"
+    order.customer_notes = (order.customer_notes or "") + f" [VOIDED: {data.reason}]"
+    order.updated_at = datetime.datetime.utcnow()
+
+    # Release table if dine-in
+    if order.table_id:
+        t = db.query(CafeTable).filter(CafeTable.id == order.table_id).first()
+        if t:
+            t.status = "available"
+
+    log_audit(
+        db=db,
+        outlet_id=order.outlet_id,
+        user_id=current_user.id,
+        action="void_order",
+        entity_type="order",
+        entity_id=order.id,
+        details={"reason": data.reason, "order_number": order.order_number, "loss_paise": order.total_paise},
+    )
+    db.commit()
+    db.refresh(order)
+
+    resp = format_order_response(order)
+    await manager.broadcast_to_admin(
+        outlet_id=order.outlet_id,
+        event_type="order_voided",
+        data=resp.model_dump(mode="json"),
+    )
+    return resp

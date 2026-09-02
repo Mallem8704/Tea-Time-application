@@ -342,3 +342,31 @@ class TableReservation(Base):
 
     outlet = relationship("Outlet")
     table = relationship("CafeTable")
+
+
+class CashierShift(Base):
+    __tablename__ = "cashier_shifts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
+    cashier_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    cashier_name = Column(String(100), nullable=False)
+    shift_name = Column(String(50), default="Counter Shift")
+    status = Column(String(20), default="open", index=True)  # 'open', 'closed'
+    opened_at = Column(DateTime, default=datetime.datetime.utcnow)
+    closed_at = Column(DateTime, nullable=True)
+    opening_float_paise = Column(Integer, default=0)
+    cash_sales_paise = Column(Integer, default=0)
+    upi_sales_paise = Column(Integer, default=0)
+    card_sales_paise = Column(Integer, default=0)
+    petty_cash_in_paise = Column(Integer, default=0)
+    petty_cash_out_paise = Column(Integer, default=0)
+    expected_cash_paise = Column(Integer, default=0)
+    actual_cash_paise = Column(Integer, nullable=True)
+    difference_paise = Column(Integer, nullable=True)
+    denominations_json = Column(Text, nullable=True)
+    closing_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    outlet = relationship("Outlet")
+    cashier = relationship("User")

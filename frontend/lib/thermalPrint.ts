@@ -572,6 +572,99 @@ export function printEODZReport(report: any, outlet?: PrintOutletData | null) {
 }
 
 /**
+ * 6. Print Cashier Shift Handover & Drawer Closing Slip (80mm & 58mm).
+ */
+export function printShiftHandoverReport(handover: any, outlet?: PrintOutletData | null) {
+    if (typeof window === "undefined" || !handover) return;
+
+    const outletName = (handover.outlet_name || outlet?.name || "ARABIEQ RESTAURANT & CAFE").toUpperCase();
+    const openTime = handover.opened_at ? new Date(handover.opened_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-";
+    const closeTime = handover.closed_at ? new Date(handover.closed_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-";
+    const shiftDate = handover.opened_at ? new Date(handover.opened_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-IN");
+
+    const diff = Number(handover.difference_rupees || 0);
+    const diffColor = diff === 0 ? "#000" : diff > 0 ? "green" : "red";
+    const diffLabel = diff === 0 ? "EXACT MATCH (₹0.00)" : diff > 0 ? `+₹${diff.toFixed(2)} (OVERAGE)` : `-₹${Math.abs(diff).toFixed(2)} (SHORTAGE)`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Shift Handover - #${handover.shift_id}</title>
+    <style>
+        @page { size: 80mm auto; margin: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            width: 74mm;
+            margin: 1mm auto;
+            padding: 2px;
+            font-size: 11px;
+            color: #000;
+            line-height: 1.25;
+            -webkit-font-smoothing: antialiased;
+        }
+        .center { text-align: center; }
+        .bold { font-weight: 700; }
+        .double-line { border-bottom: 1.5px dashed #000; margin: 4px 0; }
+        .single-line { border-bottom: 1px dashed #666; margin: 3px 0; }
+        .row { display: flex; justify-content: space-between; margin: 2px 0; }
+        .section-header { font-weight: 700; margin: 4px 0 1px 0; font-size: 10.5px; text-transform: uppercase; }
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <div class="center bold" style="font-size: 14px; text-transform: uppercase;">${outletName}</div>
+    <div class="double-line"></div>
+    <div class="center bold" style="font-size: 12px; text-transform: uppercase;">SHIFT HANDOVER / X-REPORT</div>
+    <div class="center" style="font-size: 10px; color: #333;">Shift #${handover.shift_id}: ${handover.shift_name || "Counter Shift"}</div>
+    <div class="center" style="font-size: 10px;">Cashier: <strong>${handover.cashier_name || "Staff"}</strong></div>
+    <div class="center" style="font-size: 9px; color: #555;">Date: ${shiftDate} (${openTime} - ${closeTime})</div>
+    <div class="double-line"></div>
+
+    <div class="section-header">1. DRAWER RECONCILIATION</div>
+    <div class="row"><span>(+) Opening Float:</span><span>₹${(handover.opening_float_rupees || 0).toFixed(2)}</span></div>
+    <div class="row"><span>(+) Cash Sales:</span><span>₹${(handover.cash_sales_rupees || 0).toFixed(2)}</span></div>
+    ${handover.petty_cash_in_rupees ? `<div class="row"><span>(+) Petty Cash In:</span><span>₹${Number(handover.petty_cash_in_rupees).toFixed(2)}</span></div>` : ''}
+    ${handover.petty_cash_out_rupees ? `<div class="row"><span>(-) Petty Cash Out:</span><span>-₹${Number(handover.petty_cash_out_rupees).toFixed(2)}</span></div>` : ''}
+    <div class="single-line"></div>
+    <div class="row bold"><span>(=) Expected Cash:</span><span>₹${(handover.expected_cash_rupees || 0).toFixed(2)}</span></div>
+    <div class="row bold" style="font-size: 12px;"><span>(✓) Counted Cash:</span><span>₹${(handover.actual_cash_rupees || 0).toFixed(2)}</span></div>
+    <div class="single-line"></div>
+    <div class="row bold" style="font-size: 12px; color: ${diffColor};">
+        <span>Difference:</span>
+        <span>${diffLabel}</span>
+    </div>
+
+    <div class="double-line"></div>
+    <div class="section-header">2. NON-CASH SALES</div>
+    <div class="row"><span>UPI / Online QR:</span><span>₹${(handover.upi_sales_rupees || 0).toFixed(2)}</span></div>
+    <div class="row"><span>Card / POS Swipe:</span><span>₹${(handover.card_sales_rupees || 0).toFixed(2)}</span></div>
+    <div class="row bold"><span>Total Business:</span><span>₹${(handover.total_sales_rupees || 0).toFixed(2)} (${handover.total_orders_count || 0} orders)</span></div>
+
+    ${handover.notes ? `
+    <div class="double-line"></div>
+    <div style="font-size: 9.5px; color: #333;"><strong>Notes:</strong> ${handover.notes}</div>
+    ` : ''}
+
+    <div class="double-line"></div>
+    <div style="margin-top: 14px;">
+        <div class="row" style="font-size: 9.5px;"><span>Outgoing Cashier: ________________</span></div>
+        <div class="row" style="margin-top: 10px; font-size: 9.5px;"><span>Incoming / Manager: ________________</span></div>
+    </div>
+    <div class="center" style="font-size: 8px; margin-top: 6px; color: #666;">
+        Shift Closed • Arabieq DineOS
+    </div>
+</body>
+</html>
+    `;
+
+    triggerBrowserPrint(htmlContent);
+}
+
+/**
  * Robust Browser Print Trigger (supports both desktop & mobile browsers)
  */
 function triggerBrowserPrint(htmlContent: string) {

@@ -37,6 +37,9 @@ import { POSMenuGrid } from "@/components/admin/pos/POSMenuGrid";
 import { POSTicketCart, POSCartItem } from "@/components/admin/pos/POSTicketCart";
 import { POSTableSelectorModal } from "@/components/admin/pos/POSTableSelectorModal";
 import { PettyCashModal } from "@/components/admin/pos/PettyCashModal";
+import { POSRecentBillsModal } from "@/components/admin/pos/POSRecentBillsModal";
+import { POSShiftModal } from "@/components/admin/pos/POSShiftModal";
+import { Briefcase } from "lucide-react";
 
 export default function CashierPOSTerminalPage() {
     const router = useRouter();
@@ -69,6 +72,8 @@ export default function CashierPOSTerminalPage() {
     // Modals
     const [isTableModalOpen, setIsTableModalOpen] = useState<boolean>(false);
     const [isPettyCashOpen, setIsPettyCashOpen] = useState<boolean>(false);
+    const [isRecentBillsOpen, setIsRecentBillsOpen] = useState<boolean>(false);
+    const [isShiftModalOpen, setIsShiftModalOpen] = useState<boolean>(false);
     const [isSettlementModalOpen, setIsSettlementModalOpen] = useState<boolean>(false);
     const [settlementOrder, setSettlementOrder] = useState<any | null>(null);
 
@@ -150,7 +155,10 @@ export default function CashierPOSTerminalPage() {
     // Keyboard Shortcuts Listener (F2, F4, F5, F8, F9, F10, F11, F12)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "F2") {
+            if (e.key === "F7") {
+                e.preventDefault();
+                setIsRecentBillsOpen(true);
+            } else if (e.key === "F2") {
                 e.preventDefault();
                 searchInputRef.current?.focus();
             } else if (e.key === "F4") {
@@ -554,6 +562,28 @@ export default function CashierPOSTerminalPage() {
                             B2 (New)
                         </button>
                     </div>
+
+                    {/* Recent Bills (F7) */}
+                    <button
+                        type="button"
+                        onClick={() => setIsRecentBillsOpen(true)}
+                        className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white flex items-center gap-1.5 transition cursor-pointer"
+                        title="Search & Reprint Recent Bills (F7)"
+                    >
+                        <FileText className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <span className="hidden sm:inline">Bills [F7]</span>
+                    </button>
+
+                    {/* Shift Register */}
+                    <button
+                        type="button"
+                        onClick={() => setIsShiftModalOpen(true)}
+                        className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1.5 transition cursor-pointer"
+                        title="Cash Drawer & Shift Handover"
+                    >
+                        <Briefcase className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="hidden sm:inline">Shift</span>
+                    </button>
 
                     {/* Test Print Button */}
                     <button

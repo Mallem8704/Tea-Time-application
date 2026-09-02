@@ -187,6 +187,20 @@ export const api = {
         apiFetch(`/api/orders/${orderId}/append-items`, { method: "POST", body: JSON.stringify({ items, notes }) }),
     transferOrderTable: (orderId: number, target_table_id: number) =>
         apiFetch(`/api/orders/${orderId}/transfer-table`, { method: "POST", body: JSON.stringify({ target_table_id }) }),
+    changeOrderPaymentMethod: (orderId: number, payment_method: string, notes?: string) =>
+        apiFetch(`/api/orders/${orderId}/change-payment-method`, { method: "PATCH", body: JSON.stringify({ payment_method, notes }) }),
+    voidOrder: (orderId: number, reason: string, staff_notes?: string) =>
+        apiFetch(`/api/orders/${orderId}/void`, { method: "PATCH", body: JSON.stringify({ reason, staff_notes }) }),
+
+    // Cashier Shifts & Cash Register
+    getCurrentShift: (outletId?: number) =>
+        apiFetch("/api/shifts/current", { params: outletId ? { outlet_id: outletId } : undefined }),
+    openShift: (data: { opening_float_paise: number; shift_name?: string; notes?: string }, outletId?: number) =>
+        apiFetch("/api/shifts/open", { method: "POST", params: outletId ? { outlet_id: outletId } : undefined, body: JSON.stringify(data) }),
+    closeShift: (shiftId: number, data: { actual_cash_paise: number; denominations_json?: string; closing_notes?: string }) =>
+        apiFetch(`/api/shifts/${shiftId}/close`, { method: "POST", body: JSON.stringify(data) }),
+    getPastShifts: (outletId?: number, limit = 20) =>
+        apiFetch("/api/shifts", { params: { outlet_id: outletId, limit } }),
 
     // Stock & Inventory
     getStockOverview: (outletId?: number) => apiFetch("/api/stock", { params: outletId ? { outlet_id: outletId } : undefined }),
