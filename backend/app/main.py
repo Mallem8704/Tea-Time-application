@@ -189,6 +189,11 @@ def on_startup():
         if len(outlets) >= 2:
             outlets[1].phone = "+91 95150 51545"
         db.commit()
+
+        # Purge legacy duplicate dummy credentials
+        from app.models import User
+        db.query(User).filter(User.email.in_(["owner@teatime.com", "staff@teatime.com"])).delete(synchronize_session=False)
+        db.commit()
         db.close()
     except Exception as c_err:
         print(f"[COUPON-OUTLET-SEED] Note: {c_err}")

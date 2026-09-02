@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Lock, Mail, ShieldCheck, UserCheck, ArrowRight, MapPin, Building2 } from "lucide-react";
+import { Lock, Mail, ArrowRight, MapPin, Building2, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { Button } from "@/components/ui/Button";
@@ -29,8 +29,6 @@ function AdminLoginContent() {
             name: "Old Arabieq Restaurant",
             address: "2nd Floor, Near More Super Market, Rahmath Tower, Madanapalli Road, Kadiri",
             hours: "12:00 PM – 11:30 PM",
-            owner: { email: "owner@arabieq.com", pass: "admin123" },
-            staff: { email: "staff1@arabieq.com", pass: "staff123" },
             bg: "bg-amber-50",
             border: "border-amber-300",
             badge: "bg-amber-500 text-white",
@@ -40,8 +38,6 @@ function AdminLoginContent() {
             name: "New Arabieq Restaurant & Cafe",
             address: "Opposite to Girls High School, Kadiri, Andhra Pradesh",
             hours: "7:00 AM – 11:30 PM",
-            owner: { email: "owner2@arabieq.com", pass: "admin123" },
-            staff: { email: "staff2@arabieq.com", pass: "staff123" },
             bg: "bg-emerald-50",
             border: "border-emerald-300",
             badge: "bg-emerald-500 text-white",
@@ -68,12 +64,12 @@ function AdminLoginContent() {
     };
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 flex flex-col justify-center items-center p-4">
+        <main className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 flex flex-col justify-center items-center p-4 select-none">
             <div className="max-w-lg w-full space-y-5">
                 <div className="text-center">
                     <img src="/logo.png" alt="Arabieq" className="h-16 w-auto object-contain mx-auto mb-3" />
                     <h1 className="text-2xl font-black text-white tracking-tight">Admin Operations Cockpit</h1>
-                    <p className="text-white/50 text-sm mt-1">Select your branch to continue</p>
+                    <p className="text-white/50 text-sm mt-1">Select your branch to sign in</p>
                 </div>
 
                 {!selectedBranch ? (
@@ -83,7 +79,7 @@ function AdminLoginContent() {
                             <button
                                 key={branch.id}
                                 onClick={() => setSelectedBranch(branch.id)}
-                                className="w-full p-5 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/15 hover:border-white/40 transition-all duration-200 text-left group"
+                                className="w-full p-5 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/15 hover:border-white/40 transition-all duration-200 text-left group cursor-pointer"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex items-start gap-3">
@@ -103,14 +99,6 @@ function AdminLoginContent() {
                                 </div>
                             </button>
                         ))}
-                        <p className="text-center text-white/30 text-xs pt-2">
-                            <button
-                                onClick={() => { setSelectedBranch(1); setEmail("owner@arabieq.com"); setPassword("admin123"); }}
-                                className="hover:text-white/60 underline transition-colors"
-                            >
-                                Use Admin credentials (owner@arabieq.com)
-                            </button>
-                        </p>
                     </div>
                 ) : (
                     <div className="bg-white rounded-3xl p-7 shadow-2xl space-y-5">
@@ -121,7 +109,7 @@ function AdminLoginContent() {
                             </div>
                             <button
                                 onClick={() => { setSelectedBranch(null); setEmail(""); setPassword(""); }}
-                                className="text-xs text-espresso-500 hover:text-espresso-800 font-semibold transition-colors"
+                                className="text-xs text-espresso-500 hover:text-espresso-800 font-semibold transition-colors cursor-pointer"
                             >
                                 ← Switch Branch
                             </button>
@@ -129,13 +117,15 @@ function AdminLoginContent() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1.5">Email Address</label>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-espresso-700 mb-1.5">Staff / Owner Email</label>
                                 <div className="relative">
                                     <Mail className="w-4 h-4 text-espresso-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                                     <input
-                                        type="email" required value={email}
+                                        type="email"
+                                        required
+                                        value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        placeholder={`e.g. ${activeBranch?.owner.email}`}
+                                        placeholder="username@arabieq.com"
                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-cream-300 bg-cream-50/50 text-xs sm:text-sm text-espresso-950 placeholder:text-espresso-400 focus:outline-none focus:border-terracotta-500 focus:bg-white transition"
                                     />
                                 </div>
@@ -145,7 +135,9 @@ function AdminLoginContent() {
                                 <div className="relative">
                                     <Lock className="w-4 h-4 text-espresso-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                                     <input
-                                        type="password" required value={password}
+                                        type="password"
+                                        required
+                                        value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-cream-300 bg-cream-50/50 text-xs sm:text-sm text-espresso-950 placeholder:text-espresso-400 focus:outline-none focus:border-terracotta-500 focus:bg-white transition"
@@ -153,40 +145,20 @@ function AdminLoginContent() {
                                 </div>
                             </div>
                             <Button
-                                type="submit" variant="primary" size="lg" isLoading={isLoading}
+                                type="submit"
+                                variant="primary"
+                                size="lg"
+                                isLoading={isLoading}
                                 className="w-full shadow-md shadow-terracotta-500/20 mt-2"
                                 rightIcon={<ArrowRight className="w-4 h-4" />}
                             >
-                                Sign In to Branch {selectedBranch}
+                                Secure Sign In to Branch {selectedBranch}
                             </Button>
                         </form>
 
-                        <div className="pt-4 border-t border-cream-200">
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-espresso-500 text-center mb-3">Quick 1-Tap Demo Credentials</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => { setEmail(activeBranch!.owner.email); setPassword(activeBranch!.owner.pass); }}
-                                    className="p-2.5 rounded-xl border border-terracotta-200 bg-terracotta-50/50 hover:bg-terracotta-50 text-terracotta-900 text-left transition cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-1.5 font-bold text-xs">
-                                        <ShieldCheck className="w-3.5 h-3.5 text-terracotta-600" />
-                                        <span>Owner B{selectedBranch}</span>
-                                    </div>
-                                    <span className="text-[10px] text-espresso-500 block mt-0.5 truncate">{activeBranch?.owner.email}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setEmail(activeBranch!.staff.email); setPassword(activeBranch!.staff.pass); }}
-                                    className="p-2.5 rounded-xl border border-cream-300 bg-cream-50 hover:bg-cream-100 text-espresso-900 text-left transition cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-1.5 font-bold text-xs">
-                                        <UserCheck className="w-3.5 h-3.5 text-espresso-700" />
-                                        <span>Staff B{selectedBranch}</span>
-                                    </div>
-                                    <span className="text-[10px] text-espresso-500 block mt-0.5 truncate">{activeBranch?.staff.email}</span>
-                                </button>
-                            </div>
+                        <div className="pt-3 border-t border-cream-200 text-center flex items-center justify-center gap-1.5 text-espresso-400 text-[11px]">
+                            <Shield className="w-3.5 h-3.5 text-espresso-400" />
+                            <span>Encrypted &amp; Authorized Personnel Only</span>
                         </div>
                     </div>
                 )}

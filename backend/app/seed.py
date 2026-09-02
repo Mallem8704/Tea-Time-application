@@ -90,11 +90,6 @@ def seed_database(clear_existing: bool = True):
                  password_hash=get_password_hash("admin123"), role="owner"),
             User(outlet_id=outlet1.id, name="Floor Staff", email="staff1@arabieq.com",
                  password_hash=get_password_hash("staff123"), role="staff"),
-            # Legacy emails for backward compatibility
-            User(outlet_id=outlet1.id, name="Branch Manager", email="owner@teatime.com",
-                 password_hash=get_password_hash("admin123"), role="owner"),
-            User(outlet_id=outlet1.id, name="Floor Staff", email="staff@teatime.com",
-                 password_hash=get_password_hash("staff123"), role="staff"),
         ])
 
         # USERS for Branch 2
@@ -105,17 +100,6 @@ def seed_database(clear_existing: bool = True):
                  password_hash=get_password_hash("staff123"), role="staff"),
         ])
         db.flush()
-
-        print("\n" + "-" * 60)
-        print("[CREDENTIALS] BRANCH LOGIN CREDENTIALS:")
-        print("  BRANCH 1 (Old Arabieq):")
-        print("    Owner:  owner@arabieq.com / admin123")
-        print("    Staff:  staff1@arabieq.com / staff123")
-        print("    Legacy: owner@teatime.com / admin123")
-        print("  BRANCH 2 (New Arabieq and Cafe):")
-        print("    Owner:  owner2@arabieq.com / admin123")
-        print("    Staff:  staff2@arabieq.com / staff123")
-        print("-" * 60 + "\n")
 
         # TABLES for Branch 1 (T1-T10)
         for i in range(1, 11):
