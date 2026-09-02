@@ -44,45 +44,45 @@ const SIGNATURE_DISHES = [
         id: 101,
         name: "Chicken Mandi",
         name_te: "చికెన్ మండి",
-        desc: "Slow-cooked chicken with aromatic basmati rice.",
-        price: 349,
+        desc: "Slow-cooked tender Arabian chicken with aromatic long-grain Mandi rice & tomato salsa.",
+        price: 250,
         image: "/dishes/3d_mandi.jpg",
         bestseller: true,
         tag: "BESTSELLER",
     },
     {
         id: 102,
-        name: "Mutton Mandi",
-        name_te: "మటన్ మండి",
-        desc: "Tender mutton with fragrant mandi rice.",
-        price: 499,
+        name: "Mutton Juicy Mandi",
+        name_te: "మటన్ జ్యూసీ మండి",
+        desc: "Tender melt-in-mouth lamb pieces on fragrant spiced mandi rice topped with fried cashews.",
+        price: 350,
         image: "/dishes/3d_mandi.jpg",
         bestseller: false,
     },
     {
         id: 103,
-        name: "Mixed Grill Platter",
-        name_te: "మిక్స్డ్ గ్రిల్ ప్లాటర్",
-        desc: "A perfect mix of grilled kebabs & chicken.",
-        price: 599,
+        name: "Special Al-Faham BBQ",
+        name_te: "స్పెషల్ అల్-ఫహమ్ చికెన్",
+        desc: "Smoky charcoal flame-grilled Arabian whole chicken served with kuboos & garlic mayo.",
+        price: 450,
         image: "/dishes/3d_nonveg_starters.jpg",
         bestseller: false,
     },
     {
         id: 104,
-        name: "Hummus",
-        name_te: "హమ్మస్ విత్ పీటా",
-        desc: "Creamy hummus with olive oil & pita bread.",
-        price: 199,
+        name: "Plate Shawarma (2 Roti)",
+        name_te: "ప్లేట్ చికెన్ షవర్మా",
+        desc: "Tender rotisserie spiced chicken platter with 2 fresh rumali rotis, fries & garlic toum.",
+        price: 200,
         image: "/dishes/hummus.jpg",
         bestseller: false,
     },
     {
         id: 105,
-        name: "Kunafa",
-        name_te: "కునాఫా స్వీట్",
-        desc: "Traditional arabic dessert with sweet cheese.",
-        price: 249,
+        name: "Royal Arabian Falooda",
+        name_te: "రాయల్ అరేబియన్ ఫలూదా",
+        desc: "Rich rose milk, sabja seeds, kulfi ice cream scoops, vermicelli & roasted dry fruits.",
+        price: 189,
         image: "/dishes/kunafa.jpg",
         bestseller: false,
     },
@@ -706,23 +706,23 @@ export default function ArabiqHomePage() {
                                         <div className="p-2 rounded-xl bg-[#140F0B] border border-[#D4AF37]/20 flex items-center justify-between">
                                             <div>
                                                 <span className="font-bold block text-[11px]">Chicken Mandi</span>
-                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹349</span>
+                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹250</span>
                                             </div>
                                             <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-black font-bold flex items-center justify-center">+</span>
                                         </div>
 
                                         <div className="p-2 rounded-xl bg-[#140F0B] border border-[#D4AF37]/20 flex items-center justify-between">
                                             <div>
-                                                <span className="font-bold block text-[11px]">Hummus with Pita</span>
-                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹199</span>
+                                                <span className="font-bold block text-[11px]">Plate Shawarma (2 Roti)</span>
+                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹200</span>
                                             </div>
                                             <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-black font-bold flex items-center justify-center">+</span>
                                         </div>
 
                                         <div className="p-2 rounded-xl bg-[#140F0B] border border-[#D4AF37]/20 flex items-center justify-between">
                                             <div>
-                                                <span className="font-bold block text-[11px]">Mixed Grill Platter</span>
-                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹599</span>
+                                                <span className="font-bold block text-[11px]">Special Al-Faham BBQ</span>
+                                                <span className="text-[10px] text-[#D4AF37] font-mono">₹450</span>
                                             </div>
                                             <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-black font-bold flex items-center justify-center">+</span>
                                         </div>
@@ -733,7 +733,7 @@ export default function ArabiqHomePage() {
                                         href="/order?branch=1&table=T12"
                                         className="block p-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#C59B27] text-black text-center font-bold text-[11px] uppercase tracking-wider shadow-md"
                                     >
-                                        View Cart (3) • ₹847
+                                        View Cart (3) • ₹900
                                     </Link>
                                 </div>
                             </div>
