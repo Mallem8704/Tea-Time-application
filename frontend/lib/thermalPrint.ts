@@ -1,7 +1,7 @@
 /**
  * Browser-Native Thermal POS Receipt & KOT Printing Engine
  * Supports standard 80mm (3.125") and 58mm (2.25") Thermal Printers (ESC/POS compatible).
- * Zero NaN / Zero Undefined Guaranteed.
+ * Modern, crystal-clear typography with tabular numerals. Zero NaN / Zero Undefined Guaranteed.
  */
 
 export interface PrintOrderItem {
@@ -85,14 +85,18 @@ export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null)
         const addons = parseAddons(item.selected_addons_json);
 
         itemsHtml += `
-            <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #000;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 900;">
-                    <span>${idx + 1}. ${itemName}</span>
-                    <span style="font-size: 18px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace;">x${qty}</span>
+            <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #222;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 15px; font-weight: 800; line-height: 1.25; flex: 1; padding-right: 8px;">
+                        ${idx + 1}. ${itemName}
+                    </span>
+                    <span style="font-size: 16px; font-weight: 900; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-variant-numeric: tabular-nums; white-space: nowrap;">
+                        x${qty}
+                    </span>
                 </div>
-                ${item.variant_name ? `<div style="font-size: 13px; font-weight: bold; margin-left: 14px; margin-top: 2px;">▶ Size/Portion: ${item.variant_name}</div>` : ""}
-                ${addons.length > 0 ? `<div style="font-size: 11px; margin-left: 14px;">+ Addons: ${addons.join(", ")}</div>` : ""}
-                ${item.notes ? `<div style="font-size: 12px; font-weight: 900; color: #000; background: #eee; padding: 2px 6px; margin-top: 3px; border-left: 3px solid #000;">⚠️ NOTE: ${item.notes.toUpperCase()}</div>` : ""}
+                ${item.variant_name ? `<div style="font-size: 12px; font-weight: 700; color: #222; margin-left: 14px; margin-top: 2px;">▶ Size/Portion: ${item.variant_name}</div>` : ""}
+                ${addons.length > 0 ? `<div style="font-size: 11px; color: #444; margin-left: 14px;">+ Addons: ${addons.join(", ")}</div>` : ""}
+                ${item.notes ? `<div style="font-size: 12px; font-weight: 800; color: #000; background: #f0f0f0; padding: 3px 6px; margin-top: 3px; border-left: 3px solid #000; border-radius: 2px;">⚠️ NOTE: ${item.notes.toUpperCase()}</div>` : ""}
             </div>
         `;
     });
@@ -106,26 +110,31 @@ export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null)
             <style>
                 @page { margin: 0; size: 80mm auto; }
                 body {
-                    font-family: 'Courier New', Courier, monospace;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     width: 74mm;
                     margin: 2mm auto;
                     color: #000;
                     background: #fff;
-                    line-height: 1.25;
+                    line-height: 1.3;
+                    font-size: 12px;
+                    -webkit-font-smoothing: antialiased;
                 }
                 .text-center { text-align: center; }
-                .bold { font-weight: bold; }
+                .bold { font-weight: 800; }
                 .divider { border-top: 2px solid #000; margin: 6px 0; }
                 .dashed-divider { border-top: 1px dashed #000; margin: 6px 0; }
                 .badge {
-                    font-size: 20px;
+                    font-size: 18px;
                     font-weight: 900;
                     text-align: center;
                     border: 2px solid #000;
                     padding: 6px 0;
                     margin: 6px 0;
                     text-transform: uppercase;
-                    background: #f8f8f8;
+                    background: #000;
+                    color: #fff;
+                    letter-spacing: 0.5px;
+                    border-radius: 4px;
                 }
                 @media print {
                     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -133,26 +142,30 @@ export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null)
             </style>
         </head>
         <body>
-            <div class="text-center bold" style="font-size: 18px; letter-spacing: 1px;">*** KITCHEN ORDER TICKET (KOT) ***</div>
-            <div class="text-center bold" style="font-size: 13px;">${outlet?.name || "ARABIEQ RESTAURANT & CAFE"}</div>
+            <div class="text-center bold" style="font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase;">
+                KITCHEN ORDER TICKET (KOT)
+            </div>
+            <div class="text-center" style="font-size: 12px; font-weight: 600; color: #333;">
+                ${outlet?.name || "ARABIEQ RESTAURANT & CAFE"}
+            </div>
             
             <div class="badge">${titleTag}</div>
 
-            <div style="font-size: 13px; display: flex; justify-content: space-between; font-weight: bold;">
-                <span>KOT: #${order.order_number}</span>
+            <div style="font-size: 12px; display: flex; justify-content: space-between; font-weight: 700; margin-top: 4px;">
+                <span>KOT No: #${order.order_number}</span>
                 <span>${formattedTime}</span>
             </div>
-            <div style="font-size: 11px; margin-top: 2px;">Date: ${formattedDate}</div>
-            ${order.customer_name ? `<div style="font-size: 11px;">Guest: <strong>${order.customer_name}</strong> ${order.customer_phone ? `(${order.customer_phone})` : ""}</div>` : ""}
+            <div style="font-size: 11px; color: #444; margin-top: 1px;">Date: ${formattedDate}</div>
+            ${order.customer_name ? `<div style="font-size: 11px; margin-top: 1px;">Guest: <strong>${order.customer_name}</strong> ${order.customer_phone ? `(${order.customer_phone})` : ""}</div>` : ""}
 
             <div class="divider"></div>
-            <div style="font-size: 13px; font-weight: 900; margin-bottom: 4px;">DISH & QUANTITY</div>
+            <div style="font-size: 12px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">ORDERED ITEMS</div>
             <div class="dashed-divider"></div>
 
             ${itemsHtml}
 
             <div class="divider"></div>
-            <div class="text-center bold" style="font-size: 12px; margin-top: 8px;">
+            <div class="text-center bold" style="font-size: 11px; margin-top: 6px; letter-spacing: 0.5px;">
                 *** DISPATCH TO CHEF IMMEDIATELY ***
             </div>
         </body>
@@ -178,13 +191,17 @@ export function printRunningKOT(
     newItems.forEach((item: any, idx: number) => {
         const qty = Number(item.qty ?? item.quantity ?? 1) || 1;
         itemsHtml += `
-            <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #000;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 900;">
-                    <span>${idx + 1}. ${item.item_name}</span>
-                    <span style="font-size: 18px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace;">+${qty}</span>
+            <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #222;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 15px; font-weight: 800; line-height: 1.25; flex: 1; padding-right: 8px;">
+                        ${idx + 1}. ${item.item_name}
+                    </span>
+                    <span style="font-size: 16px; font-weight: 900; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-variant-numeric: tabular-nums;">
+                        +${qty}
+                    </span>
                 </div>
-                ${item.variant_name ? `<div style="font-size: 13px; font-weight: bold; margin-left: 14px; margin-top: 2px;">▶ Size: ${item.variant_name}</div>` : ""}
-                ${item.notes ? `<div style="font-size: 12px; font-weight: 900; background: #eee; padding: 2px 6px; margin-top: 3px; border-left: 3px solid #000;">⚠️ NOTE: ${item.notes.toUpperCase()}</div>` : ""}
+                ${item.variant_name ? `<div style="font-size: 12px; font-weight: 700; margin-left: 14px; margin-top: 2px;">▶ Size: ${item.variant_name}</div>` : ""}
+                ${item.notes ? `<div style="font-size: 12px; font-weight: 800; background: #f0f0f0; padding: 2px 6px; margin-top: 3px; border-left: 3px solid #000;">⚠️ NOTE: ${item.notes.toUpperCase()}</div>` : ""}
             </div>
         `;
     });
@@ -198,48 +215,55 @@ export function printRunningKOT(
             <style>
                 @page { margin: 0; size: 80mm auto; }
                 body {
-                    font-family: 'Courier New', Courier, monospace;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     width: 74mm;
                     margin: 2mm auto;
                     color: #000;
                     background: #fff;
-                    line-height: 1.25;
+                    line-height: 1.3;
+                    font-size: 12px;
+                    -webkit-font-smoothing: antialiased;
                 }
                 .text-center { text-align: center; }
-                .bold { font-weight: bold; }
+                .bold { font-weight: 800; }
                 .divider { border-top: 2px solid #000; margin: 6px 0; }
                 .dashed-divider { border-top: 1px dashed #000; margin: 6px 0; }
                 .badge {
-                    font-size: 20px;
+                    font-size: 18px;
                     font-weight: 900;
                     text-align: center;
                     border: 2px solid #000;
                     padding: 6px 0;
                     margin: 6px 0;
-                    background: #f8f8f8;
+                    background: #000;
+                    color: #fff;
+                    border-radius: 4px;
+                }
+                @media print {
+                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 }
             </style>
         </head>
         <body>
-            <div class="text-center bold" style="font-size: 16px; letter-spacing: 1px;">⚡ RUNNING KOT (ADD-ON ROUND)</div>
-            <div class="text-center bold" style="font-size: 12px;">${outlet?.name || "ARABIEQ RESTAURANT"}</div>
+            <div class="text-center bold" style="font-size: 15px; letter-spacing: 0.5px;">⚡ RUNNING KOT (ADD-ON ROUND)</div>
+            <div class="text-center" style="font-size: 12px; font-weight: 600; color: #333;">${outlet?.name || "ARABIEQ RESTAURANT"}</div>
             
             <div class="badge">TABLE ${order.table_label || "1"}</div>
 
-            <div style="font-size: 12px; display: flex; justify-content: space-between; font-weight: bold;">
-                <span>Order: #${order.order_number}</span>
+            <div style="font-size: 12px; display: flex; justify-content: space-between; font-weight: 700;">
+                <span>Order No: #${order.order_number}</span>
                 <span>${formattedTime}</span>
             </div>
-            <div style="font-size: 11px;">Captain: <strong>${captainName}</strong> • Date: ${formattedDate}</div>
+            <div style="font-size: 11px; color: #444;">Captain: <strong>${captainName}</strong> • Date: ${formattedDate}</div>
 
             <div class="divider"></div>
-            <div style="font-size: 12px; font-weight: 900; margin-bottom: 4px;">NEW ITEMS ADDED (ROUND 2+)</div>
+            <div style="font-size: 12px; font-weight: 900; text-transform: uppercase;">NEW ITEMS ADDED (ROUND 2+)</div>
             <div class="dashed-divider"></div>
 
             ${itemsHtml}
 
             <div class="divider"></div>
-            <div class="text-center bold" style="font-size: 11px; margin-top: 8px;">
+            <div class="text-center bold" style="font-size: 11px; margin-top: 6px;">
                 *** DISPATCH TO CHEF IMMEDIATELY ***
             </div>
         </body>
@@ -255,7 +279,7 @@ export function printRunningKOT(
 export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData | null) {
     const formattedDate = order.created_at
         ? new Date(order.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
-        : new Date().toLocaleString("en-IN");
+        : new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 
     const rawItems = order.items || (order as any).order_items || [];
     let calculatedSubtotal = 0;
@@ -274,15 +298,15 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
         const itemTotalPriceRs = (lineTotalPaise / 100).toFixed(2);
 
         itemsRows += `
-            <tr>
-                <td style="padding: 3px 0; vertical-align: top;">
-                    <div style="font-weight: bold; font-size: 12px;">${idx + 1}. ${itemName}</div>
-                    ${it.variant_name ? `<div style="font-size: 10px; color: #333;">▶ ${it.variant_name}</div>` : ""}
-                    ${addons.length > 0 ? `<div style="font-size: 10px; color: #333;">+ ${addons.join(", ")}</div>` : ""}
+            <tr style="border-bottom: 1px dotted #ccc;">
+                <td style="padding: 4px 0; vertical-align: top;">
+                    <div style="font-weight: 700; font-size: 12px; line-height: 1.25;">${idx + 1}. ${itemName}</div>
+                    ${it.variant_name ? `<div style="font-size: 10px; color: #444; font-weight: 600;">▶ ${it.variant_name}</div>` : ""}
+                    ${addons.length > 0 ? `<div style="font-size: 10px; color: #555;">+ ${addons.join(", ")}</div>` : ""}
                 </td>
-                <td style="text-align: center; vertical-align: top; font-weight: bold; font-size: 12px;">${qty}</td>
-                <td style="text-align: right; vertical-align: top; font-size: 11px;">₹${itemUnitPriceRs}</td>
-                <td style="text-align: right; vertical-align: top; font-weight: bold; font-size: 12px;">₹${itemTotalPriceRs}</td>
+                <td style="text-align: center; vertical-align: top; font-weight: 800; font-size: 12px; font-variant-numeric: tabular-nums; padding: 4px 2px;">${qty}</td>
+                <td style="text-align: right; vertical-align: top; font-size: 11px; font-variant-numeric: tabular-nums; color: #333; padding: 4px 2px;">₹${itemUnitPriceRs}</td>
+                <td style="text-align: right; vertical-align: top; font-weight: 800; font-size: 12px; font-variant-numeric: tabular-nums; padding: 4px 0;">₹${itemTotalPriceRs}</td>
             </tr>
         `;
     });
@@ -317,49 +341,52 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
             <style>
                 @page { margin: 0; size: 80mm auto; }
                 body {
-                    font-family: 'Courier New', Courier, monospace;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     width: 74mm;
                     margin: 2mm auto;
                     color: #000;
                     background: #fff;
                     font-size: 12px;
-                    line-height: 1.25;
+                    line-height: 1.3;
+                    -webkit-font-smoothing: antialiased;
                 }
                 .text-center { text-align: center; }
                 .text-right { text-align: right; }
-                .bold { font-weight: bold; }
-                .divider { border-top: 2px solid #000; margin: 6px 0; }
+                .bold { font-weight: 800; }
+                .divider { border-top: 1.5px solid #000; margin: 6px 0; }
                 .dashed-divider { border-top: 1px dashed #000; margin: 6px 0; }
                 table { width: 100%; border-collapse: collapse; font-size: 11px; }
-                th { border-bottom: 1px solid #000; padding: 4px 0; font-size: 11px; font-weight: 900; }
+                th { border-bottom: 1.5px solid #000; padding: 4px 0; font-size: 11px; font-weight: 900; }
                 @media print {
                     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 }
             </style>
         </head>
         <body>
-            <div class="text-center bold" style="font-size: 17px; letter-spacing: 1px;">
-                ${(outlet?.name || "ARABIEQ RESTAURANT & CAFE").toUpperCase()}
+            <div class="text-center bold" style="font-size: 18px; letter-spacing: 0.5px; text-transform: uppercase;">
+                ${outlet?.name || "ARABIEQ RESTAURANT & CAFE"}
             </div>
-            <div class="text-center" style="font-size: 10px; margin-top: 2px;">
+            <div class="text-center" style="font-size: 10px; color: #333; margin-top: 2px;">
                 ${outlet?.address || "Main Road & Bypass Road, Kadiri - 515591"}
             </div>
-            ${outlet?.phone ? `<div class="text-center bold" style="font-size: 11px;">Ph: ${outlet.phone}</div>` : ""}
-            ${outlet?.gstin ? `<div class="text-center" style="font-size: 10px;">GSTIN: ${outlet.gstin}</div>` : ""}
-            ${outlet?.fssai_license_number ? `<div class="text-center" style="font-size: 10px;">FSSAI: ${outlet.fssai_license_number}</div>` : ""}
+            ${outlet?.phone ? `<div class="text-center bold" style="font-size: 11px; margin-top: 1px;">Ph: ${outlet.phone}</div>` : ""}
+            ${outlet?.gstin ? `<div class="text-center" style="font-size: 10px; color: #444;">GSTIN: ${outlet.gstin}</div>` : ""}
+            ${outlet?.fssai_license_number ? `<div class="text-center" style="font-size: 10px; color: #444;">FSSAI: ${outlet.fssai_license_number}</div>` : ""}
             
             <div class="divider"></div>
-            <div class="text-center bold" style="font-size: 14px; letter-spacing: 0.5px;">TAX INVOICE / CASH BILL</div>
+            <div class="text-center bold" style="font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;">
+                TAX INVOICE / CASH BILL
+            </div>
             <div class="dashed-divider"></div>
 
             <div style="font-size: 11px;">
-                <div style="display: flex; justify-content: space-between;">
-                    <span><strong>Bill No:</strong> #${order.order_number}</span>
-                    <span><strong>Type:</strong> ${isDelivery ? "Delivery" : isTakeaway ? "Takeaway" : `Table ${order.table_label || "1"}`}</span>
+                <div style="display: flex; justify-content: space-between; font-weight: 700;">
+                    <span>Bill No: #${order.order_number}</span>
+                    <span>Type: ${isDelivery ? "Delivery" : isTakeaway ? "Takeaway" : `Table ${order.table_label || "1"}`}</span>
                 </div>
-                <div><strong>Date:</strong> ${formattedDate}</div>
-                ${order.customer_name ? `<div><strong>Customer:</strong> ${order.customer_name} ${order.customer_phone ? `(${order.customer_phone})` : ""}</div>` : ""}
-                ${isDelivery && order.delivery_address ? `<div style="font-size: 10px; margin-top: 2px;"><strong>Address:</strong> ${order.delivery_address}</div>` : ""}
+                <div style="color: #333; margin-top: 1px;">Date: ${formattedDate}</div>
+                ${order.customer_name ? `<div style="margin-top: 1px;">Guest: <strong>${order.customer_name}</strong> ${order.customer_phone ? `(${order.customer_phone})` : ""}</div>` : ""}
+                ${isDelivery && order.delivery_address ? `<div style="font-size: 10px; color: #333; margin-top: 2px;">Address: <strong>${order.delivery_address}</strong></div>` : ""}
             </div>
 
             <div class="divider"></div>
@@ -368,9 +395,9 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
                 <thead>
                     <tr>
                         <th style="text-align: left;">ITEM</th>
-                        <th style="text-align: center;">QTY</th>
-                        <th style="text-align: right;">RATE</th>
-                        <th style="text-align: right;">AMT</th>
+                        <th style="text-align: center; width: 14%;">QTY</th>
+                        <th style="text-align: right; width: 22%;">RATE</th>
+                        <th style="text-align: right; width: 24%;">AMT</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -380,30 +407,30 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
 
             <div class="dashed-divider"></div>
 
-            <table style="font-size: 12px;">
+            <table style="font-size: 12px; margin-top: 2px;">
                 <tr>
-                    <td>Subtotal:</td>
-                    <td class="text-right">₹${subtotalRs}</td>
+                    <td style="padding: 2px 0;">Item Subtotal:</td>
+                    <td class="text-right" style="font-variant-numeric: tabular-nums; padding: 2px 0;">₹${subtotalRs}</td>
                 </tr>
                 ${discountPaise > 0 ? `
-                <tr style="font-weight: bold;">
-                    <td>Discount (${order.coupon_code || "Special"}):</td>
-                    <td class="text-right">-₹${discountRs}</td>
+                <tr style="font-weight: 700;">
+                    <td style="padding: 2px 0;">Discount (${order.coupon_code || "Special"}):</td>
+                    <td class="text-right" style="font-variant-numeric: tabular-nums; padding: 2px 0;">-₹${discountRs}</td>
                 </tr>
                 ` : ""}
                 <tr>
-                    <td>GST (${taxRate}%):</td>
-                    <td class="text-right">₹${taxRs}</td>
+                    <td style="padding: 2px 0;">GST / Tax (${taxRate}%):</td>
+                    <td class="text-right" style="font-variant-numeric: tabular-nums; padding: 2px 0;">₹${taxRs}</td>
                 </tr>
                 ${isDelivery ? `
                 <tr>
-                    <td>Delivery Charges:</td>
-                    <td class="text-right">FREE</td>
+                    <td style="padding: 2px 0;">Delivery Charges:</td>
+                    <td class="text-right" style="font-weight: bold; color: green; padding: 2px 0;">FREE</td>
                 </tr>
                 ` : ""}
-                <tr style="font-size: 16px; font-weight: 900; border-top: 2px solid #000; border-bottom: 2px solid #000;">
-                    <td style="padding: 5px 0;">NET AMOUNT:</td>
-                    <td class="text-right" style="padding: 5px 0;">₹${totalRs}</td>
+                <tr style="font-size: 15px; font-weight: 900; border-top: 1.5px solid #000; border-bottom: 1.5px solid #000;">
+                    <td style="padding: 5px 0;">NET PAYABLE:</td>
+                    <td class="text-right" style="padding: 5px 0; font-variant-numeric: tabular-nums;">₹${totalRs}</td>
                 </tr>
             </table>
 
@@ -414,15 +441,15 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
             ${order.payment_status !== "paid" ? `
             <div class="dashed-divider"></div>
             <div class="text-center" style="margin-top: 6px;">
-                <div style="font-size: 11px; font-weight: 900; margin-bottom: 4px;">*** SCAN TO PAY VIA ANY UPI APP ***</div>
+                <div style="font-size: 11px; font-weight: 800; margin-bottom: 4px;">*** SCAN TO PAY VIA ANY UPI APP ***</div>
                 <img src="${upiQrUrl}" style="width: 115px; height: 115px; margin: 0 auto; display: block; border: 1px solid #000; padding: 2px;" alt="UPI QR" />
-                <div style="font-size: 10px; margin-top: 4px; font-weight: bold;">GPay • PhonePe • Paytm • BHIM • Cred</div>
-                <div style="font-size: 9px; color: #444;">VPA: ${upiVpa}</div>
+                <div style="font-size: 10px; margin-top: 4px; font-weight: 700;">GPay • PhonePe • Paytm • BHIM • Cred</div>
+                <div style="font-size: 9px; color: #555;">UPI: ${upiVpa}</div>
             </div>
             ` : ""}
 
             <div class="divider"></div>
-            <div class="text-center" style="font-size: 10px; margin-top: 6px;">
+            <div class="text-center" style="font-size: 10px; color: #333; margin-top: 4px;">
                 <strong>Thank you for dining with ${(outlet?.name || "Arabieq Restaurant")}!</strong><br/>
                 Visit Again &amp; Enjoy Authentic Food.<br/>
                 <em>Order Online: www.arabeiqrestaurant.com</em>
@@ -488,34 +515,35 @@ export function printEODZReport(report: any, outlet?: PrintOutletData | null) {
             margin: 0;
         }
         body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             width: 74mm;
             margin: 0 auto;
             padding: 8px 2px;
             font-size: 12px;
             color: #000;
-            line-height: 1.25;
+            line-height: 1.3;
+            -webkit-font-smoothing: antialiased;
         }
         .center { text-align: center; }
-        .bold { font-weight: bold; }
+        .bold { font-weight: 800; }
         .double-line { border-bottom: 2px dashed #000; margin: 6px 0; }
         .single-line { border-bottom: 1px dashed #000; margin: 4px 0; }
         .row { display: flex; justify-content: space-between; margin: 2px 0; }
-        .section-header { font-weight: bold; margin: 6px 0 2px 0; font-size: 11px; text-transform: uppercase; }
+        .section-header { font-weight: 800; margin: 6px 0 2px 0; font-size: 11px; text-transform: uppercase; }
         @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body>
-    <div class="center bold" style="font-size: 16px;">${outletName}</div>
-    <div class="center" style="font-size: 10px;">${outletAddress}</div>
-    <div class="center" style="font-size: 10px;">Ph: ${outletPhone}</div>
+    <div class="center bold" style="font-size: 16px; text-transform: uppercase;">${outletName}</div>
+    <div class="center" style="font-size: 10px; color: #333;">${outletAddress}</div>
+    <div class="center" style="font-size: 10px; color: #333;">Ph: ${outletPhone}</div>
 
     <div class="double-line"></div>
-    <div class="center bold" style="font-size: 14px;">DAILY Z-REPORT / REGISTER CLOSE</div>
-    <div class="center" style="font-size: 11px;">Date: ${report.report_date}</div>
-    <div class="center" style="font-size: 9px;">Printed: ${new Date().toLocaleString('en-IN')}</div>
+    <div class="center bold" style="font-size: 13px; text-transform: uppercase;">DAILY Z-REPORT / REGISTER CLOSE</div>
+    <div class="center" style="font-size: 11px; color: #333;">Date: ${report.report_date}</div>
+    <div class="center" style="font-size: 9px; color: #666;">Printed: ${new Date().toLocaleString('en-IN')}</div>
     <div class="double-line"></div>
 
     <div class="section-header">1. FINANCIAL SUMMARY</div>
