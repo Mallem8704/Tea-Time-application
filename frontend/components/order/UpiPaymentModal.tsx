@@ -186,22 +186,43 @@ export function UpiPaymentModal({
                     {/* 1-Tap UPI Apps (For Mobile Browsers) */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 block text-center">
-                            Or Tap Your UPI App Directly:
+                            Choose your UPI App to Pay ({formatRupees(totalPaise)}):
                         </label>
                         <div className="grid grid-cols-2 gap-2">
+                            {/* Google Pay */}
                             <a
-                                href={upiUri}
+                                href={upiUri.replace(/^upi:\/\/pay/, "gpay://upi/pay")}
                                 className="p-2.5 rounded-xl bg-white/5 hover:bg-[#D4AF37]/15 border border-white/10 hover:border-[#D4AF37] text-xs font-bold text-white flex items-center justify-center gap-2 transition cursor-pointer"
                             >
                                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                                <span>Google Pay / UPI</span>
+                                <span>Google Pay</span>
                             </a>
+
+                            {/* PhonePe */}
                             <a
-                                href={upiUri}
-                                className="p-2.5 rounded-xl bg-white/5 hover:bg-[#D4AF37]/15 border border-white/10 hover:border-[#D4AF37] text-xs font-bold text-white flex items-center justify-center gap-2 transition cursor-pointer"
+                                href={upiUri.replace(/^upi:\/\//, "phonepe://")}
+                                className="p-2.5 rounded-xl bg-purple-950/30 hover:bg-purple-900/40 border border-purple-500/30 hover:border-purple-400 text-xs font-bold text-purple-200 flex items-center justify-center gap-2 transition cursor-pointer"
                             >
                                 <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-                                <span>PhonePe / PayTM</span>
+                                <span>PhonePe</span>
+                            </a>
+
+                            {/* Paytm */}
+                            <a
+                                href={upiUri.replace(/^upi:\/\//, "paytmmp://")}
+                                className="p-2.5 rounded-xl bg-sky-950/30 hover:bg-sky-900/40 border border-sky-500/30 hover:border-sky-400 text-xs font-bold text-sky-200 flex items-center justify-center gap-2 transition cursor-pointer"
+                            >
+                                <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                                <span>Paytm</span>
+                            </a>
+
+                            {/* WhatsApp / BHIM / Other UPI */}
+                            <a
+                                href={upiUri}
+                                className="p-2.5 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-500/30 hover:border-emerald-400 text-xs font-bold text-emerald-200 flex items-center justify-center gap-2 transition cursor-pointer"
+                            >
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <span>BHIM / Other</span>
                             </a>
                         </div>
                     </div>
