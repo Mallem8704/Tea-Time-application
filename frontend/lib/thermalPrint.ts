@@ -1,7 +1,7 @@
 /**
  * Browser-Native Thermal POS Receipt & KOT Printing Engine
  * Supports standard 80mm (3.125") and 58mm (2.25") Thermal Printers (ESC/POS compatible).
- * Optimized for high-speed counter printing across PC, Mac, Android, and iOS devices.
+ * Zero NaN / Zero Undefined Guaranteed.
  */
 
 export interface PrintOrderItem {
@@ -26,12 +26,12 @@ export interface PrintOrderData {
     delivery_address?: string | null;
     payment_method?: string;
     payment_status?: string;
-    subtotal_paise: number;
+    subtotal_paise?: number;
     discount_paise?: number;
     coupon_code?: string | null;
-    tax_paise: number;
+    tax_paise?: number;
     delivery_fee_paise?: number;
-    total_paise: number;
+    total_paise?: number;
     customer_notes?: string | null;
     created_at?: string;
     items: PrintOrderItem[];
@@ -57,7 +57,7 @@ function parseAddons(jsonStr?: string | null): string[] {
             return parsed.map((a: any) => (typeof a === "string" ? a : a.name || ""));
         }
     } catch {
-        // Ignore JSON parse errors
+        // Ignore JSON parse error
     }
     return [];
 }
@@ -77,14 +77,18 @@ export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null)
         ? new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
         : new Date().toLocaleDateString("en-IN");
 
+    const rawItems = order.items || (order as any).order_items || [];
     let itemsHtml = "";
-    order.items.forEach((item, idx) => {
+    rawItems.forEach((item: any, idx: number) => {
+        const qty = Number(item.qty ?? item.quantity ?? 1) || 1;
+        const itemName = item.item_name || item.menu_item?.name || `Item #${item.item_id || idx + 1}`;
         const addons = parseAddons(item.selected_addons_json);
+
         itemsHtml += `
             <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #000;">
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 900;">
-                    <span>${idx + 1}. ${item.item_name}</span>
-                    <span style="font-size: 18px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace;">x${item.qty}</span>
+                    <span>${idx + 1}. ${itemName}</span>
+                    <span style="font-size: 18px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace;">x${qty}</span>
                 </div>
                 ${item.variant_name ? `<div style="font-size: 13px; font-weight: bold; margin-left: 14px; margin-top: 2px;">▶ Size/Portion: ${item.variant_name}</div>` : ""}
                 ${addons.length > 0 ? `<div style="font-size: 11px; margin-left: 14px;">+ Addons: ${addons.join(", ")}</div>` : ""}
@@ -98,7 +102,7 @@ export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null)
         <html>
         <head>
             <meta charset="utf-8" />
-            <title>KOT - ${order.order_number}</title>
+            <title>KOT - #${order.order_number}</title>
             <style>
                 @page { margin: 0; size: 80mm auto; }
                 body {
@@ -163,7 +167,7 @@ export function printKOT(order: PrintOrderData, outlet?: PrintOutletData | null)
  */
 export function printRunningKOT(
     order: PrintOrderData,
-    newItems: Array<{ item_name: string; variant_name?: string; qty: number; notes?: string }>,
+    newItems: Array<{ item_name: string; variant_name?: string; qty?: number; quantity?: number; notes?: string }>,
     outlet?: PrintOutletData | null,
     captainName: string = "Captain"
 ) {
@@ -171,12 +175,13 @@ export function printRunningKOT(
     const formattedDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
     let itemsHtml = "";
-    newItems.forEach((item, idx) => {
+    newItems.forEach((item: any, idx: number) => {
+        const qty = Number(item.qty ?? item.quantity ?? 1) || 1;
         itemsHtml += `
             <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #000;">
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 900;">
                     <span>${idx + 1}. ${item.item_name}</span>
-                    <span style="font-size: 18px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace;">+${item.qty}</span>
+                    <span style="font-size: 18px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace;">+${qty}</span>
                 </div>
                 ${item.variant_name ? `<div style="font-size: 13px; font-weight: bold; margin-left: 14px; margin-top: 2px;">▶ Size: ${item.variant_name}</div>` : ""}
                 ${item.notes ? `<div style="font-size: 12px; font-weight: 900; background: #eee; padding: 2px 6px; margin-top: 3px; border-left: 3px solid #000;">⚠️ NOTE: ${item.notes.toUpperCase()}</div>` : ""}
@@ -189,7 +194,7 @@ export function printRunningKOT(
         <html>
         <head>
             <meta charset="utf-8" />
-            <title>Running KOT - ${order.order_number}</title>
+            <title>Running KOT - #${order.order_number}</title>
             <style>
                 @page { margin: 0; size: 80mm auto; }
                 body {
@@ -245,39 +250,58 @@ export function printRunningKOT(
 }
 
 /**
- * 3. Print Official Tax Invoice & Cashier POS Receipt (with Dynamic UPI QR Code)
+ * 3. Print Official Tax Invoice & Cashier POS Receipt (Zero NaN / Zero Undefined Guaranteed)
  */
 export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData | null) {
     const formattedDate = order.created_at
         ? new Date(order.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
         : new Date().toLocaleString("en-IN");
 
-    const subtotalRs = (order.subtotal_paise / 100).toFixed(2);
-    const discountRs = ((order.discount_paise || 0) / 100).toFixed(2);
-    const taxRs = (order.tax_paise / 100).toFixed(2);
-    const totalRs = (order.total_paise / 100).toFixed(2);
-    const isDelivery = order.order_type === "delivery";
-    const isTakeaway = order.order_type === "takeaway";
+    const rawItems = order.items || (order as any).order_items || [];
+    let calculatedSubtotal = 0;
 
     let itemsRows = "";
-    order.items.forEach((it, idx) => {
-        const itemUnitPrice = ((it.unit_price_paise || (it.total_price_paise ? it.total_price_paise / it.qty : 0)) / 100).toFixed(2);
-        const itemTotalPrice = ((it.total_price_paise || 0) / 100).toFixed(2);
+    rawItems.forEach((it: any, idx: number) => {
+        const qty = Number(it.qty ?? it.quantity ?? 1) || 1;
+        const unitPricePaise = Number(it.unit_price_paise ?? it.price_paise ?? 0) || 0;
+        const lineTotalPaise = Number(it.total_price_paise) || (unitPricePaise * qty);
+        calculatedSubtotal += lineTotalPaise;
+
+        const itemName = it.item_name || it.menu_item?.name || `Item #${it.item_id || idx + 1}`;
         const addons = parseAddons(it.selected_addons_json);
+
+        const itemUnitPriceRs = (unitPricePaise / 100).toFixed(2);
+        const itemTotalPriceRs = (lineTotalPaise / 100).toFixed(2);
 
         itemsRows += `
             <tr>
                 <td style="padding: 3px 0; vertical-align: top;">
-                    <div style="font-weight: bold; font-size: 12px;">${idx + 1}. ${it.item_name}</div>
+                    <div style="font-weight: bold; font-size: 12px;">${idx + 1}. ${itemName}</div>
                     ${it.variant_name ? `<div style="font-size: 10px; color: #333;">▶ ${it.variant_name}</div>` : ""}
                     ${addons.length > 0 ? `<div style="font-size: 10px; color: #333;">+ ${addons.join(", ")}</div>` : ""}
                 </td>
-                <td style="text-align: center; vertical-align: top; font-weight: bold; font-size: 12px;">${it.qty}</td>
-                <td style="text-align: right; vertical-align: top; font-size: 11px;">₹${itemUnitPrice}</td>
-                <td style="text-align: right; vertical-align: top; font-weight: bold; font-size: 12px;">₹${itemTotalPrice}</td>
+                <td style="text-align: center; vertical-align: top; font-weight: bold; font-size: 12px;">${qty}</td>
+                <td style="text-align: right; vertical-align: top; font-size: 11px;">₹${itemUnitPriceRs}</td>
+                <td style="text-align: right; vertical-align: top; font-weight: bold; font-size: 12px;">₹${itemTotalPriceRs}</td>
             </tr>
         `;
     });
+
+    const subtotalPaise = Number(order.subtotal_paise ?? (order as any).total_price_paise ?? calculatedSubtotal) || calculatedSubtotal;
+    const discountPaise = Number(order.discount_paise ?? 0) || 0;
+    const netAfterDiscountPaise = Math.max(0, subtotalPaise - discountPaise);
+    const taxRate = Number(outlet?.tax_rate_percent ?? 5) || 5;
+    const taxPaise = Number(order.tax_paise ?? Math.round(netAfterDiscountPaise * (taxRate / 100))) || 0;
+    const deliveryFeePaise = Number(order.delivery_fee_paise ?? 0) || 0;
+    const totalPaise = Number(order.total_paise ?? (order as any).total_price_paise ?? (netAfterDiscountPaise + taxPaise + deliveryFeePaise)) || (netAfterDiscountPaise + taxPaise + deliveryFeePaise);
+
+    const subtotalRs = (subtotalPaise / 100).toFixed(2);
+    const discountRs = (discountPaise / 100).toFixed(2);
+    const taxRs = (taxPaise / 100).toFixed(2);
+    const totalRs = (totalPaise / 100).toFixed(2);
+
+    const isDelivery = order.order_type === "delivery";
+    const isTakeaway = order.order_type === "takeaway";
 
     const upiVpa = outlet?.upi_vpa || "8328413356@ibl";
     const upiQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=0&data=${encodeURIComponent(
@@ -361,14 +385,14 @@ export function printPOSReceipt(order: PrintOrderData, outlet?: PrintOutletData 
                     <td>Subtotal:</td>
                     <td class="text-right">₹${subtotalRs}</td>
                 </tr>
-                ${(order.discount_paise || 0) > 0 ? `
+                ${discountPaise > 0 ? `
                 <tr style="font-weight: bold;">
                     <td>Discount (${order.coupon_code || "Special"}):</td>
                     <td class="text-right">-₹${discountRs}</td>
                 </tr>
                 ` : ""}
                 <tr>
-                    <td>GST (${outlet?.tax_rate_percent ?? 5}%):</td>
+                    <td>GST (${taxRate}%):</td>
                     <td class="text-right">₹${taxRs}</td>
                 </tr>
                 ${isDelivery ? `
@@ -439,67 +463,6 @@ export function printTestReceipt(outlet?: PrintOutletData | null) {
 }
 
 /**
- * Robust Browser Print Trigger (supports both desktop & mobile browsers)
- */
-function triggerBrowserPrint(htmlContent: string) {
-    if (typeof window === "undefined") return;
-
-    try {
-        const printFrame = document.createElement("iframe");
-        printFrame.style.position = "fixed";
-        printFrame.style.right = "0";
-        printFrame.style.bottom = "0";
-        printFrame.style.width = "0";
-        printFrame.style.height = "0";
-        printFrame.style.border = "0";
-        document.body.appendChild(printFrame);
-
-        const doc = printFrame.contentWindow?.document;
-        if (doc) {
-            doc.open();
-            doc.write(htmlContent);
-            doc.close();
-
-            // Wait for images and fonts to render before opening print dialog
-            setTimeout(() => {
-                try {
-                    printFrame.contentWindow?.focus();
-                    printFrame.contentWindow?.print();
-                } catch (printErr) {
-                    console.warn("Iframe print failed, falling back to popup:", printErr);
-                    fallbackWindowPrint(htmlContent);
-                } finally {
-                    setTimeout(() => {
-                        if (document.body.contains(printFrame)) {
-                            document.body.removeChild(printFrame);
-                        }
-                    }, 2000);
-                }
-            }, 350);
-        } else {
-            fallbackWindowPrint(htmlContent);
-        }
-    } catch (e) {
-        console.error("Print trigger failed:", e);
-        fallbackWindowPrint(htmlContent);
-    }
-}
-
-function fallbackWindowPrint(htmlContent: string) {
-    const win = window.open("", "_blank", "width=400,height=600");
-    if (win) {
-        win.document.open();
-        win.document.write(htmlContent);
-        win.document.close();
-        win.focus();
-        setTimeout(() => {
-            win.print();
-            win.close();
-        }, 500);
-    }
-}
-
-/**
  * 5. Print End-of-Day (EOD) Z-Report for Cashier & Store Manager Reconciliation (80mm & 58mm).
  */
 export function printEODZReport(report: any, outlet?: PrintOutletData | null) {
@@ -559,9 +522,9 @@ export function printEODZReport(report: any, outlet?: PrintOutletData | null) {
     <div class="row"><span>Total Orders:</span><span><strong>${s.total_orders || 0}</strong></span></div>
     <div class="row"><span>Gross Sales:</span><span>₹${(s.gross_sales_rupees || 0).toFixed(2)}</span></div>
     ${(s.total_discount_rupees || 0) > 0 ? `<div class="row"><span>Discounts:</span><span>-₹${(s.total_discount_rupees || 0).toFixed(2)}</span></div>` : ''}
-    <div class="row"><span>Tax (GST):</span><span>₹${(s.tax_collected_rupees || 0).toFixed(2)}</span></div>
+    <div class="row"><span>Tax (GST):</span><span>₹${(s.tax_collected_rupees || s.total_tax_rupees || 0).toFixed(2)}</span></div>
     <div class="single-line"></div>
-    <div class="row bold" style="font-size: 14px;"><span>NET REVENUE:</span><span>₹${(s.net_sales_rupees || 0).toFixed(2)}</span></div>
+    <div class="row bold" style="font-size: 14px;"><span>NET REVENUE:</span><span>₹${(s.net_sales_rupees || s.total_revenue_rupees || 0).toFixed(2)}</span></div>
 
     <div class="double-line"></div>
     <div class="section-header">2. PAYMENT TENDER BREAKDOWN</div>
@@ -597,4 +560,64 @@ export function printEODZReport(report: any, outlet?: PrintOutletData | null) {
     `;
 
     triggerBrowserPrint(htmlContent);
+}
+
+/**
+ * Robust Browser Print Trigger (supports both desktop & mobile browsers)
+ */
+function triggerBrowserPrint(htmlContent: string) {
+    if (typeof window === "undefined") return;
+
+    try {
+        const printFrame = document.createElement("iframe");
+        printFrame.style.position = "fixed";
+        printFrame.style.right = "0";
+        printFrame.style.bottom = "0";
+        printFrame.style.width = "0";
+        printFrame.style.height = "0";
+        printFrame.style.border = "0";
+        document.body.appendChild(printFrame);
+
+        const doc = printFrame.contentWindow?.document;
+        if (doc) {
+            doc.open();
+            doc.write(htmlContent);
+            doc.close();
+
+            setTimeout(() => {
+                try {
+                    printFrame.contentWindow?.focus();
+                    printFrame.contentWindow?.print();
+                } catch (printErr) {
+                    console.warn("Iframe print failed, falling back to popup:", printErr);
+                    fallbackWindowPrint(htmlContent);
+                } finally {
+                    setTimeout(() => {
+                        if (document.body.contains(printFrame)) {
+                            document.body.removeChild(printFrame);
+                        }
+                    }, 2000);
+                }
+            }, 350);
+        } else {
+            fallbackWindowPrint(htmlContent);
+        }
+    } catch (e) {
+        console.error("Print trigger failed:", e);
+        fallbackWindowPrint(htmlContent);
+    }
+}
+
+function fallbackWindowPrint(htmlContent: string) {
+    const win = window.open("", "_blank", "width=400,height=600");
+    if (win) {
+        win.document.open();
+        win.document.write(htmlContent);
+        win.document.close();
+        win.focus();
+        setTimeout(() => {
+            win.print();
+            win.close();
+        }, 500);
+    }
 }

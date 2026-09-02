@@ -9,10 +9,10 @@ import { PrintOrderData, PrintOutletData } from "@/lib/thermalPrint";
  */
 export function getCustomerWhatsAppInvoiceLink(order: PrintOrderData, outlet?: PrintOutletData | null): string {
     const outletName = outlet?.name || "Arabieq Restaurant";
-    const subtotalRs = (order.subtotal_paise / 100).toFixed(2);
+    const subtotalRs = (((order.subtotal_paise || (order as any).total_price_paise || 0)) / 100).toFixed(2);
     const discountRs = ((order.discount_paise || 0) / 100).toFixed(2);
-    const taxRs = (order.tax_paise / 100).toFixed(2);
-    const totalRs = (order.total_paise / 100).toFixed(2);
+    const taxRs = (((order.tax_paise || 0)) / 100).toFixed(2);
+    const totalRs = (((order.total_paise || (order as any).total_price_paise || 0)) / 100).toFixed(2);
     const isDelivery = order.order_type === "delivery";
 
     let itemLines = "";

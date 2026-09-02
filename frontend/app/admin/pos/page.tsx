@@ -399,21 +399,36 @@ export default function CashierPOSTerminalPage() {
             printPOSReceipt(activeTableOrder, outlet);
             toast.success("📄 Estimate bill sent to printer");
         } else if (cartItems.length > 0) {
+            const subtotal = cartItems.reduce((a, b) => a + b.price_paise * b.qty, 0);
+            const disc = discountPaise || 0;
+            const netAfterDisc = Math.max(0, subtotal - disc);
+            const taxRate = outlet?.tax_rate_percent ?? 5;
+            const tax = Math.round(netAfterDisc * (taxRate / 100));
+            const grandTotal = netAfterDisc + tax + (parcelChargePaise || 0);
+
             const mockOrder = {
                 id: "EST-" + Date.now().toString().slice(-4),
                 order_number: "EST-" + Date.now().toString().slice(-4),
                 table_id: selectedTable?.id,
-                table_label: selectedTable?.label || "Counter",
+                table_label: selectedTable?.label || (orderType === "takeaway" ? "Takeaway" : "Counter"),
                 order_type: orderType,
-                customer_name: customerName || "Guest",
+                customer_name: customerName.trim() || "Guest",
+                customer_phone: customerPhone.trim() || undefined,
                 created_at: new Date().toISOString(),
+                subtotal_paise: subtotal,
+                discount_paise: disc,
+                tax_paise: tax,
+                total_paise: grandTotal,
+                payment_method: "PROFORMA",
+                payment_status: "pending",
                 items: cartItems.map((ci) => ({
                     item_name: ci.name,
                     variant_name: ci.variant_name,
-                    quantity: ci.qty,
+                    qty: ci.qty,
                     unit_price_paise: ci.price_paise,
+                    total_price_paise: ci.price_paise * ci.qty,
+                    notes: ci.notes,
                 })),
-                total_price_paise: cartItems.reduce((a, b) => a + b.price_paise * b.qty, 0) - discountPaise,
             };
             printPOSReceipt(mockOrder as any, outlet);
             toast.success("📄 Estimate bill printed");
