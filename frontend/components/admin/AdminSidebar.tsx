@@ -18,6 +18,7 @@ import {
     User,
     Settings,
     Smartphone,
+    Calendar,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -35,6 +36,7 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
         { href: "/admin/kds", labelKey: "kds_view", icon: ChefHat },
         { href: "/admin/menu", labelKey: "menu_management", icon: Utensils },
         { href: "/admin/tables", labelKey: "tables_qr", icon: QrCode },
+        { href: "/admin/reservations", labelKey: "table_reservations", icon: Calendar },
         { href: "/admin/stock", labelKey: "inventory_stock", icon: Package },
         { href: "/admin/payments", labelKey: "payments_cashier", icon: CreditCard },
         { href: "/admin/analytics", labelKey: "sales_analytics", icon: BarChart3 },

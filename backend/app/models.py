@@ -318,3 +318,27 @@ class Coupon(Base):
     orders = relationship("Order", back_populates="coupon")
 
 
+
+
+class TableReservation(Base):
+    __tablename__ = "table_reservations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), index=True, nullable=False)
+    reservation_number = Column(String(50), unique=True, index=True, nullable=False)
+    customer_name = Column(String(100), nullable=False)
+    customer_phone = Column(String(20), index=True, nullable=False)
+    customer_email = Column(String(100), nullable=True)
+    party_size = Column(Integer, nullable=False, default=2)
+    reservation_date = Column(String(20), nullable=False)  # YYYY-MM-DD
+    reservation_time = Column(String(20), nullable=False)  # HH:MM e.g. "19:30"
+    seating_preference = Column(String(50), default="standard")  # 'majlis', 'family_ac', 'terrace', 'standard'
+    occasion = Column(String(50), nullable=True)  # 'birthday', 'anniversary', 'family', 'business', 'casual'
+    special_requests = Column(Text, nullable=True)
+    table_id = Column(Integer, ForeignKey("tables.id"), nullable=True)
+    status = Column(String(20), default="confirmed")  # 'confirmed', 'seated', 'cancelled', 'completed'
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    outlet = relationship("Outlet")
+    table = relationship("CafeTable")

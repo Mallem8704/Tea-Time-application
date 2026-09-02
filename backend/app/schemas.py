@@ -591,3 +591,47 @@ class CouponValidateResponse(BaseModel):
     message: str
 
 
+
+
+# ==========================================
+# TABLE RESERVATION / PRE-BOOKING SCHEMAS
+# ==========================================
+
+class TableReservationCreate(BaseModel):
+    outlet_id: int = 1
+    customer_name: str = Field(..., min_length=2, max_length=100)
+    customer_phone: str = Field(..., min_length=10, max_length=20)
+    customer_email: Optional[str] = None
+    party_size: int = Field(..., ge=1, le=50)
+    reservation_date: str = Field(..., description="Date formatted as YYYY-MM-DD")
+    reservation_time: str = Field(..., description="Time formatted as HH:MM e.g. 19:30")
+    seating_preference: str = "standard"  # 'majlis', 'family_ac', 'terrace', 'standard'
+    occasion: Optional[str] = "casual"
+    special_requests: Optional[str] = None
+
+
+class TableReservationStatusUpdate(BaseModel):
+    status: str = Field(..., description="'confirmed', 'seated', 'cancelled', 'completed'")
+    table_id: Optional[int] = None
+
+
+class TableReservationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    outlet_id: int
+    reservation_number: str
+    customer_name: str
+    customer_phone: str
+    customer_email: Optional[str] = None
+    party_size: int
+    reservation_date: str
+    reservation_time: str
+    seating_preference: str
+    occasion: Optional[str] = None
+    special_requests: Optional[str] = None
+    table_id: Optional[int] = None
+    table_label: Optional[str] = None
+    status: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime

@@ -106,7 +106,8 @@ const restaurantStructuredData = {
     "Chinese",
     "Desserts"
   ],
-  "acceptsReservations": "False",
+  "acceptsReservations": "True",
+  "reservation": `${SITE_URL}/book-table`,
   "menu": `${SITE_URL}/order`,
   "hasMenu": `${SITE_URL}/order`,
   "address": [

@@ -19,6 +19,7 @@ from app.routers import (
     outlets,
     customers,
     coupons,
+    reservations,
 )
 
 # Initialize database schema tables
@@ -421,6 +422,9 @@ app.include_router(customers.router, prefix="/customer", tags=["Customer Auth & 
 
 app.include_router(coupons.router, prefix="/api/coupons", tags=["Promo Codes & Coupons"])
 app.include_router(coupons.router, prefix="/coupons", tags=["Promo Codes & Coupons (Alias)"])
+
+app.include_router(reservations.router, prefix="/api/reservations", tags=["Table Pre-Booking & Reservations"])
+app.include_router(reservations.router, prefix="/reservations", tags=["Table Pre-Booking & Reservations (Alias)"])
 
 
 @app.get("/")

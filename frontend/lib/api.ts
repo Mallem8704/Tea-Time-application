@@ -220,6 +220,26 @@ export const api = {
     attendServiceCall: (callId: number) =>
         apiFetch(`/api/service-calls/${callId}/attend`, { method: "PATCH" }),
 
+    // Table Reservations & Pre-Booking
+    createReservation: (data: {
+        outlet_id: number;
+        customer_name: string;
+        customer_phone: string;
+        customer_email?: string;
+        party_size: number;
+        reservation_date: string;
+        reservation_time: string;
+        seating_preference?: string;
+        occasion?: string;
+        special_requests?: string;
+    }) => apiFetch("/api/reservations", { method: "POST", body: JSON.stringify(data) }),
+    getReservations: (params?: { outlet_id?: number; date?: string; status?: string }) =>
+        apiFetch("/api/reservations", { params }),
+    lookupReservation: (queryStr: string) =>
+        apiFetch(`/api/reservations/lookup/${encodeURIComponent(queryStr)}`),
+    updateReservationStatus: (id: number, data: { status: string; table_id?: number }) =>
+        apiFetch(`/api/reservations/${id}/status`, { method: "PATCH", body: JSON.stringify(data) }),
+
     // Analytics
     getAnalyticsSummary: (params?: { outlet_id?: number; start_date?: string; end_date?: string }) =>
         apiFetch("/api/analytics/summary", { params }),

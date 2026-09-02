@@ -26,6 +26,7 @@ import {
     Layers,
     Menu as MenuIcon,
     X,
+    Calendar,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
@@ -270,6 +271,9 @@ export default function ArabiqHomePage() {
                         <button onClick={() => setStoryOpen(true)} className="hover:text-[#D4AF37] transition py-1 cursor-pointer uppercase">
                             Our Story
                         </button>
+                        <Link href="/book-table" className="text-[#E5C058] hover:text-[#D4AF37] transition py-1 font-bold">
+                            Book Table
+                        </Link>
                         <a href="#experience" className="hover:text-[#D4AF37] transition py-1">
                             Gallery
                         </a>
@@ -350,6 +354,9 @@ export default function ArabiqHomePage() {
                         >
                             Our Story
                         </button>
+                        <Link href="/book-table" onClick={() => setMobileNavOpen(false)} className="block text-[#E5C058] font-bold">
+                            👑 Book a Table (Pre-Booking)
+                        </Link>
                         <a href="#experience" onClick={() => setMobileNavOpen(false)} className="block hover:text-[#D4AF37]">
                             Gallery & Ambiance
                         </a>
@@ -403,12 +410,12 @@ export default function ArabiqHomePage() {
                                 From slow-cooked mandi to smoky grills and freshly baked breads – experience the true taste of Arabia.
                             </p>
 
-                            {/* Dual Primary Action Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2 justify-center lg:justify-start">
+                            {/* 3 Primary Action Buttons */}
+                            <div className="flex flex-col sm:flex-row items-center gap-3.5 pt-2 justify-center lg:justify-start">
                                 {/* Button 1: Order at Table (Scan QR) */}
                                 <button
                                     onClick={openTablePicker}
-                                    className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-[#141E15]/90 hover:bg-[#1A261B] text-[#86EFAC] border-2 border-[#22C55E]/50 hover:border-[#22C55E] font-serif font-black text-xs uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
+                                    className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-[#141E15]/90 hover:bg-[#1A261B] text-[#86EFAC] border-2 border-[#22C55E]/50 hover:border-[#22C55E] font-serif font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
                                 >
                                     <QrCode className="w-5 h-5 text-[#4ADE80] group-hover:rotate-12 transition-transform" />
                                     <div className="text-left">
@@ -420,12 +427,24 @@ export default function ArabiqHomePage() {
                                 {/* Button 2: Order for Delivery */}
                                 <Link
                                     href="/delivery?branch=1"
-                                    className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#E5C058] to-[#C59B27] hover:from-[#E5C058] hover:to-[#D4AF37] text-black font-serif font-black text-xs uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl shadow-[#D4AF37]/25 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
+                                    className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#E5C058] to-[#C59B27] hover:from-[#E5C058] hover:to-[#D4AF37] text-black font-serif font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl shadow-[#D4AF37]/25 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
                                 >
                                     <Truck className="w-5 h-5 text-black group-hover:translate-x-1 transition-transform" />
                                     <div className="text-left">
-                                        <span className="block text-[11px] leading-none">ORDER FOR</span>
-                                        <span className="text-[9px] font-mono tracking-widest text-black/80">FREE DELIVERY</span>
+                                        <span className="block text-[11px] leading-none">FREE DELIVERY</span>
+                                        <span className="text-[9px] font-mono tracking-widest text-black/80">HOT & FRESH</span>
+                                    </div>
+                                </Link>
+
+                                {/* Button 3: Pre-Book Table */}
+                                <Link
+                                    href="/book-table"
+                                    className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-[#1A140F] hover:bg-[#2A1E14] text-[#F3E5AB] border-2 border-[#D4AF37]/60 hover:border-[#D4AF37] font-serif font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
+                                >
+                                    <Calendar className="w-5 h-5 text-[#D4AF37] group-hover:scale-110 transition-transform" />
+                                    <div className="text-left">
+                                        <span className="block text-[11px] leading-none">PRE-BOOK TABLE</span>
+                                        <span className="text-[9px] font-mono tracking-widest text-[#D4AF37]">ZERO WAIT VIP</span>
                                     </div>
                                 </Link>
                             </div>
@@ -1122,6 +1141,11 @@ export default function ArabiqHomePage() {
                                     <button onClick={openTablePicker} className="hover:text-[#D4AF37] transition cursor-pointer">
                                         Order at Table (QR)
                                     </button>
+                                </li>
+                                <li>
+                                    <Link href="/book-table" className="text-[#E5C058] hover:text-[#D4AF37] transition font-bold">
+                                        👑 Pre-Book a Table (VIP)
+                                    </Link>
                                 </li>
                                 <li>
                                     <Link href="/delivery?branch=1" className="hover:text-[#D4AF37] transition">
