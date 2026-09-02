@@ -21,6 +21,7 @@ class ChangePasswordRequest(BaseModel):
 class SwitchBranchRequest(BaseModel):
     target_outlet_id: int
     admin_password: str
+    admin_email: Optional[EmailStr] = None
 
 
 

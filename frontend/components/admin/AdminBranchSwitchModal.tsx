@@ -42,6 +42,7 @@ export function AdminBranchSwitchModal({
             const res = await api.switchBranch({
                 target_outlet_id: targetBranch.id,
                 admin_password: password.trim(),
+                admin_email: user?.email || undefined,
             });
 
             if (res && res.access_token) {

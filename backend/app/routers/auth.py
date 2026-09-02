@@ -272,23 +272,53 @@ def test_owner_check(current_user: User = Depends(require_owner)):
 @router.post("/switch-branch", response_model=TokenResponse)
 def switch_branch(
     data: SwitchBranchRequest,
-    current_user: User = Depends(require_owner),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Admin-only password-protected branch switching endpoint.
     
     Verifies admin credentials server-side and generates a newly scoped JWT token
     for the selected target branch with full tamper-evident audit logging.
+    Supports both active sessions and password re-authentication.
     """
+    admin_user = current_user
+
+    # If token was missing/expired or user not resolved from token, resolve via admin_email
+    if not admin_user and data.admin_email:
+        email_clean = data.admin_email.strip().lower()
+        admin_user = db.query(User).filter(User.email == email_clean).first()
+
+    # If still not resolved from session or email, find matching owner account by password
+    if not admin_user:
+        owners = db.query(User).filter(User.role == "owner").all()
+        for o in owners:
+            if verify_password(data.admin_password, o.password_hash):
+                admin_user = o
+                break
+
+    if not admin_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid admin credentials. Please enter your Admin password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Verify role is owner
+    if admin_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators / owners can switch branches.",
+        )
+
     # 1. Verify Admin password
-    if not verify_password(data.admin_password, current_user.password_hash):
+    if not verify_password(data.admin_password, admin_user.password_hash):
         log_audit(
             db=db,
-            outlet_id=current_user.outlet_id,
-            user_id=current_user.id,
+            outlet_id=admin_user.outlet_id,
+            user_id=admin_user.id,
             action="branch_switch_failed",
             entity_type="auth",
-            entity_id=current_user.id,
+            entity_id=admin_user.id,
             details={
                 "target_outlet_id": data.target_outlet_id,
                 "reason": "invalid_admin_password",
@@ -312,11 +342,11 @@ def switch_branch(
 
     # 3. Create fresh JWT token scoped to the target branch
     token_claims = {
-        "sub": str(current_user.id),
-        "user_id": current_user.id,
-        "email": current_user.email,
-        "role": current_user.role,
-        "name": current_user.name,
+        "sub": str(admin_user.id),
+        "user_id": admin_user.id,
+        "email": admin_user.email,
+        "role": admin_user.role,
+        "name": admin_user.name,
         "outlet_id": target_outlet.id,
     }
     access_token = create_access_token(data=token_claims)
@@ -324,15 +354,15 @@ def switch_branch(
     log_audit(
         db=db,
         outlet_id=target_outlet.id,
-        user_id=current_user.id,
+        user_id=admin_user.id,
         action="branch_switch_success",
         entity_type="auth",
-        entity_id=current_user.id,
+        entity_id=admin_user.id,
         details={
-            "from_outlet_id": current_user.outlet_id,
+            "from_outlet_id": admin_user.outlet_id,
             "to_outlet_id": target_outlet.id,
             "to_outlet_name": target_outlet.name,
-            "admin_name": current_user.name,
+            "admin_name": admin_user.name,
         },
     )
     db.commit()
@@ -340,17 +370,17 @@ def switch_branch(
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        role=current_user.role,
-        user_id=current_user.id,
-        name=current_user.name,
-        email=current_user.email,
+        role=admin_user.role,
+        user_id=admin_user.id,
+        name=admin_user.name,
+        email=admin_user.email,
         outlet_id=target_outlet.id,
         user=UserOut(
-            id=current_user.id,
+            id=admin_user.id,
             outlet_id=target_outlet.id,
-            name=current_user.name,
-            email=current_user.email,
-            role=current_user.role,
-            created_at=current_user.created_at,
+            name=admin_user.name,
+            email=admin_user.email,
+            role=admin_user.role,
+            created_at=admin_user.created_at,
         ),
     )
