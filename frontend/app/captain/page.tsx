@@ -28,6 +28,8 @@ import {
     Shield,
     Bike,
     Smartphone,
+    Download,
+    Share2,
     Layers,
     Banknote,
     CreditCard,
@@ -123,6 +125,39 @@ export default function CaptainWaiterPage() {
     const [transferTargetTableId, setTransferTargetTableId] = useState<number | null>(null);
     const [isTransferring, setIsTransferring] = useState(false);
     const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
+
+    // PWA Install State for Staff Phones
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [isStandalone, setIsStandalone] = useState(false);
+    const [showInstallModal, setShowInstallModal] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            if (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone) {
+                setIsStandalone(true);
+            }
+            const handleBeforeInstall = (e: any) => {
+                e.preventDefault();
+                setDeferredPrompt(e);
+            };
+            window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+            return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+        }
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const choiceResult = await deferredPrompt.userChoice;
+            if (choiceResult.outcome === "accepted") {
+                setIsStandalone(true);
+                toast.success("Arabieq Captain App installed successfully!");
+            }
+            setDeferredPrompt(null);
+        } else {
+            setShowInstallModal(true);
+        }
+    };
 
     // Load initial data
     const loadFloorData = useCallback(async () => {
@@ -462,6 +497,19 @@ export default function CaptainWaiterPage() {
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                             <span>B{user?.outlet_id || 1} • {user?.outlet_id === 2 ? "New Arabieq" : "Old Arabieq"}</span>
                         </div>
+                    )}
+
+                    {/* 1-Tap App Install Button */}
+                    {!isStandalone && (
+                        <button
+                            onClick={handleInstallClick}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs shadow-md transition active:scale-95 cursor-pointer shrink-0"
+                            title="Install Captain App on Phone"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Install App</span>
+                            <span className="sm:hidden">Install</span>
+                        </button>
                     )}
 
                     <button

@@ -1,12 +1,13 @@
 {
-  "name": "Arabieq Restaurant & Cafe DineOS",
-  "short_name": "Arabieq",
-  "description": "Smart QR Table Ordering & Free Home Delivery for Arabieq Restaurant Kadiri",
-  "start_url": "/",
+  "name": "Arabieq Floor Captain POS",
+  "short_name": "Arabieq Captain",
+  "description": "Floor Waiter & Captain Table Ordering App for Arabieq Restaurant",
+  "start_url": "/captain",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0d0a06",
   "theme_color": "#f59e0b",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "icons": [
     {
       "src": "/logo.png",
@@ -21,5 +22,28 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["food", "lifestyle", "shopping"]
+  "shortcuts": [
+    {
+      "name": "Floor Captain POS",
+      "short_name": "Captain",
+      "description": "Floor waiter table ordering",
+      "url": "/captain",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Cashier POS",
+      "short_name": "POS",
+      "description": "Counter cashier billing",
+      "url": "/admin/pos",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Customer Menu",
+      "short_name": "Menu",
+      "description": "Customer table QR ordering",
+      "url": "/order",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["food", "business", "productivity"]
 }
