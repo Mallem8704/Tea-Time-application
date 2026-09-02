@@ -30,7 +30,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useOutlet } from "@/context/OutletContext";
 import { useToast } from "@/context/ToastContext";
 import { useAdminSocket, SocketEvent } from "@/hooks/useSockets";
-import { printKOT, printRunningKOT, printPOSReceipt } from "@/lib/thermalPrint";
+import { printKOT, printRunningKOT, printPOSReceipt, printTestReceipt } from "@/lib/thermalPrint";
 import { soundManager } from "@/lib/sound";
 import { PaymentSettlementModal } from "@/components/admin/PaymentSettlementModal";
 import { POSMenuGrid } from "@/components/admin/pos/POSMenuGrid";
@@ -539,6 +539,20 @@ export default function CashierPOSTerminalPage() {
                             B2 (New)
                         </button>
                     </div>
+
+                    {/* Test Print Button */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            printTestReceipt(outlet);
+                            toast.success("🖨️ Sample receipt sent to thermal printer");
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white/80 hover:text-white flex items-center gap-1 transition cursor-pointer"
+                        title="Test Thermal Receipt Printer (80mm / 58mm)"
+                    >
+                        <Printer className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <span className="hidden sm:inline">Test Print</span>
+                    </button>
 
                     {/* Petty Cash Button */}
                     <button
