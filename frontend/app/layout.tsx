@@ -20,11 +20,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://arabeiqrestaurant.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Arabieq Restaurant & Cafe Kadiri | Best Mandi, Biryani, Food Delivery & Table Booking",
+    default: "Best Restaurants in Kadiri | Arabieq Restaurant & Cafe — Mandi, Biryani, Food Delivery & Table Booking",
     template: "%s | Arabieq Restaurant Kadiri",
   },
   description:
-    "Top-rated restaurant & hotel in Kadiri for Authentic Arabian Mandi, Chicken Biryani, Mutton Mandi, Alfaham BBQ Grills, Shawarma, Tandoori, and South Indian tiffin. Instant Table QR Ordering, Free Doorstep Food Delivery across Kadiri & VIP Table Pre-Booking.",
+    "Ranked #1 among best restaurants & hotels in Kadiri for Authentic Arabian Mandi, Chicken Biryani, Mutton Mandi, Alfaham BBQ Grills, Shawarma, Tandoori, and South Indian tiffin. Instant Table QR Ordering, Free Doorstep Food Delivery across Kadiri & VIP Table Pre-Booking.",
   keywords: [
     // Core Restaurant & Hotel Keywords
     "restaurant",
