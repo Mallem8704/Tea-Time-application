@@ -633,5 +633,5 @@ class TableReservationOut(BaseModel):
     table_id: Optional[int] = None
     table_label: Optional[str] = None
     status: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: Optional[datetime.datetime] = None
+    updated_at: Optional[datetime.datetime] = None

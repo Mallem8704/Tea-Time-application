@@ -25,6 +25,62 @@ def generate_reservation_number():
     return f"RES-{date_part}-{unique_part}"
 
 
+@router.get("/setup-table")
+def setup_reservation_table(db: Session = Depends(get_db)):
+    """Initialize table_reservations in DB if missing."""
+    try:
+        from app.database import engine
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            if engine.dialect.name == "sqlite":
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS table_reservations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        outlet_id INTEGER NOT NULL REFERENCES outlets(id),
+                        reservation_number VARCHAR(50) UNIQUE NOT NULL,
+                        customer_name VARCHAR(150) NOT NULL,
+                        customer_phone VARCHAR(50) NOT NULL,
+                        customer_email VARCHAR(150),
+                        party_size INTEGER NOT NULL DEFAULT 2,
+                        reservation_date VARCHAR(50) NOT NULL,
+                        reservation_time VARCHAR(50) NOT NULL,
+                        seating_preference VARCHAR(50) DEFAULT 'standard',
+                        occasion VARCHAR(100) DEFAULT 'casual',
+                        special_requests TEXT,
+                        table_id INTEGER REFERENCES tables(id) ON DELETE SET NULL,
+                        status VARCHAR(50) DEFAULT 'confirmed',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    );
+                """))
+            else:
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS table_reservations (
+                        id SERIAL PRIMARY KEY,
+                        outlet_id INTEGER NOT NULL REFERENCES outlets(id),
+                        reservation_number VARCHAR(50) UNIQUE NOT NULL,
+                        customer_name VARCHAR(150) NOT NULL,
+                        customer_phone VARCHAR(50) NOT NULL,
+                        customer_email VARCHAR(150),
+                        party_size INTEGER NOT NULL DEFAULT 2,
+                        reservation_date VARCHAR(50) NOT NULL,
+                        reservation_time VARCHAR(50) NOT NULL,
+                        seating_preference VARCHAR(50) DEFAULT 'standard',
+                        occasion VARCHAR(100) DEFAULT 'casual',
+                        special_requests TEXT,
+                        table_id INTEGER REFERENCES tables(id) ON DELETE SET NULL,
+                        status VARCHAR(50) DEFAULT 'confirmed',
+                        created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    );
+                    CREATE INDEX IF NOT EXISTS ix_table_reservations_outlet_id ON table_reservations(outlet_id);
+                    CREATE INDEX IF NOT EXISTS ix_table_reservations_reservation_number ON table_reservations(reservation_number);
+                """))
+        return {"status": "ok", "message": "table_reservations table is ready"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @router.post("", response_model=TableReservationOut)
 @router.post("/", response_model=TableReservationOut)
 async def create_table_reservation(
@@ -32,7 +88,7 @@ async def create_table_reservation(
     db: Session = Depends(get_db),
 ):
     """Public endpoint: Pre-book a table in advance at Arabieq Restaurant (Branch 1 or Branch 2)."""
-    # Ensure table_reservations table exists in DB
+    # Ensure table exists in database
     try:
         TableReservation.__table__.create(bind=db.get_bind(), checkfirst=True)
     except Exception:
