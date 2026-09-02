@@ -50,10 +50,16 @@ function CustomerOrderContent() {
     const toast = useToast();
 
     // ── Branch / Outlet & Table from URL params ─────────────────────────────
-    const branchParam = searchParams.get("branch");
+    const branchParam = searchParams.get("branch") || searchParams.get("outlet");
     const tableParam = searchParams.get("table");
-    const outletId = branchParam ? Number(branchParam) : undefined;
+    const outletId = branchParam ? Number(branchParam) : (typeof window !== "undefined" && safeStorage.getItem("arabieq_branch", "session") ? Number(safeStorage.getItem("arabieq_branch", "session")) : 1);
     const [branchOutlet, setBranchOutlet] = useState<any>(null);
+
+    useEffect(() => {
+        if (outletId) {
+            safeStorage.setItem("arabieq_branch", String(outletId), "session");
+        }
+    }, [outletId]);
 
     // Fetch branch-specific outlet details
     useEffect(() => {

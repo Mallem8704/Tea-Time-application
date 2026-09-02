@@ -144,7 +144,9 @@ async def websocket_hub(
             if not user_data:
                 await websocket.close(code=1008, reason="Invalid admin token")
                 return
-            outlet_id = user_data.get("outlet_id", outlet_id)
+            # Allow owner to inspect any outlet_id passed in query; restrict staff to their assigned outlet
+            if user_data.get("role") != "owner":
+                outlet_id = user_data.get("outlet_id", outlet_id)
         elif is_production:
             await websocket.close(code=1008, reason="Missing admin token")
             return
