@@ -1117,6 +1117,134 @@ export default function ArabiqHomePage() {
                 </div>
             </section>
 
+            
+            {/* ══════════════════════════════════════════════════════════════
+                7.5. LOCAL KADIRI FOOD & RESTAURANT SEO DIRECTORY
+               ══════════════════════════════════════════════════════════════ */}
+            <section className="py-16 bg-[#0E0906] border-t border-[#D4AF37]/20 text-xs text-[#C5B39A]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+                    
+                    {/* Header */}
+                    <div className="text-center space-y-3 max-w-3xl mx-auto">
+                        <span className="text-[11px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
+                            Kadiri Culinary Guide & Local SEO Directory
+                        </span>
+                        <h2 className="font-serif text-2xl sm:text-3xl font-black text-[#F8F3EB]">
+                            Arabieq Restaurant & Cafe — Kadiri&apos;s #1 Dining & Food Delivery Hub
+                        </h2>
+                        <p className="text-xs leading-relaxed text-[#A6957E]">
+                            Looking for the best hotel, non-veg restaurant, biryani, or authentic Arabian mandi in Kadiri? Arabieq operates two iconic outlets offering dine-in, QR table ordering, VIP table pre-booking, and 100% free doorstep delivery across Kadiri town.
+                        </p>
+                    </div>
+
+                    {/* SEO Grid 1: Popular Cuisines & Signature Food Items */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="p-6 rounded-2xl bg-[#140E0A] border border-[#D4AF37]/15 space-y-3">
+                            <h3 className="font-serif text-sm font-bold text-[#E5C058] uppercase tracking-wider flex items-center gap-2">
+                                <span>🍗 Arabian Mandi & Charcoal Grills</span>
+                            </h3>
+                            <p className="text-[11px] leading-relaxed text-[#A6957E]">
+                                Savor slow-cooked authentic Yemeni <strong>Chicken Mandi</strong>, tender <strong>Mutton Juicy Mandi</strong>, smoky <strong>Charcoal Alfaham Chicken</strong> (Classic Arabic & Spicy Peri-Peri), and clay-oven <strong>Tandoori Chicken</strong>. Served in traditional Arabian Floor Majlis seating.
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 pt-2">
+                                {["Chicken Mandi", "Mutton Mandi", "Alfaham BBQ", "Peri Peri Chicken", "Tandoori Whole"].map((tag) => (
+                                    <span key={tag} className="px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] border border-[#D4AF37]/20">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="p-6 rounded-2xl bg-[#140E0A] border border-[#D4AF37]/15 space-y-3">
+                            <h3 className="font-serif text-sm font-bold text-[#E5C058] uppercase tracking-wider flex items-center gap-2">
+                                <span>🍚 Royal Dum Biryani & Starters</span>
+                            </h3>
+                            <p className="text-[11px] leading-relaxed text-[#A6957E]">
+                                Authentic Hyderabadi-style <strong>Chicken Dum Biryani</strong>, spicy <strong>Kadiri Special Chicken 65</strong>, <strong>Mutton Seekh Kebabs</strong>, <strong>Arabian Rumali Shawarma</strong>, and rich <strong>Butter Chicken with Garlic Naan</strong> made fresh to order.
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 pt-2">
+                                {["Chicken Biryani", "Mutton Biryani", "Shawarma Roll", "Chicken 65", "Butter Chicken"].map((tag) => (
+                                    <span key={tag} className="px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] border border-[#D4AF37]/20">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="p-6 rounded-2xl bg-[#140E0A] border border-[#D4AF37]/15 space-y-3">
+                            <h3 className="font-serif text-sm font-bold text-[#E5C058] uppercase tracking-wider flex items-center gap-2">
+                                <span>☕ Irani Chai, Bakes & South Indian Tiffin</span>
+                            </h3>
+                            <p className="text-[11px] leading-relaxed text-[#A6957E]">
+                                Start your morning with steaming <strong>Ghee Roast Masala Dosa</strong>, crispy Vada, Idli combo, and thick creamy <strong>Irani Dum Chai with Osmania Biscuits</strong>. Indulge in warm Arabian <strong>Kunafa with melted Mozzarella</strong> for dessert.
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 pt-2">
+                                {["Ghee Masala Dosa", "Irani Chai", "Osmania Biscuits", "Arabian Kunafa", "Milkshakes"].map((tag) => (
+                                    <span key={tag} className="px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] border border-[#D4AF37]/20">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SEO Grid 2: Kadiri Localities & Delivery Zones */}
+                    <div className="p-6 rounded-2xl bg-[#120B07] border border-[#D4AF37]/20 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <h3 className="font-serif text-sm font-bold text-[#F8F3EB]">
+                                    🚀 100% Free Food Delivery Localities in Kadiri Town
+                                </h3>
+                                <p className="text-[11px] text-[#A6957E]">
+                                    We deliver hot and fresh meals across all residential colonies and commercial hubs in Kadiri:
+                                </p>
+                            </div>
+                            <Link href="/delivery" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D4AF37] text-black font-bold text-[11px] hover:bg-[#E5C058] transition">
+                                Order Food Online
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-[#C5B39A]">
+                            {[
+                                "📍 Clock Tower & Main Road",
+                                "📍 Madanapalli Road & Rahmath Tower",
+                                "📍 Bypass Road & Girls High School",
+                                "📍 RTC Bus Stand & Railway Station",
+                                "📍 NGO Colony & Housing Board",
+                                "📍 College Road & STSN Degree College",
+                                "📍 Kummaravandlapalli & Kutagulla",
+                                "📍 Masapet & Market Yard",
+                            ].map((loc) => (
+                                <div key={loc} className="p-2 rounded-lg bg-black/30 border border-white/5">
+                                    {loc}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* FAQ Snippets */}
+                    <div className="space-y-4">
+                        <h3 className="font-serif text-base font-bold text-[#F8F3EB] text-center">
+                            Frequently Asked Questions — Arabieq Restaurant Kadiri
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-4 rounded-xl bg-[#140E0A] border border-[#D4AF37]/15 space-y-1.5">
+                                <h4 className="font-bold text-xs text-[#E5C058]">Where is Arabieq Restaurant located in Kadiri?</h4>
+                                <p className="text-[11px] text-[#A6957E]">
+                                    We have two prime branches: <strong>Branch 1 (Old Arabieq)</strong> at 2nd Floor, Rahmath Tower, Madanapalli Road (Near Clock Tower) and <strong>Branch 2 (New Arabieq)</strong> at Bypass Road, Opposite Girls High School.
+                                </p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-[#140E0A] border border-[#D4AF37]/15 space-y-1.5">
+                                <h4 className="font-bold text-xs text-[#E5C058]">How do I order food delivery or pre-book a table?</h4>
+                                <p className="text-[11px] text-[#A6957E]">
+                                    Visit <Link href="/delivery" className="text-[#D4AF37] underline">arabeiqrestaurant.com/delivery</Link> for instant home delivery or <Link href="/book-table" className="text-[#D4AF37] underline">arabeiqrestaurant.com/book-table</Link> to reserve your floor Majlis or family AC table with zero advance fee.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
             {/* ══════════════════════════════════════════════════════════════
                 8. COMPREHENSIVE LUXURY FOOTER
                ══════════════════════════════════════════════════════════════ */}
