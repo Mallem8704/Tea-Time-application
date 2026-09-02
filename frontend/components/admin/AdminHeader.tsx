@@ -27,7 +27,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
-import { useOutlet } from "@/context/OutletContext";
+import { useOutlet, OutletInfo } from "@/context/OutletContext";
+import { AdminBranchSwitchModal } from "@/components/admin/AdminBranchSwitchModal";
 
 interface AdminHeaderProps {
     wsConnected: boolean;
@@ -47,6 +48,8 @@ export function AdminHeader({
     const toast = useToast();
     const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+    const [selectedTargetBranch, setSelectedTargetBranch] = useState<OutletInfo | null>(null);
+    const [switchModalOpen, setSwitchModalOpen] = useState(false);
 
     const pendingCount = pendingServiceCalls.length;
     const isBranch2 = outlet?.id === 2 || (outlet?.name || "").includes("Cafe");
@@ -81,38 +84,50 @@ export function AdminHeader({
                         <Menu className="w-5 h-5" />
                     </button>
 
-                    {/* Branch Badge / Switcher */}
+                    {/* Branch Badge / Switcher (Admin-Only Password Protected) */}
                     <div className="relative">
                         <button
-                            onClick={() => allOutlets.length > 1 && setBranchDropdownOpen(!branchDropdownOpen)}
+                            onClick={() => isOwner && allOutlets.length > 1 && setBranchDropdownOpen(!branchDropdownOpen)}
+                            disabled={!isOwner}
                             className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all text-left ${
                                 isBranch2
                                     ? "bg-emerald-50 border-emerald-300 text-emerald-950"
                                     : "bg-amber-50 border-amber-300 text-amber-950"
-                            } ${allOutlets.length > 1 ? "cursor-pointer hover:shadow-xs" : "cursor-default"}`}
+                            } ${isOwner && allOutlets.length > 1 ? "cursor-pointer hover:shadow-xs" : "cursor-default opacity-95"}`}
+                            title={isOwner ? "Click to switch branch (Admin Password Required)" : "Assigned Branch"}
                         >
                             <span className={`w-2.5 h-2.5 rounded-full ${isBranch2 ? "bg-emerald-500" : "bg-amber-500"} animate-pulse shrink-0`} />
-                            <span className="text-xs font-black tracking-wide max-w-[140px] sm:max-w-[220px] truncate">
-                                {outlet?.name || "Arabieq Restaurant"}
-                            </span>
-                            {allOutlets.length > 1 && (
+                            <div className="flex flex-col">
+                                <span className="text-xs font-black tracking-wide max-w-[140px] sm:max-w-[220px] truncate">
+                                    {outlet?.name || "Arabieq Restaurant"}
+                                </span>
+                                {!isOwner && (
+                                    <span className="text-[9px] font-bold text-espresso-500 uppercase tracking-tighter">
+                                        Assigned Branch
+                                    </span>
+                                )}
+                            </div>
+                            {isOwner && allOutlets.length > 1 && (
                                 <ChevronDown className="w-3.5 h-3.5 opacity-60 ml-0.5 shrink-0" />
                             )}
                         </button>
 
-                        {/* Branch Switcher Dropdown */}
-                        {branchDropdownOpen && allOutlets.length > 1 && (
+                        {/* Admin Branch Switcher Dropdown */}
+                        {isOwner && branchDropdownOpen && allOutlets.length > 1 && (
                             <div className="absolute top-full left-0 mt-1.5 w-72 bg-white rounded-2xl border border-cream-200 shadow-xl p-2 z-50 animate-in fade-in">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-espresso-400 px-2 py-1">
-                                    Switch Branch View
+                                <p className="text-[10px] font-black uppercase tracking-wider text-espresso-400 px-2 py-1 flex items-center justify-between">
+                                    <span>Switch Active Branch</span>
+                                    <Shield className="w-3 h-3 text-amber-500" />
                                 </p>
                                 {allOutlets.map((b) => (
                                     <button
                                         key={b.id}
                                         onClick={() => {
-                                            switchBranch(b.id);
+                                            if (outlet?.id !== b.id) {
+                                                setSelectedTargetBranch(b);
+                                                setSwitchModalOpen(true);
+                                            }
                                             setBranchDropdownOpen(false);
-                                            toast.info(`Switched view to ${b.name}`);
                                         }}
                                         className={`w-full p-2 rounded-xl text-left flex items-start gap-2.5 transition cursor-pointer ${
                                             outlet?.id === b.id
@@ -121,8 +136,15 @@ export function AdminHeader({
                                         }`}
                                     >
                                         <Building2 className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
-                                        <div>
-                                            <p className="text-xs font-bold">{b.name}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-xs font-bold truncate">{b.name}</p>
+                                                {outlet?.id === b.id && (
+                                                    <span className="text-[9px] bg-terracotta-200 text-terracotta-950 font-black px-1.5 py-0.5 rounded-md">
+                                                        Active
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-[10px] text-espresso-500 line-clamp-1">{b.address}</p>
                                         </div>
                                     </button>
@@ -244,6 +266,13 @@ export function AdminHeader({
                     </div>
                 </div>
             )}
+
+            {/* Admin Password Verification Branch Switch Modal */}
+            <AdminBranchSwitchModal
+                isOpen={switchModalOpen}
+                onClose={() => setSwitchModalOpen(false)}
+                targetBranch={selectedTargetBranch}
+            />
         </>
     );
 }

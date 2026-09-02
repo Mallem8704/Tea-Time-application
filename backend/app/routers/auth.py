@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
-from app.schemas import LoginRequest, TokenResponse, UserOut, ChangePasswordRequest
+from app.schemas import LoginRequest, TokenResponse, UserOut, ChangePasswordRequest, SwitchBranchRequest
 from app.auth_utils import verify_password, create_access_token, decode_access_token, get_password_hash
 from app.audit_utils import log_audit
 from app.rate_limiter import auth_limiter
@@ -267,3 +267,90 @@ def test_owner_check(current_user: User = Depends(require_owner)):
         "role": current_user.role,
         "outlet_id": current_user.outlet_id,
     }
+
+
+@router.post("/switch-branch", response_model=TokenResponse)
+def switch_branch(
+    data: SwitchBranchRequest,
+    current_user: User = Depends(require_owner),
+    db: Session = Depends(get_db),
+):
+    """Admin-only password-protected branch switching endpoint.
+    
+    Verifies admin credentials server-side and generates a newly scoped JWT token
+    for the selected target branch with full tamper-evident audit logging.
+    """
+    # 1. Verify Admin password
+    if not verify_password(data.admin_password, current_user.password_hash):
+        log_audit(
+            db=db,
+            outlet_id=current_user.outlet_id,
+            user_id=current_user.id,
+            action="branch_switch_failed",
+            entity_type="auth",
+            entity_id=current_user.id,
+            details={
+                "target_outlet_id": data.target_outlet_id,
+                "reason": "invalid_admin_password",
+            },
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid admin password. Branch switch access denied.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 2. Verify target outlet exists
+    from app.models import Outlet
+    target_outlet = db.query(Outlet).filter(Outlet.id == data.target_outlet_id).first()
+    if not target_outlet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Branch with ID {data.target_outlet_id} does not exist.",
+        )
+
+    # 3. Create fresh JWT token scoped to the target branch
+    token_claims = {
+        "sub": str(current_user.id),
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "role": current_user.role,
+        "name": current_user.name,
+        "outlet_id": target_outlet.id,
+    }
+    access_token = create_access_token(data=token_claims)
+
+    log_audit(
+        db=db,
+        outlet_id=target_outlet.id,
+        user_id=current_user.id,
+        action="branch_switch_success",
+        entity_type="auth",
+        entity_id=current_user.id,
+        details={
+            "from_outlet_id": current_user.outlet_id,
+            "to_outlet_id": target_outlet.id,
+            "to_outlet_name": target_outlet.name,
+            "admin_name": current_user.name,
+        },
+    )
+    db.commit()
+
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        role=current_user.role,
+        user_id=current_user.id,
+        name=current_user.name,
+        email=current_user.email,
+        outlet_id=target_outlet.id,
+        user=UserOut(
+            id=current_user.id,
+            outlet_id=target_outlet.id,
+            name=current_user.name,
+            email=current_user.email,
+            role=current_user.role,
+            created_at=current_user.created_at,
+        ),
+    )

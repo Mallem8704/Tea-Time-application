@@ -21,6 +21,7 @@ interface AuthContextType {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
+    updateAuthSession: (token: string, user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -93,6 +94,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/admin");
     };
 
+    const updateAuthSession = (authToken: string, authUser: AuthUser) => {
+        setToken(authToken);
+        setUser(authUser);
+        safeStorage.setItem("teatime_token", authToken);
+        safeStorage.setItem("teatime_user", JSON.stringify(authUser));
+    };
+
     const isAuthenticated = !!user && !!token;
     const isOwner = user?.role === "owner";
 
@@ -106,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isLoading,
                 login,
                 logout,
+                updateAuthSession,
             }}
         >
             {children}

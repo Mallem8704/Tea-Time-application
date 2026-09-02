@@ -537,7 +537,7 @@ async def append_order_items(
     order = (
         db.query(Order)
         .options(joinedload(Order.items), joinedload(Order.table))
-        .filter(Order.id == order_id)
+        .filter(Order.id == order_id, Order.outlet_id == current_user.outlet_id)
         .first()
     )
     if not order:

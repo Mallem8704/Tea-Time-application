@@ -96,6 +96,8 @@ export const api = {
     getMe: () => apiFetch("/api/auth/me"),
     changePassword: (data: { current_password: string; new_password: string }) =>
         apiFetch("/api/auth/change-password", { method: "POST", body: JSON.stringify(data) }),
+    switchBranch: (data: { target_outlet_id: number; admin_password: string }) =>
+        apiFetch("/api/auth/switch-branch", { method: "POST", body: JSON.stringify(data) }),
 
     // Categories
     getCategories: (activeOnly = true, outletId?: number) =>

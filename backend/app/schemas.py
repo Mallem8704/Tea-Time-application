@@ -18,6 +18,11 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=8, description="Minimum 8 characters")
 
 
+class SwitchBranchRequest(BaseModel):
+    target_outlet_id: int
+    admin_password: str
+
+
 
 class TokenResponse(BaseModel):
     access_token: str
