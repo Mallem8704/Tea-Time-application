@@ -541,27 +541,36 @@ export default function CashierPOSTerminalPage() {
 
                 {/* Right: Branch Switcher & Quick Utility Buttons */}
                 <div className="flex items-center gap-2">
-                    {/* Branch Switcher Pill */}
-                    <div className="flex rounded-xl bg-black/50 border border-white/10 p-0.5 text-[11px]">
-                        <button
-                            type="button"
-                            onClick={() => setSelectedOutletId(1)}
-                            className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-                                selectedOutletId === 1 ? "bg-amber-500 text-black" : "text-white/60 hover:text-white"
-                            }`}
-                        >
-                            B1 (Old)
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setSelectedOutletId(2)}
-                            className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-                                selectedOutletId === 2 ? "bg-amber-500 text-black" : "text-white/60 hover:text-white"
-                            }`}
-                        >
-                            B2 (New)
-                        </button>
-                    </div>
+                    {/* Branch Switcher Pill (Owners/SuperAdmin only; Staff locked to assigned branch) */}
+                    {isOwner ? (
+                        <div className="flex rounded-xl bg-black/50 border border-white/10 p-0.5 text-[11px]">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedOutletId(1)}
+                                className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                                    selectedOutletId === 1 ? "bg-amber-500 text-black" : "text-white/60 hover:text-white"
+                                }`}
+                                title="Switch to Branch 1 (Old Arabieq)"
+                            >
+                                B1 (Old)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedOutletId(2)}
+                                className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                                    selectedOutletId === 2 ? "bg-amber-500 text-black" : "text-white/60 hover:text-white"
+                                }`}
+                                title="Switch to Branch 2 (New Arabieq)"
+                            >
+                                B2 (New)
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-[11px] font-extrabold text-amber-400 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>B{user?.outlet_id || 1} • {user?.outlet_id === 2 ? "New Arabieq" : "Old Arabieq"}</span>
+                        </div>
+                    )}
 
                     {/* Recent Bills (F7) */}
                     <button

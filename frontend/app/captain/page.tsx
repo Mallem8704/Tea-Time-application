@@ -435,25 +435,34 @@ export default function CaptainWaiterPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Branch Switcher Pill */}
-                    <div className="flex rounded-xl bg-black/40 border border-white/10 p-1">
-                        <button
-                            onClick={() => setSelectedOutletId(1)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                                selectedOutletId === 1 ? "bg-amber-500 text-black" : "text-white/60"
-                            }`}
-                        >
-                            B1 (Rahmath)
-                        </button>
-                        <button
-                            onClick={() => setSelectedOutletId(2)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                                selectedOutletId === 2 ? "bg-emerald-500 text-black" : "text-white/60"
-                            }`}
-                        >
-                            B2 (Girls High)
-                        </button>
-                    </div>
+                    {/* Branch Switcher Pill (Owners/SuperAdmin only; Staff locked to assigned branch) */}
+                    {isOwner ? (
+                        <div className="flex rounded-xl bg-black/40 border border-white/10 p-1">
+                            <button
+                                onClick={() => setSelectedOutletId(1)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                                    selectedOutletId === 1 ? "bg-amber-500 text-black" : "text-white/60"
+                                }`}
+                                title="Switch to Branch 1"
+                            >
+                                B1 (Old)
+                            </button>
+                            <button
+                                onClick={() => setSelectedOutletId(2)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                                    selectedOutletId === 2 ? "bg-emerald-500 text-black" : "text-white/60"
+                                }`}
+                                title="Switch to Branch 2"
+                            >
+                                B2 (New)
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-[11px] font-black text-amber-400 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>B{user?.outlet_id || 1} • {user?.outlet_id === 2 ? "New Arabieq" : "Old Arabieq"}</span>
+                        </div>
+                    )}
 
                     <button
                         onClick={loadFloorData}
