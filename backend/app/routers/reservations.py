@@ -32,6 +32,12 @@ async def create_table_reservation(
     db: Session = Depends(get_db),
 ):
     """Public endpoint: Pre-book a table in advance at Arabieq Restaurant (Branch 1 or Branch 2)."""
+    # Ensure table_reservations table exists in DB
+    try:
+        TableReservation.__table__.create(bind=db.get_bind(), checkfirst=True)
+    except Exception:
+        pass
+
     outlet = db.query(Outlet).filter(Outlet.id == data.outlet_id).first()
     if not outlet:
         data.outlet_id = 1
@@ -71,25 +77,28 @@ async def create_table_reservation(
     db.commit()
     db.refresh(reservation)
 
-    # Broadcast real-time reservation alert to staff/admin cockpit
-    await manager.broadcast_to_admin(
-        event_type="new_reservation",
-        data={
-            "id": reservation.id,
-            "reservation_number": reservation.reservation_number,
-            "outlet_id": reservation.outlet_id,
-            "customer_name": reservation.customer_name,
-            "customer_phone": reservation.customer_phone,
-            "party_size": reservation.party_size,
-            "reservation_date": reservation.reservation_date,
-            "reservation_time": reservation.reservation_time,
-            "seating_preference": reservation.seating_preference,
-            "occasion": reservation.occasion,
-            "status": reservation.status,
-            "table_label": matched_table.label if matched_table else None,
-        },
-        outlet_id=reservation.outlet_id,
-    )
+    # Broadcast real-time reservation alert to staff/admin cockpit safely
+    try:
+        await manager.broadcast_to_admin(
+            event_type="new_reservation",
+            data={
+                "id": reservation.id,
+                "reservation_number": reservation.reservation_number,
+                "outlet_id": reservation.outlet_id,
+                "customer_name": reservation.customer_name,
+                "customer_phone": reservation.customer_phone,
+                "party_size": reservation.party_size,
+                "reservation_date": reservation.reservation_date,
+                "reservation_time": reservation.reservation_time,
+                "seating_preference": reservation.seating_preference,
+                "occasion": reservation.occasion,
+                "status": reservation.status,
+                "table_label": matched_table.label if matched_table else None,
+            },
+            outlet_id=reservation.outlet_id,
+        )
+    except Exception:
+        pass
 
     return TableReservationOut(
         id=reservation.id,

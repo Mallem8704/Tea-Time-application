@@ -138,6 +138,26 @@ def on_startup():
                 "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(50);",
                 "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_id INTEGER;",
                 "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_notes TEXT;",
+                """CREATE TABLE IF NOT EXISTS table_reservations (
+                    id SERIAL PRIMARY KEY,
+                    outlet_id INTEGER NOT NULL REFERENCES outlets(id),
+                    reservation_number VARCHAR(50) UNIQUE NOT NULL,
+                    customer_name VARCHAR(150) NOT NULL,
+                    customer_phone VARCHAR(50) NOT NULL,
+                    customer_email VARCHAR(150),
+                    party_size INTEGER NOT NULL DEFAULT 2,
+                    reservation_date VARCHAR(50) NOT NULL,
+                    reservation_time VARCHAR(50) NOT NULL,
+                    seating_preference VARCHAR(50) DEFAULT 'standard',
+                    occasion VARCHAR(100) DEFAULT 'casual',
+                    special_requests TEXT,
+                    table_id INTEGER REFERENCES tables(id) ON DELETE SET NULL,
+                    status VARCHAR(50) DEFAULT 'confirmed',
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );""",
+                "CREATE INDEX IF NOT EXISTS ix_table_reservations_outlet_id ON table_reservations(outlet_id);",
+                "CREATE INDEX IF NOT EXISTS ix_table_reservations_reservation_number ON table_reservations(reservation_number);",
             ]
             for mig in migrations:
                 try:
