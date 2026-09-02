@@ -88,93 +88,107 @@ async def create_table_reservation(
     db: Session = Depends(get_db),
 ):
     """Public endpoint: Pre-book a table in advance at Arabieq Restaurant (Branch 1 or Branch 2)."""
-    # Ensure table exists in database
     try:
-        TableReservation.__table__.create(bind=db.get_bind(), checkfirst=True)
-    except Exception:
-        pass
+        # Ensure table exists in database
+        try:
+            TableReservation.__table__.create(bind=db.get_bind(), checkfirst=True)
+        except Exception:
+            pass
 
-    outlet = db.query(Outlet).filter(Outlet.id == data.outlet_id).first()
-    if not outlet:
-        data.outlet_id = 1
+        outlet = db.query(Outlet).filter(Outlet.id == data.outlet_id).first()
+        if not outlet:
+            data.outlet_id = 1
 
-    res_num = generate_reservation_number()
-    # Retry on collision
-    while db.query(TableReservation).filter(TableReservation.reservation_number == res_num).first():
         res_num = generate_reservation_number()
+        # Retry on collision
+        while db.query(TableReservation).filter(TableReservation.reservation_number == res_num).first():
+            res_num = generate_reservation_number()
 
-    # Find suitable available table for this outlet
-    matched_table = (
-        db.query(CafeTable)
-        .filter(
-            CafeTable.outlet_id == data.outlet_id,
-            CafeTable.status == "free",
+        # Find suitable available table for this outlet
+        matched_table = None
+        try:
+            matched_table = (
+                db.query(CafeTable)
+                .filter(
+                    CafeTable.outlet_id == data.outlet_id,
+                    CafeTable.status == "free",
+                )
+                .first()
+            )
+        except Exception:
+            pass
+
+        reservation = TableReservation(
+            outlet_id=data.outlet_id,
+            reservation_number=res_num,
+            customer_name=data.customer_name.strip(),
+            customer_phone=data.customer_phone.strip(),
+            customer_email=data.customer_email.strip() if data.customer_email else None,
+            party_size=data.party_size,
+            reservation_date=data.reservation_date.strip(),
+            reservation_time=data.reservation_time.strip(),
+            seating_preference=data.seating_preference.strip() if data.seating_preference else "standard",
+            occasion=data.occasion.strip() if data.occasion else "casual",
+            special_requests=data.special_requests.strip() if data.special_requests else None,
+            table_id=matched_table.id if matched_table else None,
+            status="confirmed",
         )
-        .first()
-    )
 
-    reservation = TableReservation(
-        outlet_id=data.outlet_id,
-        reservation_number=res_num,
-        customer_name=data.customer_name.strip(),
-        customer_phone=data.customer_phone.strip(),
-        customer_email=data.customer_email.strip() if data.customer_email else None,
-        party_size=data.party_size,
-        reservation_date=data.reservation_date.strip(),
-        reservation_time=data.reservation_time.strip(),
-        seating_preference=data.seating_preference.strip() if data.seating_preference else "standard",
-        occasion=data.occasion.strip() if data.occasion else "casual",
-        special_requests=data.special_requests.strip() if data.special_requests else None,
-        table_id=matched_table.id if matched_table else None,
-        status="confirmed",
-    )
+        db.add(reservation)
+        db.commit()
+        db.refresh(reservation)
 
-    db.add(reservation)
-    db.commit()
-    db.refresh(reservation)
+        # Broadcast real-time reservation alert to staff/admin cockpit safely
+        try:
+            await manager.broadcast_to_admin(
+                outlet_id=reservation.outlet_id,
+                event_type="new_reservation",
+                data={
+                    "id": reservation.id,
+                    "reservation_number": reservation.reservation_number,
+                    "outlet_id": reservation.outlet_id,
+                    "customer_name": reservation.customer_name,
+                    "customer_phone": reservation.customer_phone,
+                    "party_size": reservation.party_size,
+                    "reservation_date": reservation.reservation_date,
+                    "reservation_time": reservation.reservation_time,
+                    "seating_preference": reservation.seating_preference,
+                    "occasion": reservation.occasion,
+                    "status": reservation.status,
+                    "table_label": matched_table.label if matched_table else None,
+                },
+            )
+        except Exception as ws_err:
+            print("[WS Broadcast Error]", ws_err)
 
-    # Broadcast real-time reservation alert to staff/admin cockpit safely
-    try:
-        await manager.broadcast_to_admin(
-            event_type="new_reservation",
-            data={
-                "id": reservation.id,
-                "reservation_number": reservation.reservation_number,
-                "outlet_id": reservation.outlet_id,
-                "customer_name": reservation.customer_name,
-                "customer_phone": reservation.customer_phone,
-                "party_size": reservation.party_size,
-                "reservation_date": reservation.reservation_date,
-                "reservation_time": reservation.reservation_time,
-                "seating_preference": reservation.seating_preference,
-                "occasion": reservation.occasion,
-                "status": reservation.status,
-                "table_label": matched_table.label if matched_table else None,
-            },
+        return TableReservationOut(
+            id=reservation.id,
             outlet_id=reservation.outlet_id,
+            reservation_number=reservation.reservation_number,
+            customer_name=reservation.customer_name,
+            customer_phone=reservation.customer_phone,
+            customer_email=reservation.customer_email,
+            party_size=reservation.party_size,
+            reservation_date=reservation.reservation_date,
+            reservation_time=reservation.reservation_time,
+            seating_preference=reservation.seating_preference,
+            occasion=reservation.occasion,
+            special_requests=reservation.special_requests,
+            table_id=reservation.table_id,
+            table_label=matched_table.label if matched_table else None,
+            status=reservation.status,
+            created_at=reservation.created_at,
+            updated_at=reservation.updated_at,
         )
-    except Exception:
-        pass
-
-    return TableReservationOut(
-        id=reservation.id,
-        outlet_id=reservation.outlet_id,
-        reservation_number=reservation.reservation_number,
-        customer_name=reservation.customer_name,
-        customer_phone=reservation.customer_phone,
-        customer_email=reservation.customer_email,
-        party_size=reservation.party_size,
-        reservation_date=reservation.reservation_date,
-        reservation_time=reservation.reservation_time,
-        seating_preference=reservation.seating_preference,
-        occasion=reservation.occasion,
-        special_requests=reservation.special_requests,
-        table_id=reservation.table_id,
-        table_label=matched_table.label if matched_table else None,
-        status=reservation.status,
-        created_at=reservation.created_at,
-        updated_at=reservation.updated_at,
-    )
+    except Exception as e:
+        db.rollback()
+        import traceback
+        trace = traceback.format_exc()
+        print("[Reservation Error Traceback]", trace)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unable to complete table reservation: {str(e)}"
+        )
 
 
 @router.get("", response_model=List[TableReservationOut])
