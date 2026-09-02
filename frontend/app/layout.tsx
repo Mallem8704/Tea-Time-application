@@ -15,15 +15,139 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://arabieq.in";
+
 export const metadata: Metadata = {
-  title: "Arabieq Restaurant & Cafe — DineOS",
-  description: "Smart QR table ordering, live kitchen Kanban, and 100% free home delivery for Kadiri",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Arabieq Restaurant & Cafe | DineOS — Authentic Arabian Cuisine & Mandi",
+    template: "%s | Arabieq Restaurant",
+  },
+  description:
+    "Order authentic Arabian Mandi, Tandoori Grills, Biryanis, Shawarmas, and South Indian tiffin in Kadiri. Fast table QR ordering & 100% free home delivery across Kadiri.",
+  keywords: [
+    "Arabieq Restaurant",
+    "Arabieq Cafe Kadiri",
+    "Arabian Restaurant Kadiri",
+    "Best Mandi in Kadiri",
+    "Chicken Alfaham Kadiri",
+    "Mutton Mandi Kadiri",
+    "Biryani Kadiri",
+    "Shawarma Kadiri",
+    "Table QR Ordering",
+    "Kadiri Food Delivery",
+    "South Indian Tiffin Kadiri",
+    "Old Arabieq Restaurant",
+    "New Arabieq Restaurant and Cafe",
+  ],
+  authors: [{ name: "Arabieq Restaurant" }],
+  creator: "Arabieq Restaurant & Cafe",
+  publisher: "Arabieq Restaurant",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: SITE_URL,
+    siteName: "Arabieq Restaurant & Cafe",
+    title: "Arabieq Restaurant & Cafe — Authentic Arabian Cuisine & Mandi",
+    description:
+      "Kadiri's destination for authentic Arabian Mandi, charcoal grills, biryani, and cafe delights with table QR ordering and doorstep delivery.",
+    images: [
+      {
+        url: "/logo.png",
+        width: 800,
+        height: 800,
+        alt: "Arabieq Restaurant & Cafe Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Arabieq Restaurant & Cafe — Kadiri",
+    description: "Authentic Arabian Mandi, Grills, and DineOS QR Table Ordering.",
+    images: ["/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Arabieq",
   },
+};
+
+const restaurantStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Arabieq Restaurant and Cafe",
+  "image": `${SITE_URL}/logo.png`,
+  "@id": `${SITE_URL}/#restaurant`,
+  "url": SITE_URL,
+  "telephone": "+91 98765 43210",
+  "priceRange": "₹₹",
+  "servesCuisine": [
+    "Arabian",
+    "Mandi",
+    "Barbecue / Grill",
+    "Biryani",
+    "South Indian",
+    "Chinese",
+    "Desserts"
+  ],
+  "acceptsReservations": "False",
+  "menu": `${SITE_URL}/order`,
+  "hasMenu": `${SITE_URL}/order`,
+  "address": [
+    {
+      "@type": "PostalAddress",
+      "streetAddress": "Madanapalli Road, Near Clock Tower",
+      "addressLocality": "Kadiri",
+      "addressRegion": "Andhra Pradesh",
+      "postalCode": "515591",
+      "addressCountry": "IN"
+    },
+    {
+      "@type": "PostalAddress",
+      "streetAddress": "Opposite Girls High School, Main Road",
+      "addressLocality": "Kadiri",
+      "addressRegion": "Andhra Pradesh",
+      "postalCode": "515591",
+      "addressCountry": "IN"
+    }
+  ],
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 14.1132,
+    "longitude": 78.1612
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "opens": "06:00",
+      "closes": "23:30"
+    }
+  ]
 };
 
 export default function RootLayout({
@@ -37,6 +161,11 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        {/* Schema.org Structured Data for Google Rich Snippets */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(restaurantStructuredData) }}
+        />
         {/* Pre-hydration: nuke stale service workers & caches on iOS Safari */}
         <script
           dangerouslySetInnerHTML={{
