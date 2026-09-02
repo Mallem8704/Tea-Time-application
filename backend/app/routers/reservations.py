@@ -81,6 +81,32 @@ def setup_reservation_table(db: Session = Depends(get_db)):
         return {"status": "error", "message": str(e)}
 
 
+def resolve_target_outlet(db: Session, requested_id: Optional[int]) -> Outlet:
+    """Safely resolve outlet ID whether it's an absolute DB ID or relative index (1 or 2)."""
+    all_outlets = db.query(Outlet).order_by(Outlet.id.asc()).all()
+    if not all_outlets:
+        outlet = Outlet(name="Old Arabieq Restaurant", currency="INR", tax_rate_percent=0)
+        db.add(outlet)
+        db.commit()
+        db.refresh(outlet)
+        return outlet
+    
+    if requested_id is None:
+        return all_outlets[0]
+        
+    for o in all_outlets:
+        if o.id == requested_id:
+            return o
+            
+    # Check 1-based relative index (1 -> Branch 1, 2 -> Branch 2)
+    if requested_id == 1 and len(all_outlets) >= 1:
+        return all_outlets[0]
+    if requested_id == 2 and len(all_outlets) >= 2:
+        return all_outlets[1]
+        
+    return all_outlets[0]
+
+
 @router.post("", response_model=TableReservationOut)
 @router.post("/", response_model=TableReservationOut)
 async def create_table_reservation(
@@ -95,9 +121,8 @@ async def create_table_reservation(
         except Exception:
             pass
 
-        outlet = db.query(Outlet).filter(Outlet.id == data.outlet_id).first()
-        if not outlet:
-            data.outlet_id = 1
+        target_outlet = resolve_target_outlet(db, data.outlet_id)
+        resolved_outlet_id = target_outlet.id
 
         res_num = generate_reservation_number()
         # Retry on collision
@@ -110,7 +135,7 @@ async def create_table_reservation(
             matched_table = (
                 db.query(CafeTable)
                 .filter(
-                    CafeTable.outlet_id == data.outlet_id,
+                    CafeTable.outlet_id == resolved_outlet_id,
                     CafeTable.status == "free",
                 )
                 .first()
@@ -119,7 +144,7 @@ async def create_table_reservation(
             pass
 
         reservation = TableReservation(
-            outlet_id=data.outlet_id,
+            outlet_id=resolved_outlet_id,
             reservation_number=res_num,
             customer_name=data.customer_name.strip(),
             customer_phone=data.customer_phone.strip(),
@@ -201,11 +226,11 @@ def list_table_reservations(
     db: Session = Depends(get_db),
 ):
     """Staff / Owner: List all table reservations with live filters."""
-    target_outlet_id = outlet_id if outlet_id is not None else current_user.outlet_id
+    target_outlet = resolve_target_outlet(db, outlet_id if outlet_id is not None else current_user.outlet_id)
     query = (
         db.query(TableReservation)
         .options(joinedload(TableReservation.table))
-        .filter(TableReservation.outlet_id == target_outlet_id)
+        .filter(TableReservation.outlet_id == target_outlet.id)
     )
 
     if date:
