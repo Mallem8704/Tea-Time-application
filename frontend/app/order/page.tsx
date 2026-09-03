@@ -172,9 +172,15 @@ function CustomerOrderContent() {
                 .then((ord) => {
                     if (ord && ord.status !== "cancelled" && ord.status !== "served") {
                         setActiveOrder(ord);
+                    } else {
+                        safeStorage.removeItem("arabieq_active_order_id", "session");
+                        safeStorage.removeItem("teatime_active_order_id", "session");
                     }
                 })
-                .catch(() => {});
+                .catch(() => {
+                    safeStorage.removeItem("arabieq_active_order_id", "session");
+                    safeStorage.removeItem("teatime_active_order_id", "session");
+                });
         }
     }, [tableParam, outletId]);
 

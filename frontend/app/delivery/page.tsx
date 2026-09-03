@@ -240,9 +240,13 @@ function DeliveryOrderContent() {
                 .then((ord) => {
                     if (ord && ord.status !== "cancelled" && ord.status !== "delivered") {
                         setActiveOrder(ord);
+                    } else {
+                        safeStorage.removeItem("arabieq_delivery_order_id", "session");
                     }
                 })
-                .catch(() => {});
+                .catch(() => {
+                    safeStorage.removeItem("arabieq_delivery_order_id", "session");
+                });
         }
     }, []);
 
